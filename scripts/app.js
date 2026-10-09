@@ -333,8 +333,8 @@
       return;
     }
 
-    // Show all active citizen posts (APPROVED, SUBMITTED, etc.) - never hide them
-    let posts = marbsDB.data.posts.filter(p => p.status !== 'REJECTED' && p.status !== 'RESOLVED');
+    // Show only APPROVED posts in the public community feed per Section 10 Post Moderation
+    let posts = marbsDB.data.posts.filter(p => p.status === 'APPROVED');
 
     // Filter by type
     if (currentFilter === 'LOST_ITEMS') {
@@ -430,7 +430,7 @@
     const list = $('#recentActivityList');
     if (!list) return;
 
-    const realPosts = marbsDB.data.posts.slice(0, 5);
+    const realPosts = marbsDB.data.posts.filter(p => p.status === 'APPROVED').slice(0, 5);
 
     if (realPosts.length === 0) {
       list.innerHTML = `
@@ -877,7 +877,7 @@
         serial_number_private: serial,
         general_location: location,
         private_coordinates: { lat: 6.5028, lng: 124.8468, address_notes: location },
-        status: 'APPROVED', // Immediately approved so it shows in Recent Posts & Activities
+        status: 'PENDING_REVIEW', // Moderation workflow: SUBMITTED -> PENDING REVIEW -> APPROVED
         reward_status: hasReward ? 'REWARD_OFFERED' : 'NO_REWARD',
         reward_offered: hasReward,
         reward_amount: rewardAmount,
@@ -890,7 +890,7 @@
       };
 
       marbsDB.data.posts.unshift(post);
-      marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted lost post ${newPostId} (${itemName})`);
+      marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted lost post ${newPostId} (${itemName}) - Pending Admin Review`);
       marbsDB.save();
       if (marbsDB.syncPostToFirestore) marbsDB.syncPostToFirestore(post);
 
@@ -902,14 +902,15 @@
       capturedPhotoPayload = null;
 
       showNotificationModal({
-        title: 'Report Published Successfully',
-        message: 'Your lost post was published! It is now live in Recent Posts and the Community Feed.',
-        btnText: 'View Feed',
-        onAction: () => navigateToView('home')
+        title: 'Report Submitted for Admin Review',
+        message: 'Your report has been received! Under Section 10 Post Moderation, an Administrator will review the details. Once approved, it will be published publicly.',
+        btnText: 'Understood',
+        onAction: () => navigateToView('dashboard')
       });
 
       renderFeed();
       renderRecentActivity();
+      renderUserDashboard();
     });
   }
 
@@ -955,7 +956,7 @@
         serial_number_private: '',
         general_location: location,
         private_coordinates: { lat: 6.5028, lng: 124.8468, address_notes: location },
-        status: 'APPROVED', // Immediately approved so it shows in Recent Posts & Activities
+        status: 'PENDING_REVIEW', // Moderation workflow: SUBMITTED -> PENDING REVIEW -> APPROVED
         reward_status: 'NO_REWARD',
         reward_offered: false,
         reward_amount: 0,
@@ -968,7 +969,7 @@
       };
 
       marbsDB.data.posts.unshift(post);
-      marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted found post ${newPostId} (${itemName})`);
+      marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted found post ${newPostId} (${itemName}) - Pending Admin Review`);
       marbsDB.save();
       if (marbsDB.syncPostToFirestore) marbsDB.syncPostToFirestore(post);
 
@@ -979,14 +980,15 @@
       capturedPhotoPayload = null;
 
       showNotificationModal({
-        title: 'Found Report Published',
-        message: 'Thank you for your civic contribution! Your found report is now live in Recent Posts and the Community Feed.',
-        btnText: 'View Feed',
-        onAction: () => navigateToView('home')
+        title: 'Found Report Submitted for Admin Review',
+        message: 'Thank you for your civic contribution! Under Section 10 Post Moderation, an Administrator will verify the details. Once approved, it will be published publicly and your +10 Marbs Points bonus will be awarded.',
+        btnText: 'Understood',
+        onAction: () => navigateToView('dashboard')
       });
 
       renderFeed();
       renderRecentActivity();
+      renderUserDashboard();
     });
   }
 
@@ -1765,7 +1767,15 @@
             </td>
             <td><span class="post-badge ${p.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}">${p.post_type}</span></td>
             <td>${p.general_location}</td>
-            <td><span class="activity-badge" style="background: ${p.status === 'APPROVED' ? '#d1fae5' : '#fef3c7'}; color: ${p.status === 'APPROVED' ? '#065f46' : '#92400e'}">${p.status}</span></td>
+            <td>
+              <span class="activity-badge" style="${
+                p.status === 'APPROVED' ? 'background: #d1fae5; color: #065f46; font-weight: 700;' :
+                p.status === 'REJECTED' ? 'background: #fee2e2; color: #991b1b; font-weight: 700;' :
+                'background: #fef3c7; color: #92400e; font-weight: 700;'
+              }">
+                ${p.status === 'PENDING_REVIEW' ? 'PENDING REVIEW' : p.status}
+              </span>
+            </td>
             <td>
               <div style="display: flex; gap: 6px;">
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="window.marbsApp.openPostDetailModal('${p.post_id}')">View</button>
@@ -1905,7 +1915,15 @@
         </td>
         <td><span class="post-badge ${p.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}">${p.post_type}</span></td>
         <td>${p.general_location}</td>
-        <td><span class="activity-badge" style="background: #fef3c7; color: #92400e;">${p.status}</span></td>
+        <td>
+          <span class="activity-badge" style="${
+            p.status === 'APPROVED' ? 'background: #d1fae5; color: #065f46; font-weight: 700;' :
+            p.status === 'REJECTED' ? 'background: #fee2e2; color: #991b1b; font-weight: 700;' :
+            'background: #fef3c7; color: #92400e; font-weight: 700;'
+          }">
+            ${p.status === 'PENDING_REVIEW' ? 'PENDING REVIEW' : p.status}
+          </span>
+        </td>
         <td>
           <div style="display: flex; gap: 6px;">
             ${p.status !== 'APPROVED' ? `<button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminApprovePost('${p.post_id}')">Approve</button>` : ''}
@@ -1942,9 +1960,15 @@
     }
 
     marbsDB.save();
+    if (window.firestoreDb) {
+      window.firestoreDb.collection('posts').doc(postId).set({ status: 'APPROVED' }, { merge: true })
+        .catch(err => console.warn('Firestore post approval sync warning:', err));
+    }
     renderAdminPortal();
     renderFeed();
-    showToast(`✓ Post ${postId} approved and published!`);
+    renderRecentActivity();
+    renderUserDashboard();
+    showToast(`✓ Post ${postId} approved and published publicly!`);
   };
 
   window.adminRejectPost = function (postId) {
@@ -1954,8 +1978,14 @@
     post.status = 'REJECTED';
     marbsDB.logAudit('POST_REJECTION', `Rejected post ${postId}`);
     marbsDB.save();
+    if (window.firestoreDb) {
+      window.firestoreDb.collection('posts').doc(postId).set({ status: 'REJECTED' }, { merge: true })
+        .catch(err => console.warn('Firestore post rejection sync warning:', err));
+    }
     renderAdminPortal();
     renderFeed();
+    renderRecentActivity();
+    renderUserDashboard();
     showToast(`Post ${postId} has been rejected.`);
   };
 
