@@ -332,6 +332,12 @@ if (firebaseAuth) {
       }
     } else {
       console.log('Firebase Auth State: Logged Out');
+      if (window.marbsDB && window.marbsDB.data.current_user_id !== 'USR-ADMIN') {
+        window.marbsDB.setCurrentUser(null);
+      }
+      if (typeof window.renderUserPill === 'function') {
+        window.renderUserPill();
+      }
     }
   });
 }

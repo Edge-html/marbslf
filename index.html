@@ -56,12 +56,12 @@
           <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
         </button>
 
-        <div class="user-pill" id="navUserBtn" title="Click to view User Dashboard">
-          <div class="user-avatar-sm" id="navUserAvatar">M</div>
-          <span class="user-name-sm" id="navUserName">Maria Clara</span>
+        <div class="user-pill" id="navUserBtn" title="Click to view User Dashboard" style="display: none;">
+          <div class="user-avatar-sm" id="navUserAvatar">U</div>
+          <span class="user-name-sm" id="navUserName"></span>
         </div>
 
-        <button class="btn btn-outline" id="navSignOutBtn" onclick="window.signOutUser()" style="padding: 6px 12px; font-size: 12px;" title="Sign Out">Logout</button>
+        <button class="btn btn-outline" id="navSignOutBtn" onclick="window.signOutUser()" style="padding: 6px 12px; font-size: 12px; display: none;" title="Sign Out">Logout</button>
         <button class="btn btn-outline" id="openLoginModalBtn">Login</button>
         <button class="btn btn-primary" id="openRegisterModalBtn">Sign Up</button>
       </div>
@@ -298,10 +298,10 @@
         <!-- Sidebar Navigation -->
         <aside class="dashboard-nav">
           <div class="dash-user-card">
-            <div class="dash-user-avatar" id="dashAvatarText">M</div>
-            <div class="dash-user-name" id="dashUserLegalName">Maria Clara</div>
-            <div style="font-size: 11px; color: var(--text-muted);" id="dashUserAlias">Verified Citizen #101</div>
-            <span class="dash-user-badge" id="dashUserStatus">VERIFIED</span>
+            <div class="dash-user-avatar" id="dashAvatarText">U</div>
+            <div class="dash-user-name" id="dashUserLegalName">Citizen</div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="dashUserAlias">Active Member</div>
+            <span class="dash-user-badge" id="dashUserStatus">UNVERIFIED</span>
           </div>
 
           <ul class="dash-menu">
@@ -1358,11 +1358,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="scripts/firebaseClient.js"></script>
+  <script src="scripts/firebaseClient.js?v=12"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=11"></script>
-  <script src="scripts/camera.js?v=11"></script>
-  <script src="scripts/app.js?v=11"></script>
+  <script src="scripts/data.js?v=12"></script>
+  <script src="scripts/camera.js?v=12"></script>
+  <script src="scripts/app.js?v=12"></script>
 </body>
 </html>
