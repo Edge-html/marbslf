@@ -44,7 +44,18 @@
     renderUserPill();
     updateNotificationBadges();
 
-    // Check Supabase session after all modules are initialized
+    // Restore last visited view (e.g. admin or dashboard) on page reload
+    try {
+      const savedView = localStorage.getItem('marbslf_active_view');
+      const currentUser = marbsDB.getCurrentUser();
+      if (savedView === 'admin' && currentUser && currentUser.role === 'ADMIN') {
+        navigateToView('admin');
+      } else if (savedView && savedView !== 'home') {
+        navigateToView(savedView);
+      }
+    } catch (e) {}
+
+    // Check Firebase / session after all modules are initialized
     if (typeof window.checkCurrentSession === 'function') {
       window.checkCurrentSession();
     }
@@ -137,6 +148,19 @@
     $('#howItWorksView').style.display = 'none';
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Sync navbar active state
+    $$('.nav-link-btn').forEach(b => {
+      if (b.dataset.view === viewName) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+
+    try {
+      localStorage.setItem('marbslf_active_view', viewName);
+    } catch (e) {}
 
     if (viewName === 'home') {
       currentFilter = 'ALL';
@@ -1873,12 +1897,14 @@
     showToast(`Post ${postId} has been rejected.`);
   };
 
+  let activeAdminVerId = null;
+
   function renderAdminVerifications() {
     const tbody = $('#adminVerificationsTbody');
     if (!tbody) return;
 
     if (!marbsDB.data.id_verifications || marbsDB.data.id_verifications.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">No ID verification submissions yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No ID verification submissions yet.</td></tr>`;
       return;
     }
 
@@ -1893,30 +1919,87 @@
     tbody.innerHTML = marbsDB.data.id_verifications.map(v => {
       const statusColor = badgeColors[v.status] || 'background: #f1f5f9; color: #475569;';
       const dateStr = v.submitted_at ? new Date(v.submitted_at).toLocaleDateString() : 'N/A';
-      const reviewer = v.reviewed_by || 'Pending Review';
 
       return `
-        <tr>
+        <tr style="cursor: pointer; transition: background 0.15s ease;" onclick="window.openAdminIdDetailsModal('${v.verification_id}')" title="Click to view full ID details and decide verification">
           <td><strong>${v.verification_id}</strong></td>
           <td><code>${v.user_id}</code></td>
-          <td><strong>${escapeHtml(v.full_legal_name)}</strong></td>
+          <td><strong style="color: var(--primary-dark);">${escapeHtml(v.full_legal_name)}</strong></td>
           <td>${v.id_type}</td>
           <td>
-            <img src="${v.id_image || 'assets/images.jpg'}" alt="ID Photo" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); cursor: pointer;" onclick="alert('Viewing secure ID capture for ${escapeHtml(v.full_legal_name)}')">
+            <img src="${v.id_image || 'assets/images.jpg'}" alt="ID Photo" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
           </td>
           <td>${dateStr}</td>
-          <td>${reviewer}</td>
           <td><span class="activity-badge" style="${statusColor}">${v.status}</span></td>
-          <td>
-            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-              <button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminSetVerificationStatus('${v.verification_id}', 'VERIFIED')">Verify</button>
-              <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #ef4444;" onclick="window.adminSetVerificationStatus('${v.verification_id}', 'REJECTED')">Reject</button>
-              <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #7e22ce;" onclick="window.adminSetVerificationStatus('${v.verification_id}', 'SUSPENDED')">Suspend</button>
-            </div>
-          </td>
         </tr>
       `;
     }).join('');
+  }
+
+  window.openAdminIdDetailsModal = function (verId) {
+    const ver = marbsDB.data.id_verifications.find(v => v.verification_id === verId);
+    if (!ver) return;
+
+    activeAdminVerId = verId;
+
+    const modal = $('#adminIdDetailsModal');
+    if (!modal) return;
+
+    $('#adminDetailIdImage').src = ver.id_image || 'assets/images.jpg';
+    $('#adminDetailVerId').textContent = ver.verification_id;
+    $('#adminDetailLegalName').textContent = ver.full_legal_name || 'N/A';
+    $('#adminDetailDocType').textContent = ver.id_type || 'National ID';
+    $('#adminDetailUserId').textContent = ver.user_id || 'N/A';
+    $('#adminDetailSubmittedAt').textContent = ver.submitted_at ? new Date(ver.submitted_at).toLocaleString() : 'N/A';
+    $('#adminDetailReviewer').textContent = ver.reviewed_by || 'Pending Review';
+
+    const hashBadge = $('#adminDetailHashBadge');
+    if (hashBadge) {
+      hashBadge.textContent = ver.camera_verified ? `✓ Camera Verification Verified (${ver.verification_id})` : `Uploaded Verification Doc (${ver.verification_id})`;
+    }
+
+    const badgeColors = {
+      'UNVERIFIED': 'background: #f1f5f9; color: #475569;',
+      'PENDING': 'background: #fef3c7; color: #92400e;',
+      'VERIFIED': 'background: #d1fae5; color: #065f46;',
+      'REJECTED': 'background: #fee2e2; color: #991b1b;',
+      'SUSPENDED': 'background: #f3e8ff; color: #6b21a8;'
+    };
+    const statusColor = badgeColors[ver.status] || 'background: #f1f5f9; color: #475569;';
+    $('#adminDetailStatus').innerHTML = `<span class="activity-badge" style="${statusColor}">${ver.status}</span>`;
+
+    modal.classList.add('active');
+  };
+
+  // Wire decision buttons inside adminIdDetailsModal
+  const acceptBtn = $('#adminDetailAcceptBtn');
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', () => {
+      if (activeAdminVerId) {
+        window.adminSetVerificationStatus(activeAdminVerId, 'VERIFIED');
+        $('#adminIdDetailsModal').classList.remove('active');
+      }
+    });
+  }
+
+  const rejectBtn = $('#adminDetailRejectBtn');
+  if (rejectBtn) {
+    rejectBtn.addEventListener('click', () => {
+      if (activeAdminVerId) {
+        window.adminSetVerificationStatus(activeAdminVerId, 'REJECTED');
+        $('#adminIdDetailsModal').classList.remove('active');
+      }
+    });
+  }
+
+  const suspendBtn = $('#adminDetailSuspendBtn');
+  if (suspendBtn) {
+    suspendBtn.addEventListener('click', () => {
+      if (activeAdminVerId) {
+        window.adminSetVerificationStatus(activeAdminVerId, 'SUSPENDED');
+        $('#adminIdDetailsModal').classList.remove('active');
+      }
+    });
   }
 
   window.adminSetVerificationStatus = function (verId, newStatus) {

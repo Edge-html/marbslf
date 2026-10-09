@@ -12,10 +12,10 @@ try {
   if (existingRaw) {
     const parsed = JSON.parse(existingRaw);
     if (parsed) {
-      if (['USR-101', 'USR-102', 'USR-103', 'USR-ADMIN'].includes(parsed.current_user_id)) {
+      if (['USR-101', 'USR-102', 'USR-103'].includes(parsed.current_user_id)) {
         parsed.current_user_id = null;
       }
-      parsed.users = (parsed.users || []).filter(u => !['USR-101', 'USR-102', 'USR-103', 'USR-ADMIN'].includes(u.user_id));
+      parsed.users = (parsed.users || []).filter(u => !['USR-101', 'USR-102', 'USR-103'].includes(u.user_id));
       // Delete any test posts like 'Black Wallet' or empty test posts
       if (Array.isArray(parsed.posts)) {
         parsed.posts = parsed.posts.filter(p => {
