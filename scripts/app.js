@@ -735,20 +735,36 @@
 
     if (user.role === 'ADMIN') return true;
 
-    if (user.verification_status !== 'VERIFIED') {
-      showToast('⚠️ Verify first before you can post or claim');
-      showNotificationModal({
-        title: 'Identity Verification Required',
-        message: `Verify first before you can ${actionDesc}. Under Section 4 security rules, users must complete identity verification (PhilSys, School ID, Driver's License, or Passport) to prevent fraud and protect citizens.`,
-        btnText: 'Verify Identity Now',
-        onAction: () => {
-          $('#idVerificationModal').classList.add('active');
-        }
+    // Self-healing check: check if already verified directly or in id_verifications
+    if (user.verification_status === 'VERIFIED') return true;
+
+    if (window.marbsDB && Array.isArray(window.marbsDB.data.id_verifications)) {
+      const userFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim().toLowerCase();
+      const approvedVer = window.marbsDB.data.id_verifications.find(v => {
+        if (v.status !== 'VERIFIED') return false;
+        const isUserMatch = v.user_id && (v.user_id === user.user_id || v.user_id === user.email);
+        const isNameMatch = v.full_legal_name && v.full_legal_name.trim().toLowerCase() === userFullName;
+        return isUserMatch || isNameMatch;
       });
-      return false;
+
+      if (approvedVer) {
+        user.verification_status = 'VERIFIED';
+        window.marbsDB.save();
+        return true;
+      }
     }
 
-    return true;
+    // If still not verified, show friendly guidance modal
+    showToast('⚠️ Verify first before you can post or claim');
+    showNotificationModal({
+      title: 'Identity Verification Required',
+      message: `Verify first before you can ${actionDesc}. Under Section 4 security rules, users must complete identity verification (PhilSys, School ID, Driver's License, or Passport) to prevent fraud and protect citizens.`,
+      btnText: 'Verify Identity Now',
+      onAction: () => {
+        $('#idVerificationModal').classList.add('active');
+      }
+    });
+    return false;
   }
 
   // 10. Reporting Lost Item (Section 7, 9, 10, 23, 24)

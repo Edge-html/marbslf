@@ -580,7 +580,26 @@ class MarbsLFDatabase {
 
   getCurrentUser() {
     if (!this.data.current_user_id) return null;
-    return this.data.users.find(u => u.user_id === this.data.current_user_id) || null;
+    let user = this.data.users.find(u => u.user_id === this.data.current_user_id || u.email === this.data.current_user_id) || null;
+    if (!user) return null;
+
+    // Auto-heal / sync verification status against id_verifications and admin roles
+    if (user.role === 'ADMIN') {
+      user.verification_status = 'VERIFIED';
+    } else if (user.verification_status !== 'VERIFIED' && Array.isArray(this.data.id_verifications)) {
+      const uFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim().toLowerCase();
+      const hasApprovedVer = this.data.id_verifications.some(v => {
+        if (v.status !== 'VERIFIED') return false;
+        const idMatch = v.user_id && (v.user_id === user.user_id || v.user_id === user.email);
+        const nameMatch = v.full_legal_name && v.full_legal_name.trim().toLowerCase() === uFullName;
+        return idMatch || nameMatch;
+      });
+      if (hasApprovedVer) {
+        user.verification_status = 'VERIFIED';
+        this.save();
+      }
+    }
+    return user;
   }
 
   setCurrentUser(userId) {

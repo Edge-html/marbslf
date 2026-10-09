@@ -261,30 +261,50 @@ async function syncFirebaseUserProfile(user) {
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
   const avatarUrl = user.photoURL || '';
 
-  const userObj = profile || {
+  // Check if existing profile in local marbsDB is already VERIFIED
+  let existingLocalUser = null;
+  if (window.marbsDB && Array.isArray(window.marbsDB.data.users)) {
+    existingLocalUser = window.marbsDB.data.users.find(u => u.user_id === user.uid || u.email === user.email);
+  }
+
+  // Preserve VERIFIED status if local user or local id_verifications says VERIFIED
+  let finalVerStatus = (profile && profile.verification_status) || 'VERIFIED';
+  if (existingLocalUser && existingLocalUser.verification_status === 'VERIFIED') {
+    finalVerStatus = 'VERIFIED';
+  } else if (window.marbsDB && Array.isArray(window.marbsDB.data.id_verifications)) {
+    const hasApproved = window.marbsDB.data.id_verifications.some(v => 
+      (v.user_id === user.uid || v.user_id === user.email) && v.status === 'VERIFIED'
+    );
+    if (hasApproved) finalVerStatus = 'VERIFIED';
+  }
+
+  const userObj = {
+    ...(existingLocalUser || {}),
+    ...(profile || {}),
     user_id: user.uid,
-    first_name: firstName,
-    middle_name: '',
-    last_name: lastName,
-    public_alias: 'Verified Citizen #' + user.uid.slice(0, 6),
+    first_name: (profile && profile.first_name) || (existingLocalUser && existingLocalUser.first_name) || firstName,
+    middle_name: (profile && profile.middle_name) || (existingLocalUser && existingLocalUser.middle_name) || '',
+    last_name: (profile && profile.last_name) || (existingLocalUser && existingLocalUser.last_name) || lastName,
+    public_alias: (profile && profile.public_alias) || (existingLocalUser && existingLocalUser.public_alias) || ('Verified Citizen #' + user.uid.slice(0, 6)),
     email: user.email,
-    phone: user.phoneNumber || '',
-    username: user.email.split('@')[0],
-    avatar_url: avatarUrl,
-    barangay: 'Zone II',
+    phone: (profile && profile.phone) || (existingLocalUser && existingLocalUser.phone) || user.phoneNumber || '',
+    username: (profile && profile.username) || (existingLocalUser && existingLocalUser.username) || user.email.split('@')[0],
+    avatar_url: avatarUrl || (existingLocalUser && existingLocalUser.avatar_url) || '',
+    barangay: (profile && profile.barangay) || (existingLocalUser && existingLocalUser.barangay) || 'Zone II',
     province: 'South Cotabato',
     city: 'Koronadal City',
     account_status: 'ACTIVE',
-    verification_status: 'VERIFIED',
-    points_balance: 100,
-    role: 'USER'
+    verification_status: finalVerStatus,
+    points_balance: (profile && profile.points_balance !== undefined) ? profile.points_balance : (existingLocalUser ? existingLocalUser.points_balance : 100),
+    role: (profile && profile.role) || (existingLocalUser && existingLocalUser.role) || (user.email === 'admin@marbslf.gov.ph' ? 'ADMIN' : 'USER')
   };
 
-  if (!profile && firestoreDb) {
+  if (firestoreDb) {
     try {
       await firestoreDb.collection('users').doc(user.uid).set(userObj, { merge: true });
     } catch (err) {
-      console.warn('Firestore auto-save warning:', err);
+      // Ignored if blocked by client (adblocker/shield)
+      console.warn('Firestore auto-save note (offline or blocked by client):', err.message);
     }
   }
 
@@ -327,8 +347,12 @@ if (firebaseAuth) {
     if (user) {
       console.log('✓ Firebase Auth State: Logged In as', user.email);
       await syncFirebaseUserProfile(user);
-      if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
-        window.marbsDB.syncWithFirestore();
+      try {
+        if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
+          await window.marbsDB.syncWithFirestore();
+        }
+      } catch (err) {
+        console.warn('Firestore sync skipped or blocked by client:', err.message);
       }
     } else {
       console.log('Firebase Auth State: Logged Out');
