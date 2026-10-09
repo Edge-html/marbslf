@@ -17,6 +17,7 @@
   let activeChatPost = null;
   let activeCameraContext = null; // 'lost', 'found', or 'id'
   let capturedPhotoPayload = null;
+  let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
 
   // DOM Elements cache helper
   const $ = (selector) => document.querySelector(selector);
@@ -398,6 +399,11 @@
           <div class="post-image-container">
             <img src="${post.image}" alt="${escapeHtml(post.item_name)}" class="post-image" onerror="this.src='assets/images.jpg'">
             <span class="post-badge ${badgeClass}">${badgeText}</span>
+            ${(Array.isArray(post.images) && post.images.length > 1) ? `
+              <span style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                ${post.images.length}
+              </span>` : ''}
             ${post.reward_offered ? `
               <span class="reward-tag" style="display: inline-flex; align-items: center; gap: 4px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
@@ -557,6 +563,38 @@
 
     $('#modalPostTitle').textContent = post.item_name;
     $('#modalPostImage').src = post.image;
+
+    // Multi-photo gallery handling in detail modal
+    const postPhotos = (Array.isArray(post.images) && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
+    const galleryStrip = $('#modalPhotoGalleryStrip');
+    const indexBadge = $('#modalPhotoIndexBadge');
+
+    if (galleryStrip && indexBadge) {
+      if (postPhotos.length > 1) {
+        galleryStrip.style.display = 'flex';
+        indexBadge.style.display = 'inline-block';
+        indexBadge.textContent = `1 / ${postPhotos.length}`;
+
+        galleryStrip.innerHTML = postPhotos.map((imgSrc, i) => `
+          <div onclick="window.marbsApp.setModalActivePhoto('${imgSrc}', ${i + 1}, ${postPhotos.length})" style="cursor: pointer; flex-shrink: 0; width: 64px; height: 64px; border-radius: var(--radius-sm); overflow: hidden; border: 2px solid ${i === 0 ? 'var(--primary-dark)' : 'var(--border)'}; background: #000;" class="modal-thumb-item" data-thumb-idx="${i}">
+            <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" alt="thumb ${i + 1}">
+          </div>
+        `).join('');
+
+        window.marbsApp.setModalActivePhoto = function(src, currentIdx, total) {
+          $('#modalPostImage').src = src;
+          indexBadge.textContent = `${currentIdx} / ${total}`;
+          document.querySelectorAll('.modal-thumb-item').forEach((el, idx) => {
+            el.style.borderColor = (idx === currentIdx - 1) ? 'var(--primary-dark)' : 'var(--border)';
+          });
+        };
+      } else {
+        galleryStrip.style.display = 'none';
+        galleryStrip.innerHTML = '';
+        indexBadge.style.display = 'none';
+      }
+    }
+
     $('#modalPostCategory').textContent = post.category;
     $('#modalPostType').textContent = post.post_type === 'LOST' ? 'Lost Item' : 'Found Item';
     $('#modalPostType').className = `post-badge ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}`;
@@ -619,27 +657,77 @@
     $('#cameraUseBtn').addEventListener('click', () => marbsCamera.usePhoto());
 
     // Trigger buttons from Forms
-    // Lost Item: supports both direct file upload or camera
+    // Lost Item: supports multiple file uploads and/or camera additions
     const lostUploadBtn = $('#lostUploadFileBtn');
     const lostCameraBtn = $('#lostCameraOpenBtn');
     const lostFileInput = $('#lostFileInput');
 
+    function renderLostPhotosPreview() {
+      const grid = $('#lostPhotosPreviewGrid');
+      const badge = $('#lostPhotoCountBadge');
+      const prompt = $('#lostCameraPrompt');
+      const hashtag = $('#lostPhotoHashTag');
+      if (!grid) return;
+
+      if (lostUploadedPhotos.length === 0) {
+        grid.style.display = 'none';
+        grid.innerHTML = '';
+        if (badge) badge.style.display = 'none';
+        if (prompt) prompt.style.display = 'block';
+        if (hashtag) hashtag.style.display = 'none';
+        return;
+      }
+
+      grid.style.display = 'grid';
+      if (prompt) prompt.style.display = 'none';
+      if (badge) {
+        badge.style.display = 'inline-block';
+        badge.textContent = `${lostUploadedPhotos.length} Photo${lostUploadedPhotos.length > 1 ? 's' : ''} Attached`;
+      }
+      if (hashtag) {
+        hashtag.style.display = 'block';
+        hashtag.textContent = `✓ ${lostUploadedPhotos.length} secure photo${lostUploadedPhotos.length > 1 ? 's' : ''} ready for review`;
+      }
+
+      grid.innerHTML = lostUploadedPhotos.map((item, idx) => `
+        <div style="position: relative; border-radius: var(--radius-sm); overflow: hidden; background: #000; height: 80px; border: 1px solid var(--border);">
+          <img src="${item.image_data}" alt="Photo ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+          <span style="position: absolute; bottom: 2px; left: 4px; background: rgba(0,0,0,0.65); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 4px;">#${idx + 1}</span>
+          <button type="button" onclick="event.stopPropagation(); window.marbsApp.removeLostPhoto(${idx});" style="position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.85); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">×</button>
+        </div>
+      `).join('');
+    }
+
+    window.marbsApp = window.marbsApp || {};
+    window.marbsApp.removeLostPhoto = function(index) {
+      lostUploadedPhotos.splice(index, 1);
+      renderLostPhotosPreview();
+    };
+
     if (lostUploadBtn && lostFileInput) {
       lostUploadBtn.addEventListener('click', () => lostFileInput.click());
       lostFileInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          activeCameraContext = 'lost';
-          handlePhotoCaptured({
-            image_data: evt.target.result,
-            image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-            timestamp: new Date().toISOString()
-          });
-          showToast('✓ Lost item photo uploaded from device!');
-        };
-        reader.readAsDataURL(file);
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        let loadedCount = 0;
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function (evt) {
+            lostUploadedPhotos.push({
+              image_data: evt.target.result,
+              image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+              timestamp: new Date().toISOString()
+            });
+            loadedCount++;
+            if (loadedCount === files.length) {
+              renderLostPhotosPreview();
+              showToast(`✓ ${files.length} photo${files.length > 1 ? 's' : ''} added!`);
+              lostFileInput.value = ''; // reset so same files can be re-selected if needed
+            }
+          };
+          reader.readAsDataURL(file);
+        });
       });
     }
 
@@ -655,8 +743,6 @@
 
     // Default trigger box on Lost item form
     $('#reportLostCameraTrigger').addEventListener('click', () => {
-      // If photo already selected, do nothing on click
-      if (capturedPhotoPayload && activeCameraContext === 'lost') return;
       if (lostFileInput) lostFileInput.click();
     });
 
@@ -708,11 +794,32 @@
     capturedPhotoPayload = payload;
 
     if (activeCameraContext === 'lost') {
-      $('#lostPhotoPreview').src = payload.image_data;
-      $('#lostPhotoPreview').style.display = 'block';
-      $('#lostCameraPrompt').style.display = 'none';
-      $('#lostPhotoHashTag').textContent = `✓ Proof Hash: ${payload.image_hash} (Camera Verified)`;
-      $('#lostPhotoHashTag').style.display = 'block';
+      // Append captured camera photo to lostUploadedPhotos list
+      lostUploadedPhotos.push(payload);
+      const grid = $('#lostPhotosPreviewGrid');
+      const badge = $('#lostPhotoCountBadge');
+      const prompt = $('#lostCameraPrompt');
+      const hashtag = $('#lostPhotoHashTag');
+
+      if (grid) {
+        grid.style.display = 'grid';
+        if (prompt) prompt.style.display = 'none';
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.textContent = `${lostUploadedPhotos.length} Photo${lostUploadedPhotos.length > 1 ? 's' : ''} Attached`;
+        }
+        if (hashtag) {
+          hashtag.style.display = 'block';
+          hashtag.textContent = `✓ ${lostUploadedPhotos.length} secure photo${lostUploadedPhotos.length > 1 ? 's' : ''} ready for review`;
+        }
+        grid.innerHTML = lostUploadedPhotos.map((item, idx) => `
+          <div style="position: relative; border-radius: var(--radius-sm); overflow: hidden; background: #000; height: 80px; border: 1px solid var(--border);">
+            <img src="${item.image_data}" alt="Photo ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+            <span style="position: absolute; bottom: 2px; left: 4px; background: rgba(0,0,0,0.65); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 4px;">#${idx + 1}</span>
+            <button type="button" onclick="event.stopPropagation(); window.marbsApp.removeLostPhoto(${idx});" style="position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.85); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">×</button>
+          </div>
+        `).join('');
+      }
     } else if (activeCameraContext === 'found') {
       $('#foundPhotoPreview').src = payload.image_data;
       $('#foundPhotoPreview').style.display = 'block';
@@ -916,9 +1023,10 @@
         reward_offered: hasReward,
         reward_amount: rewardAmount,
         reward_amount_private: hideReward,
-        image: capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/images.jpg',
-        camera_verified: !!capturedPhotoPayload,
-        photo_hash: capturedPhotoPayload ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH',
+        image: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos[0].image_data : (capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/images.jpg'),
+        images: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos.map(p => p.image_data) : (capturedPhotoPayload ? [capturedPhotoPayload.image_data] : []),
+        camera_verified: lostUploadedPhotos.some(p => p.image_hash && !p.image_hash.startsWith('UPLOAD-')) || !!(capturedPhotoPayload && !capturedPhotoPayload.image_hash.startsWith('UPLOAD-')),
+        photo_hash: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos.map(p => p.image_hash).join(', ') : (capturedPhotoPayload ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH'),
         likes_count: 0,
         created_at: new Date().toISOString()
       };
@@ -934,6 +1042,18 @@
       $('#reportLostModal').classList.remove('active');
       lostForm.reset();
       capturedPhotoPayload = null;
+      lostUploadedPhotos = [];
+      const previewGrid = $('#lostPhotosPreviewGrid');
+      if (previewGrid) {
+        previewGrid.style.display = 'none';
+        previewGrid.innerHTML = '';
+      }
+      const countBadge = $('#lostPhotoCountBadge');
+      if (countBadge) countBadge.style.display = 'none';
+      const promptEl = $('#lostCameraPrompt');
+      if (promptEl) promptEl.style.display = 'block';
+      const hashEl = $('#lostPhotoHashTag');
+      if (hashEl) hashEl.style.display = 'none';
 
       showNotificationModal({
         title: 'Report Submitted for Admin Review',
