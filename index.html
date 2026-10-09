@@ -233,17 +233,16 @@
               </select>
             </div>
             
-            <div class="map-widget-container" style="position: relative; height: 260px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border);">
+            <div class="map-widget-container" style="position: relative; height: 260px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); background: #f8fafc;">
               <iframe 
                 id="googleMapIframe"
-                src="https://maps.google.com/maps?q=Koronadal%20City,%20South%20Cotabato&t=&z=14&ie=UTF8&iwloc=&output=embed"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=124.8100%2C6.4750%2C124.8850%2C6.5300&amp;layer=mapnik&amp;marker=6.5020%2C124.8480"
                 width="100%" 
                 height="100%" 
                 style="border:0; display: block;" 
                 allowfullscreen="" 
                 loading="lazy" 
-                referrerpolicy="no-referrer-when-downgrade"
-                title="Koronadal City Google Map">
+                title="Koronadal City Interactive Map">
               </iframe>
               <div class="map-legend" style="bottom: 8px; left: 8px; right: 8px; padding: 6px 10px; font-size: 11px;">
                 <div class="legend-item"><span class="legend-dot dot-safe"></span> Koronadal Hubs</div>
@@ -253,7 +252,7 @@
             </div>
             <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; align-items: flex-start; gap: 6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0; margin-top: 2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span><em>Privacy Shield Active:</em> Live interactive Google Map of Koronadal City. Exact residential GPS coordinates remain hidden to protect citizen privacy.</span>
+              <span><em>Privacy Shield Active:</em> Live interactive city map of Koronadal City. Exact residential GPS coordinates remain hidden to protect citizen privacy.</span>
             </p>
           </div>
 
@@ -1612,6 +1611,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=20"></script>
   <script src="scripts/camera.js?v=16"></script>
-  <script src="scripts/app.js?v=26"></script>
+  <script src="scripts/app.js?v=27"></script>
 </body>
 </html>

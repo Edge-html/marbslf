@@ -273,13 +273,9 @@
         currentArea = tag.dataset.area;
         renderFeed();
 
-        // Pan Google Map to the selected Koronadal area
+        // Pan Map to the selected Koronadal area
         if (window.setMapLocation) {
-          if (currentArea === 'ALL') {
-            window.setMapLocation('Koronadal City, South Cotabato');
-          } else {
-            window.setMapLocation(`${currentArea}, Koronadal City, South Cotabato`);
-          }
+          window.setMapLocation(currentArea);
         }
       });
     });
@@ -506,15 +502,34 @@
     const resetBtn = $('#recenterMapBtn');
     const citySelector = $('#mapCitySelector');
 
-    function updateMapLocation(query) {
+    // Geo coordinates for specific key zones in Koronadal City
+    const koronadalZones = {
+      'ALL': { lat: 6.5020, lon: 124.8480, delta: 0.038 },
+      'City Proper': { lat: 6.5025, lon: 124.8475, delta: 0.015 },
+      'Public Market': { lat: 6.4988, lon: 124.8440, delta: 0.012 },
+      'Robinsons': { lat: 6.4912, lon: 124.8398, delta: 0.012 },
+      'KCC': { lat: 6.5090, lon: 124.8510, delta: 0.012 },
+      'KNCHS': { lat: 6.5050, lon: 124.8490, delta: 0.012 },
+      'Notre Dame': { lat: 6.4970, lon: 124.8470, delta: 0.012 },
+      'Zone': { lat: 6.5010, lon: 124.8530, delta: 0.020 }
+    };
+
+    function updateMapLocation(areaKey) {
       if (!mapIframe) return;
-      const encoded = encodeURIComponent(query);
-      mapIframe.src = `https://maps.google.com/maps?q=${encoded}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+      const zone = koronadalZones[areaKey] || koronadalZones['ALL'];
+      const minLon = (zone.lon - zone.delta).toFixed(4);
+      const minLat = (zone.lat - zone.delta * 0.7).toFixed(4);
+      const maxLon = (zone.lon + zone.delta).toFixed(4);
+      const maxLat = (zone.lat + zone.delta * 0.7).toFixed(4);
+      const markerLat = zone.lat.toFixed(4);
+      const markerLon = zone.lon.toFixed(4);
+
+      mapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${markerLat}%2C${markerLon}`;
     }
 
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
-        updateMapLocation('Koronadal City, South Cotabato');
+        updateMapLocation('ALL');
         currentArea = 'ALL';
         $$('.area-tag').forEach(t => t.classList.remove('active'));
         const allTag = document.querySelector('.area-tag[data-area="ALL"]');
@@ -525,8 +540,8 @@
     }
 
     if (citySelector) {
-      citySelector.addEventListener('change', (e) => {
-        updateMapLocation(e.target.value + ', South Cotabato');
+      citySelector.addEventListener('change', () => {
+        updateMapLocation('ALL');
       });
     }
 
