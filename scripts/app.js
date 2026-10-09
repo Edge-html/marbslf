@@ -55,6 +55,11 @@
       }
     } catch (e) {}
 
+    // Sync posts from Firestore cloud so posts are always up to date for guests and logged-in users
+    if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
+      window.marbsDB.syncWithFirestore();
+    }
+
     // Check Firebase / session after all modules are initialized
     if (typeof window.checkCurrentSession === 'function') {
       window.checkCurrentSession();
