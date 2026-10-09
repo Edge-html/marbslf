@@ -79,11 +79,26 @@
   }
 
   // 2. Navigation & Views Switching
-  function setupNavigation() {
+    // Mobile menu drawer toggle
+    const mobileToggle = $('#mobileMenuToggle');
+    const navMenu = $('#navMenu');
+    if (mobileToggle && navMenu) {
+      mobileToggle.addEventListener('click', () => {
+        mobileToggle.classList.toggle('active');
+        navMenu.classList.toggle('active');
+      });
+    }
+
     $$('.nav-link-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+
+        // Automatically close mobile menu drawer upon link click
+        if (mobileToggle && navMenu) {
+          mobileToggle.classList.remove('active');
+          navMenu.classList.remove('active');
+        }
 
         const view = btn.dataset.view;
         navigateToView(view);
@@ -95,6 +110,10 @@
       $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
       const homeBtn = document.querySelector('[data-view="home"]');
       if (homeBtn) homeBtn.classList.add('active');
+      if (mobileToggle && navMenu) {
+        mobileToggle.classList.remove('active');
+        navMenu.classList.remove('active');
+      }
     });
 
     $('#navUserBtn').addEventListener('click', () => {
