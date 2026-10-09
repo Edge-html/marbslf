@@ -47,6 +47,12 @@
           <li class="nav-item"><button class="nav-link-btn" data-view="found-pets">Found Pets</button></li>
           <li class="nav-item"><button class="nav-link-btn" data-view="how-it-works">How It Works</button></li>
           <li class="nav-item">
+            <button class="nav-link-btn" data-view="verifications" id="navVerificationsBtn" style="position: relative; display: inline-flex; align-items: center; gap: 6px;">
+              Verification
+              <span id="navVerificationsBadge" style="display: none; background: #2563eb; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; min-width: 16px; text-align: center; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.4);">0</span>
+            </button>
+          </li>
+          <li class="nav-item">
             <button class="nav-link-btn" data-view="admin" id="navAdminPortalBtn" style="position: relative; display: inline-flex; align-items: center; gap: 6px;">
               Admin Portal
               <span id="navAdminQueueBadge" style="display: none; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; min-width: 16px; text-align: center; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.4);">0</span>
@@ -1121,6 +1127,43 @@
     </div>
   </div>
 
+  <!-- 5B. Post Verification Answers Review Modal (For Post Owners to review claimants' responses) -->
+  <div class="modal-overlay" id="postVerificationsModal" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 740px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          Private Verification Answers
+        </h3>
+        <button class="modal-close-btn" onclick="$('#postVerificationsModal').classList.remove('active')">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div class="warning-alert" style="background: #eff6ff; border-color: #bfdbfe; margin-bottom: 16px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div style="font-size: 13px; color: #1e3a8a;">
+            <strong>Confidential Owner Review:</strong> Below are private verification answers submitted by citizens regarding your lost/found items. Review their answers carefully to confirm if they are the rightful owner or finder before arranging a safe return.
+          </div>
+        </div>
+
+        <div id="postVerificationsFilterBar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; flex-wrap: wrap;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-main);" id="postVerificationsCountLabel">
+            Showing responses for your posts
+          </div>
+          <select id="postVerificationsFilterSelect" class="form-select" style="max-width: 260px; font-size: 12px; padding: 6px 10px;">
+            <option value="ALL">All My Posts</option>
+          </select>
+        </div>
+
+        <div id="postVerificationsList" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline" onclick="$('#postVerificationsModal').classList.remove('active')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 6. Safe Pickup Place & Meetup Scheduler Modal (Section 15 & 16) -->
   <div class="modal-overlay" id="meetupModal" role="dialog" aria-modal="true">
     <div class="modal-card">
@@ -1611,6 +1654,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=20"></script>
   <script src="scripts/camera.js?v=16"></script>
-  <script src="scripts/app.js?v=27"></script>
+  <script src="scripts/app.js?v=28"></script>
 </body>
 </html>

@@ -242,6 +242,17 @@
       }
       $('#dashboardView').style.display = 'block';
       renderUserDashboard();
+    } else if (viewName === 'verifications') {
+      const user = marbsDB.getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        showToast('Please log in to view verification answers.');
+        $('#homeView').style.display = 'block';
+        return;
+      }
+      $('#homeView').style.display = 'block';
+      renderFeed();
+      window.openVerificationsModal();
     } else if (viewName === 'admin') {
       const user = marbsDB.getCurrentUser();
       if (!user || user.role !== 'ADMIN') {
@@ -429,9 +440,33 @@
                 </span>
                 <span class="like-count" id="like-count-${post.post_id}">${likesCount}</span>
               </button>
-              <button class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
-                ${isLost ? 'Found this?' : 'I Think This Is Mine'}
-              </button>
+              ${(() => {
+                const currentUser = marbsDB.getCurrentUser();
+                const isOwnPost = Boolean(currentUser && (
+                  (post.user_id && currentUser.user_id === post.user_id) ||
+                  (post.poster_id && currentUser.user_id === post.poster_id) ||
+                  (currentUser.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
+                ));
+
+                if (isOwnPost) {
+                  return `
+                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 11px; font-weight: 700; color: var(--primary-dark); background: #fef3c7; border: 1px solid #fde68a; padding: 4px 8px; border-radius: 6px;">
+                        Your Post
+                      </span>
+                      <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #2563eb; border-color: #93c5fd; border-radius: 6px;" title="View Verification Answers received for this post">
+                        View Answers
+                      </button>
+                    </div>
+                  `;
+                }
+
+                return `
+                  <button class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
+                    ${isLost ? 'Found this?' : 'I Think This Is Mine'}
+                  </button>
+                `;
+              })()}
               ${(marbsDB.getCurrentUser() && (marbsDB.getCurrentUser().role === 'ADMIN' || marbsDB.getCurrentUser().user_id === post.user_id || post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST')) ? `
                 <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); window.marbsApp.deletePost('${post.post_id}')" style="padding: 4px 8px; font-size: 11px; color: #ef4444; border-color: #fca5a5; border-radius: 6px;" title="Delete Post">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -561,12 +596,8 @@
       }
     });
 
-    $('#claimPostBtn').addEventListener('click', () => {
-      if (activePostForModal) {
-        $('#postDetailModal').classList.remove('active');
-        openOwnershipClaimModal(activePostForModal);
-      }
-    });
+    // Default claim click is configured dynamically inside openPostDetailModal
+    // for author verification review vs other citizen claim submission
   }
 
   function openPostDetailModal(postId) {
@@ -643,12 +674,37 @@
       camBadge.style.display = 'none';
     }
 
-    // Configure Claim Button
+    // Configure Claim Button vs Own Post Actions
     const claimBtn = $('#claimPostBtn');
-    if (post.post_type === 'LOST') {
-      claimBtn.textContent = 'I Found This Item (Contact Owner)';
-    } else {
-      claimBtn.textContent = 'I Think This Is Mine (Verify Ownership)';
+    const currentUser = marbsDB.getCurrentUser();
+    const isOwnPost = Boolean(currentUser && (
+      (post.user_id && currentUser.user_id === post.user_id) ||
+      (post.poster_id && currentUser.user_id === post.poster_id) ||
+      (currentUser.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
+    ));
+
+    if (claimBtn) {
+      if (isOwnPost) {
+        claimBtn.textContent = 'View Verification Answers';
+        claimBtn.style.display = 'inline-flex';
+        claimBtn.className = 'btn btn-primary';
+        claimBtn.onclick = () => {
+          $('#postDetailModal').classList.remove('active');
+          window.openPostVerificationAnswers(post.post_id);
+        };
+      } else {
+        claimBtn.style.display = 'inline-flex';
+        claimBtn.className = 'btn btn-primary';
+        if (post.post_type === 'LOST') {
+          claimBtn.textContent = 'I Found This Item (Contact Owner)';
+        } else {
+          claimBtn.textContent = 'I Think This Is Mine (Verify Ownership)';
+        }
+        claimBtn.onclick = () => {
+          $('#postDetailModal').classList.remove('active');
+          openOwnershipClaimModal(post);
+        };
+      }
     }
 
     // Configure Delete Button in Modal
@@ -974,7 +1030,20 @@
         return;
       }
       const post = marbsDB.data.posts.find(p => p.post_id === postId);
-      if (post) openOwnershipClaimModal(post);
+      if (!post) return;
+
+      const isOwnPost = Boolean(
+        (post.user_id && user.user_id === post.user_id) ||
+        (post.poster_id && user.user_id === post.poster_id) ||
+        (user.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
+      );
+
+      if (isOwnPost) {
+        window.openPostVerificationAnswers(postId);
+        return;
+      }
+
+      openOwnershipClaimModal(post);
     },
 
     toggleLike: function (postId) {
@@ -1287,6 +1356,23 @@
 
   function openOwnershipClaimModal(post) {
     const user = marbsDB.getCurrentUser();
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+
+    const isOwnPost = Boolean(
+      (post.user_id && user.user_id === post.user_id) ||
+      (post.poster_id && user.user_id === post.poster_id) ||
+      (user.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
+    );
+
+    if (isOwnPost) {
+      showToast('You cannot claim your own post. Viewing private verification answers instead.');
+      window.openPostVerificationAnswers(post.post_id);
+      return;
+    }
+
     if (!checkUserVerification(user, post.post_type === 'LOST' ? 'report finding this item' : 'claim this found item')) {
       return;
     }
@@ -1994,8 +2080,9 @@
               </span>
             </td>
             <td>
-              <div style="display: flex; gap: 6px;">
+              <div style="display: flex; gap: 6px; align-items: center;">
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="window.marbsApp.openPostDetailModal('${p.post_id}')">View</button>
+                <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #2563eb; border-color: #bfdbfe;" onclick="window.openPostVerificationAnswers('${p.post_id}')" title="Review verification answers submitted for this post">Answers</button>
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #ef4444; border-color: #fca5a5;" onclick="window.marbsApp.deletePost('${p.post_id}')">Delete</button>
               </div>
             </td>
@@ -2459,6 +2546,33 @@
       }
     }
 
+    // Calculate pending verification answers count on user's own posts
+    const verifNavBadge = $('#navVerificationsBadge');
+    if (verifNavBadge) {
+      if (user && user.user_id) {
+        const userPosts = (marbsDB.data.posts || []).filter(p =>
+          (p.user_id && p.user_id === user.user_id) ||
+          (p.poster_id && p.poster_id === user.user_id) ||
+          (user.user_id === 'USR-ADMIN' && (p.user_id === 'USR-ADMIN' || p.user_id === 'USR-GUEST'))
+        );
+        const userPostIds = new Set(userPosts.map(p => p.post_id));
+        const pendingClaimsCount = (marbsDB.data.matches || []).filter(m =>
+          (userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id)) &&
+          m.claimant_id !== user.user_id &&
+          m.status !== 'RESOLVED' && m.status !== 'MATCH_REJECTED'
+        ).length;
+
+        if (pendingClaimsCount > 0) {
+          verifNavBadge.style.display = 'inline-block';
+          verifNavBadge.textContent = pendingClaimsCount;
+        } else {
+          verifNavBadge.style.display = 'none';
+        }
+      } else {
+        verifNavBadge.style.display = 'none';
+      }
+    }
+
     if (user && user.user_id) {
       if (pill) {
         pill.style.display = 'flex';
@@ -2511,6 +2625,34 @@
         adminNavBadge.textContent = pendingReviewPostsCount;
       } else {
         adminNavBadge.style.display = 'none';
+      }
+    }
+
+    // Also sync verification answers badge count
+    const verifNavBadge = $('#navVerificationsBadge');
+    if (verifNavBadge) {
+      const user = marbsDB.getCurrentUser();
+      if (user && user.user_id) {
+        const userPosts = (marbsDB.data.posts || []).filter(p =>
+          (p.user_id && p.user_id === user.user_id) ||
+          (p.poster_id && p.poster_id === user.user_id) ||
+          (user.user_id === 'USR-ADMIN' && (p.user_id === 'USR-ADMIN' || p.user_id === 'USR-GUEST'))
+        );
+        const userPostIds = new Set(userPosts.map(p => p.post_id));
+        const pendingClaimsCount = (marbsDB.data.matches || []).filter(m =>
+          (userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id)) &&
+          m.claimant_id !== user.user_id &&
+          m.status !== 'RESOLVED' && m.status !== 'MATCH_REJECTED'
+        ).length;
+
+        if (pendingClaimsCount > 0) {
+          verifNavBadge.style.display = 'inline-block';
+          verifNavBadge.textContent = pendingClaimsCount;
+        } else {
+          verifNavBadge.style.display = 'none';
+        }
+      } else {
+        verifNavBadge.style.display = 'none';
       }
     }
   }
@@ -2618,6 +2760,248 @@
   window.openRegisterModal = openRegisterModal;
   window.openOwnershipClaimModal = openOwnershipClaimModal;
   window.openChatModal = openChatModal;
+
+  // Reviewer for Private Verification Answers submitted for post owner's items
+  function openVerificationsModal(filterPostId = 'ALL') {
+    const user = marbsDB.getCurrentUser();
+    if (!user) {
+      openLoginModal();
+      showToast('Please log in to view verification answers.');
+      return;
+    }
+
+    const modal = $('#postVerificationsModal');
+    if (!modal) return;
+
+    // Get user's own posts
+    const userPosts = (marbsDB.data.posts || []).filter(p =>
+      (p.user_id && p.user_id === user.user_id) ||
+      (p.poster_id && p.poster_id === user.user_id) ||
+      (user.role === 'ADMIN') ||
+      (user.user_id === 'USR-ADMIN' && (p.user_id === 'USR-ADMIN' || p.user_id === 'USR-GUEST'))
+    );
+
+    const userPostIds = new Set(userPosts.map(p => p.post_id));
+
+    // Populate post dropdown filter
+    const select = $('#postVerificationsFilterSelect');
+    if (select) {
+      select.innerHTML = `<option value="ALL">All My Posts (${userPosts.length})</option>` +
+        userPosts.map(p => `<option value="${p.post_id}" ${p.post_id === filterPostId ? 'selected' : ''}>${escapeHtml(p.item_name)} (${p.post_type})</option>`).join('');
+
+      select.onchange = (e) => {
+        renderVerificationAnswersList(e.target.value);
+      };
+    }
+
+    renderVerificationAnswersList(filterPostId);
+    modal.classList.add('active');
+  }
+
+  function renderVerificationAnswersList(targetPostId = 'ALL') {
+    const user = marbsDB.getCurrentUser();
+    if (!user) return;
+
+    const list = $('#postVerificationsList');
+    const countLabel = $('#postVerificationsCountLabel');
+    if (!list) return;
+
+    // Find all matches/claims where this post is owned by current user (or all if admin)
+    const userPosts = (marbsDB.data.posts || []).filter(p =>
+      (p.user_id && p.user_id === user.user_id) ||
+      (p.poster_id && p.poster_id === user.user_id) ||
+      (user.role === 'ADMIN') ||
+      (user.user_id === 'USR-ADMIN' && (p.user_id === 'USR-ADMIN' || p.user_id === 'USR-GUEST'))
+    );
+    const userPostIds = new Set(userPosts.map(p => p.post_id));
+
+    let relevantMatches = (marbsDB.data.matches || []).filter(m => {
+      // Must pertain to one of user's posts
+      const isRelated = userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id);
+      // And submitted by someone else (or if admin, show all)
+      return isRelated && (user.role === 'ADMIN' || m.claimant_id !== user.user_id);
+    });
+
+    if (targetPostId && targetPostId !== 'ALL') {
+      relevantMatches = relevantMatches.filter(m => m.lost_post_id === targetPostId || m.found_post_id === targetPostId);
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `Received Answers (${relevantMatches.length} response${relevantMatches.length === 1 ? '' : 's'})`;
+    }
+
+    if (relevantMatches.length === 0) {
+      list.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-md);">
+          <div style="font-size: 28px; margin-bottom: 8px;">📬</div>
+          <strong style="color: var(--text-main); font-size: 14px;">No Private Verification Answers Yet</strong>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; max-width: 400px; margin-left: auto; margin-right: auto;">
+            When another citizen submits answers to verify ownership or reports finding your item, their private answers will appear securely here for your review.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = relevantMatches.map(m => {
+      // Find matching post
+      const post = (marbsDB.data.posts || []).find(p => p.post_id === m.lost_post_id || p.post_id === m.found_post_id) || {
+        item_name: 'Lost / Found Item',
+        post_type: 'POST',
+        image: 'assets/images.jpg',
+        general_location: 'Koronadal'
+      };
+
+      const claimant = (marbsDB.data.users || []).find(u => u.user_id === m.claimant_id) || {
+        first_name: 'Citizen',
+        public_alias: 'Citizen Claimant',
+        verification_status: 'VERIFIED'
+      };
+
+      const qna = m.qna_responses || {};
+      const statusColor = m.status === 'MATCH_CONFIRMED' || m.status === 'RETURN_SCHEDULED' ? '#10b981' :
+                          m.status === 'MATCH_REJECTED' ? '#ef4444' : '#2563eb';
+
+      return `
+        <div class="card" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <!-- Top info bar -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <img src="${post.image || 'assets/images.jpg'}" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
+              <div>
+                <span class="post-badge ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}" style="font-size: 10px; padding: 2px 6px;">${post.post_type || 'POST'}</span>
+                <strong style="display: block; font-size: 14px; margin-top: 2px; color: var(--text-main);">${escapeHtml(post.item_name)}</strong>
+                <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(post.general_location || 'Koronadal')}</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span style="background: ${statusColor}15; color: ${statusColor}; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 12px; display: inline-block;">
+                ${m.status || 'VERIFICATION_IN_PROGRESS'}
+              </span>
+              <div style="font-size: 11px; color: var(--text-subtle); margin-top: 4px;">
+                ${m.created_at ? new Date(m.created_at).toLocaleDateString() : 'Recent'}
+              </div>
+            </div>
+          </div>
+
+          <!-- Claimant Badge -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+            <div>
+              <span style="color: var(--text-muted);">Submitted by:</span>
+              <strong style="color: var(--text-main); margin-left: 4px;">${escapeHtml(claimant.public_alias || claimant.first_name)}</strong>
+              ${claimant.verification_status === 'VERIFIED' ? `
+                <span style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 4px;">ID VERIFIED</span>
+              ` : ''}
+            </div>
+            <div style="font-size: 11px; color: #2563eb; font-weight: 700;">
+              Match Score: ${m.match_score || 90}%
+            </div>
+          </div>
+
+          <!-- Private Q&A Answers Grid -->
+          <div style="background: #fafafa; border: 1px solid #f1f5f9; border-radius: 8px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-weight: 800; color: #1e3a8a; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Submitted Verification Answers:
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+              <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">1. Location:</div>
+                <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.location_lost || 'Not provided')}</div>
+              </div>
+
+              <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">2. Approximate Time:</div>
+                <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.approx_time || 'Not provided')}</div>
+              </div>
+
+              <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">3. Color & Markings:</div>
+                <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.color || 'Not provided')}</div>
+              </div>
+
+              ${qna.identifying_marks ? `
+                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">4. Distinct Identifying Marks:</div>
+                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.identifying_marks)}</div>
+                </div>
+              ` : ''}
+
+              ${qna.accessories ? `
+                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">5. Attached Accessories / Charms:</div>
+                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.accessories)}</div>
+                </div>
+              ` : ''}
+
+              ${qna.inside_contents ? `
+                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">6. Inside Contents (if bag/wallet):</div>
+                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.inside_contents)}</div>
+                </div>
+              ` : ''}
+
+              <div style="background: #fefce8; padding: 8px 10px; border-radius: 6px; border: 1px solid #fef08a;">
+                <div style="color: #854d0e; font-size: 11px; font-weight: 700;">★ Secret Proof / Unique Characteristic:</div>
+                <div style="color: #713f12; font-weight: 700; margin-top: 2px;">${escapeHtml(qna.private_proof || 'Not provided')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openChat('${post.post_id}')">
+              Open Private Chat
+            </button>
+            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #ef4444; border-color: #fca5a5;" onclick="window.rejectVerificationMatch('${m.match_id}')">
+              Reject Claim
+            </button>
+            <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 6px 14px;" onclick="window.acceptVerificationMatch('${m.match_id}', '${post.post_id}')">
+              ✓ Accept & Schedule Return
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.openVerificationsModal = openVerificationsModal;
+  window.openPostVerificationAnswers = function (postId) {
+    openVerificationsModal(postId);
+  };
+
+  window.acceptVerificationMatch = function (matchId, postId) {
+    const match = (marbsDB.data.matches || []).find(m => m.match_id === matchId);
+    if (!match) return;
+
+    match.status = 'MATCH_CONFIRMED';
+    marbsDB.logAudit('MATCH_CONFIRMED', `Post owner confirmed match ${matchId}`);
+    marbsDB.save();
+
+    $('#postVerificationsModal').classList.remove('active');
+    
+    // Open Safe Return scheduler modal
+    $('#meetupModal').classList.add('active');
+    showToast('✓ Match accepted! Select an official Safe Pickup Place to schedule the return.');
+    renderUserDashboard();
+    updateNotificationBadges();
+  };
+
+  window.rejectVerificationMatch = function (matchId) {
+    if (!confirm('Are you sure the submitted answers do not match your item? This will decline the claim.')) return;
+    const match = (marbsDB.data.matches || []).find(m => m.match_id === matchId);
+    if (!match) return;
+
+    match.status = 'MATCH_REJECTED';
+    marbsDB.logAudit('MATCH_REJECTED', `Post owner declined claim ${matchId}`);
+    marbsDB.save();
+
+    showToast('Claim was declined.');
+    renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
+    updateNotificationBadges();
+  };
+
   window.showDashboardTab = function(tabName) {
     if (tabName === 'overview') {
       const el = $('#myPostsTbody');
