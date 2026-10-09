@@ -94,7 +94,9 @@
         <div class="hero-cta-col">
           <div class="cta-card lost-cta" onclick="window.marbsApp.openReportModal('LOST')" role="button" tabindex="0">
             <div class="cta-info">
-              <div class="cta-icon-box">🐾</div>
+              <div class="cta-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
               <div>
                 <div class="cta-title">Report a Lost Item</div>
                 <div class="cta-desc">Post details to get help from the community.</div>
@@ -105,7 +107,9 @@
 
           <div class="cta-card found-cta" onclick="window.marbsApp.openReportModal('FOUND')" role="button" tabindex="0">
             <div class="cta-info">
-              <div class="cta-icon-box">🔍</div>
+              <div class="cta-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
               <div>
                 <div class="cta-title">Report a Found Item</div>
                 <div class="cta-desc">Help return it safely to its rightful owner.</div>
@@ -119,39 +123,57 @@
       <!-- Categories Pills Strip -->
       <div class="categories-bar" role="region" aria-label="Category Selection">
         <button class="category-chip active" data-category="ALL">
-          <div class="category-icon">🌟</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
           <span class="category-label">All Items</span>
         </button>
         <button class="category-chip" data-category="Pets">
-          <div class="category-icon">🐾</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.172a2 2 0 0 0-3.414 0l-.828 1.414a2 2 0 0 1-1.414.828H3a1 1 0 0 0-1 1v2a6 6 0 0 0 6 6h1a4 4 0 0 0 4-4V7a2 2 0 0 0-2-2z"/><path d="M14 5.172a2 2 0 0 1 3.414 0l.828 1.414a2 2 0 0 0 1.414.828H21a1 1 0 0 1 1 1v2a6 6 0 0 1-6 6h-1a4 4 0 0 1-4-4V7a2 2 0 0 1 2-2z"/></svg>
+          </div>
           <span class="category-label">Pets</span>
         </button>
         <button class="category-chip" data-category="Electronics">
-          <div class="category-icon">📱</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
           <span class="category-label">Electronics</span>
         </button>
         <button class="category-chip" data-category="Personal Items">
-          <div class="category-icon">👜</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
           <span class="category-label">Personal Items</span>
         </button>
         <button class="category-chip" data-category="IDs & Documents">
-          <div class="category-icon">🪪</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/><line x1="14" y1="14" x2="18" y2="14"/><line x1="14" y1="17" x2="17" y2="17"/></svg>
+          </div>
           <span class="category-label">IDs & Docs</span>
         </button>
         <button class="category-chip" data-category="Keys">
-          <div class="category-icon">🔑</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1-1-1.5 1.5L6 8 2 12a5 5 0 1 0 7 7l4-4-1.5-1.5 1.5-1.5-1-1 1.5-1.5L15 11l3.5-3.5"/><circle cx="7.5" cy="16.5" r="1.5"/></svg>
+          </div>
           <span class="category-label">Keys</span>
         </button>
         <button class="category-chip" data-category="Clothing">
-          <div class="category-icon">👕</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+          </div>
           <span class="category-label">Clothing</span>
         </button>
         <button class="category-chip" data-category="School Items">
-          <div class="category-icon">🎒</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+          </div>
           <span class="category-label">School Items</span>
         </button>
         <button class="category-chip" data-category="Others">
-          <div class="category-icon">⋯</div>
+          <div class="category-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+          </div>
           <span class="category-label">Others</span>
         </button>
       </div>
@@ -203,16 +225,26 @@
               </select>
             </div>
             
-            <div class="map-widget-container">
-              <canvas id="interactiveMapCanvas" class="interactive-map-canvas"></canvas>
-              <div class="map-legend">
-                <div class="legend-item"><span class="legend-dot dot-safe"></span> Safe Pickup</div>
-                <div class="legend-item"><span class="legend-dot dot-lost"></span> Lost Area</div>
-                <div class="legend-item"><span class="legend-dot dot-found"></span> Found Area</div>
+            <div class="map-widget-container" style="position: relative; height: 260px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border);">
+              <iframe 
+                id="googleMapIframe"
+                src="https://maps.google.com/maps?q=Koronadal%20City,%20South%20Cotabato&t=&z=14&ie=UTF8&iwloc=&output=embed"
+                width="100%" 
+                height="100%" 
+                style="border:0; display: block;" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade"
+                title="Koronadal City Google Map">
+              </iframe>
+              <div class="map-legend" style="bottom: 8px; left: 8px; right: 8px; padding: 6px 10px; font-size: 11px;">
+                <div class="legend-item"><span class="legend-dot dot-safe"></span> Koronadal Hubs</div>
+                <div class="legend-item"><span class="legend-dot dot-lost"></span> Zones</div>
+                <button type="button" id="recenterMapBtn" style="background: none; border: none; color: var(--primary-dark); font-size: 11px; font-weight: 700; cursor: pointer;">↺ Reset</button>
               </div>
             </div>
             <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
-              🛡️ <em>Privacy Shield Active:</em> Exact residential GPS coordinates remain hidden. Only general public zones are mapped.
+              🛡️ <em>Privacy Shield Active:</em> Live interactive Google Map of Koronadal City. Exact residential GPS coordinates remain hidden to protect citizen privacy.
             </p>
           </div>
 
@@ -1365,8 +1397,8 @@
   <script src="scripts/firebaseClient.js?v=12"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=13"></script>
-  <script src="scripts/camera.js?v=13"></script>
-  <script src="scripts/app.js?v=13"></script>
+  <script src="scripts/data.js?v=14"></script>
+  <script src="scripts/camera.js?v=14"></script>
+  <script src="scripts/app.js?v=14"></script>
 </body>
 </html>

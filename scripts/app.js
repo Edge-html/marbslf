@@ -205,6 +205,15 @@
         tag.classList.add('active');
         currentArea = tag.dataset.area;
         renderFeed();
+
+        // Pan Google Map to the selected Koronadal area
+        if (window.setMapLocation) {
+          if (currentArea === 'ALL') {
+            window.setMapLocation('Koronadal City, South Cotabato');
+          } else {
+            window.setMapLocation(`${currentArea}, Koronadal City, South Cotabato`);
+          }
+        }
       });
     });
 
@@ -398,105 +407,36 @@
 
   // 7. Interactive Koronadal Map Widget with Pins (Section 2, 7, 8, 15)
   function setupInteractiveMap() {
-    const canvas = $('#interactiveMapCanvas');
-    if (!canvas) return;
+    const mapIframe = $('#googleMapIframe');
+    const resetBtn = $('#recenterMapBtn');
+    const citySelector = $('#mapCitySelector');
 
-    const ctx = canvas.getContext('2d');
-    canvas.width = canvas.parentElement.clientWidth || 360;
-    canvas.height = 240;
+    function updateMapLocation(query) {
+      if (!mapIframe) return;
+      const encoded = encodeURIComponent(query);
+      mapIframe.src = `https://maps.google.com/maps?q=${encoded}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+    }
 
-    function drawMap() {
-      const w = canvas.width;
-      const h = canvas.height;
-
-      // Soft map background styling
-      ctx.fillStyle = '#eef2f6';
-      ctx.fillRect(0, 0, w, h);
-
-      // Roads & Street Grid of Koronadal City
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 6;
-
-      // GenSan Drive (main arterial)
-      ctx.beginPath();
-      ctx.moveTo(w * 0.15, h * 0.9);
-      ctx.lineTo(w * 0.85, h * 0.1);
-      ctx.stroke();
-
-      // Alunan Avenue
-      ctx.beginPath();
-      ctx.moveTo(w * 0.1, h * 0.4);
-      ctx.lineTo(w * 0.9, h * 0.6);
-      ctx.stroke();
-
-      // Rizal Street
-      ctx.beginPath();
-      ctx.moveTo(w * 0.35, h * 0.1);
-      ctx.lineTo(w * 0.65, h * 0.9);
-      ctx.stroke();
-
-      // City labels
-      ctx.fillStyle = '#475569';
-      ctx.font = 'bold 12px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Koronadal City', w * 0.5, h * 0.5);
-
-      // Draw Safe Pickup Places (Blue Pins)
-      const places = [
-        { name: 'KCC Mall of Marbel', x: w * 0.72, y: h * 0.28, type: 'safe' },
-        { name: 'Robinsons Koronadal', x: w * 0.28, y: h * 0.75, type: 'safe' },
-        { name: 'KNCHS', x: w * 0.75, y: h * 0.52, type: 'safe' },
-        { name: 'Notre Dame', x: w * 0.68, y: h * 0.82, type: 'safe' },
-        { name: 'Public Market', x: w * 0.45, y: h * 0.65, type: 'safe' }
-      ];
-
-      places.forEach(p => {
-        // Pin shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y + 4, 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Pin body
-        ctx.fillStyle = '#f6b819';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#1e293b';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Label
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(p.name, p.x + 10, p.y + 3);
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        updateMapLocation('Koronadal City, South Cotabato');
+        currentArea = 'ALL';
+        $$('.area-tag').forEach(t => t.classList.remove('active'));
+        const allTag = document.querySelector('.area-tag[data-area="ALL"]');
+        if (allTag) allTag.classList.add('active');
+        renderFeed();
+        showToast('📍 Map reset to Koronadal City');
       });
     }
 
-    drawMap();
-    window.addEventListener('resize', () => {
-      canvas.width = canvas.parentElement.clientWidth || 360;
-      drawMap();
-    });
+    if (citySelector) {
+      citySelector.addEventListener('change', (e) => {
+        updateMapLocation(e.target.value + ', South Cotabato');
+      });
+    }
 
-    // Click on map to filter by area
-    canvas.addEventListener('click', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      if (x > canvas.width * 0.5) {
-        showToast('📍 Filtered to KCC Mall & KNCHS Vicinity');
-        currentArea = 'KCC';
-      } else {
-        showToast('📍 Filtered to Robinsons & Public Market Vicinity');
-        currentArea = 'Market';
-      }
-      renderFeed();
-    });
+    // Expose map focal point update helper for areas tags
+    window.setMapLocation = updateMapLocation;
   }
 
   // 8. Public Item Detail Modal & Privacy Enforcement (Section 11, 33)
