@@ -1673,11 +1673,25 @@
       openLoginModal();
       return;
     }
+    // Check if there is an approved verification record in DB for this user
+    const userFullName = `${user.first_name || ''} ${user.last_name || ''}`.trim().toLowerCase();
+    const approvedVer = (marbsDB.data.id_verifications || []).find(v => {
+      const isUserMatch = v.user_id && v.user_id === user.user_id;
+      const isNameMatch = v.full_legal_name && v.full_legal_name.trim().toLowerCase() === userFullName;
+      return (isUserMatch || isNameMatch) && v.status === 'VERIFIED';
+    });
+
+    if (approvedVer && user.verification_status !== 'VERIFIED') {
+      user.verification_status = 'VERIFIED';
+      marbsDB.save();
+    }
+
+    const currentStatus = (user.verification_status || 'UNVERIFIED').toUpperCase();
     $('#dashAvatarText').textContent = (user.first_name[0] || 'U').toUpperCase();
     $('#dashUserLegalName').textContent = `${user.first_name || ''} ${user.last_name || ''}`;
     $('#dashUserAlias').textContent = user.public_alias || 'Citizen';
-    $('#dashUserStatus').textContent = user.verification_status || 'UNVERIFIED';
-    $('#dashUserStatus').className = `dash-user-badge status-${(user.verification_status || 'unverified').toLowerCase()}`;
+    $('#dashUserStatus').textContent = currentStatus;
+    $('#dashUserStatus').className = `dash-user-badge status-${currentStatus.toLowerCase()}`;
 
     // Stats
     const userPosts = marbsDB.data.posts.filter(p => p.user_id === user.user_id);
@@ -2010,19 +2024,55 @@
     ver.reviewed_by = 'USR-ADMIN (Central Admin)';
     ver.reviewed_at = new Date().toISOString();
 
-    const user = marbsDB.data.users.find(u => u.user_id === ver.user_id);
-    if (user) {
-      user.verification_status = newStatus;
+    // Match target user by user_id OR full legal name / alias
+    let targetUser = marbsDB.data.users.find(u => u.user_id === ver.user_id);
+    if (!targetUser && ver.full_legal_name) {
+      const cleanVerName = ver.full_legal_name.trim().toLowerCase();
+      targetUser = marbsDB.data.users.find(u => {
+        const uFullName = `${u.first_name || ''} ${u.last_name || ''}`.trim().toLowerCase();
+        return uFullName === cleanVerName || (u.public_alias && u.public_alias.toLowerCase() === cleanVerName);
+      });
+    }
+
+    if (targetUser) {
+      targetUser.verification_status = newStatus;
       if (newStatus === 'VERIFIED') {
-        user.points_balance = (user.points_balance || 0) + 50; // Verification bonus
+        targetUser.points_balance = (targetUser.points_balance || 0) + 50; // Verification bonus
       }
     }
 
-    marbsDB.logAudit(`ID_${newStatus}`, `Admin updated identity verification for user ${ver.user_id} to ${newStatus}`);
+    // Also check current active user
+    const curUser = marbsDB.getCurrentUser();
+    if (curUser) {
+      if (curUser.user_id === ver.user_id || 
+          (ver.full_legal_name && `${curUser.first_name || ''} ${curUser.last_name || ''}`.trim().toLowerCase() === ver.full_legal_name.trim().toLowerCase())) {
+        curUser.verification_status = newStatus;
+        if (newStatus === 'VERIFIED' && !targetUser) {
+          curUser.points_balance = (curUser.points_balance || 0) + 50;
+        }
+      }
+    }
+
+    // Sync to Firestore if online
+    if (window.firestoreDb) {
+      try {
+        const targetUid = targetUser ? targetUser.user_id : ver.user_id;
+        if (targetUid) {
+          window.firestoreDb.collection('users').doc(targetUid).set({
+            verification_status: newStatus
+          }, { merge: true }).catch(err => console.warn('Firestore user update err:', err));
+        }
+        window.firestoreDb.collection('id_verifications').doc(verId).set(ver, { merge: true })
+          .catch(err => console.warn('Firestore ver update err:', err));
+      } catch (fErr) {
+        console.warn('Firestore sync note:', fErr);
+      }
+    }
+
+    marbsDB.logAudit(`ID_${newStatus}`, `Admin updated identity verification for user ${ver.user_id || ver.full_legal_name} to ${newStatus}`);
     marbsDB.save();
     renderAdminPortal();
     renderUserDashboard();
-    renderUserPill();
     showToast(`✓ Updated verification status to ${newStatus} for ${ver.full_legal_name}`);
   };
 
