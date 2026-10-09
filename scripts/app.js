@@ -951,7 +951,7 @@
         approximate_time: timeFound || 'Not specified',
         color: color,
         brand: brand,
-        model: model,
+        model: brand,
         serial_number_private: '',
         general_location: location,
         private_coordinates: { lat: 6.5028, lng: 124.8468, address_notes: location },
