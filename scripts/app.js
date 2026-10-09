@@ -371,7 +371,9 @@
     if (posts.length === 0) {
       grid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: #fff; border-radius: var(--radius-lg); border: 1px dashed var(--border);">
-          <div style="font-size: 40px; margin-bottom: 12px;">🔍</div>
+          <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: var(--surface-alt); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--text-muted);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
           <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">No matching reports found</h3>
           <p style="font-size: 13px; color: var(--text-muted); max-width: 400px; margin: 0 auto 16px auto;">
             Try clearing search filters or report a new lost or found item to let the Koronadal community know.
@@ -396,8 +398,16 @@
           <div class="post-image-container">
             <img src="${post.image}" alt="${escapeHtml(post.item_name)}" class="post-image" onerror="this.src='assets/images.jpg'">
             <span class="post-badge ${badgeClass}">${badgeText}</span>
-            ${post.reward_offered ? `<span class="reward-tag">★ Reward Offered</span>` : ''}
-            ${post.camera_verified ? `<span class="camera-verified-tag">📷 Verified Capture</span>` : ''}
+            ${post.reward_offered ? `
+              <span class="reward-tag" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                Reward Offered
+              </span>` : ''}
+            ${post.camera_verified ? `
+              <span class="camera-verified-tag" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Verified Capture
+              </span>` : ''}
           </div>
           <div class="post-body">
             <h3 class="post-title">${escapeHtml(post.item_name)}</h3>
@@ -412,7 +422,9 @@
             <p class="post-desc">${escapeHtml(post.description)}</p>
             <div class="post-footer">
               <button type="button" class="post-like-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post.post_id}" onclick="event.stopPropagation(); window.marbsApp.toggleLike('${post.post_id}')" title="Heart this post">
-                <span class="heart-icon">${isLiked ? '❤️' : '🤍'}</span>
+                <span class="heart-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                </span>
                 <span class="like-count" id="like-count-${post.post_id}">${likesCount}</span>
               </button>
               <button class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
@@ -568,7 +580,7 @@
     const camBadge = $('#modalCameraVerifiedBadge');
     if (post.camera_verified) {
       camBadge.style.display = 'inline-flex';
-      camBadge.innerHTML = `📷 Verified Real-time Capture (Hash: ${post.photo_hash || 'OK'})`;
+      camBadge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Verified Real-time Capture (Hash: ${post.photo_hash || 'OK'})`;
     } else {
       camBadge.style.display = 'none';
     }
@@ -827,12 +839,13 @@
       const btn = document.getElementById(`like-btn-${postId}`);
       const countEl = document.getElementById(`like-count-${postId}`);
       if (btn && countEl) {
+        const heartSpan = btn.querySelector('.heart-icon');
         if (res.liked) {
           btn.classList.add('liked');
-          btn.querySelector('.heart-icon').textContent = '❤️';
+          if (heartSpan) heartSpan.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
         } else {
           btn.classList.remove('liked');
-          btn.querySelector('.heart-icon').textContent = '🤍';
+          if (heartSpan) heartSpan.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
         }
         countEl.textContent = res.count;
       }
@@ -1799,7 +1812,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <span class="activity-badge" style="background: #dbeafe; color: #1e40af; font-weight: 800;">${m.status}</span>
-                <h4 style="font-size: 15px; font-weight: 800; margin-top: 6px;">📍 ${escapeHtml(m.place_name)}</h4>
+                <h4 style="font-size: 15px; font-weight: 800; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${escapeHtml(m.place_name)}
+                </h4>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Scheduled: ${m.date} at ${m.time}</div>
               </div>
               <button class="btn btn-outline" style="font-size: 11px;" onclick="window.openChat('${m.post_id}')">Open Private Chat</button>

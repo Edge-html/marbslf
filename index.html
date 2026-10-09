@@ -181,7 +181,7 @@
       <!-- Popular Areas Strip -->
       <div class="areas-strip">
         <div class="areas-label">
-          <span>📍</span> Popular Areas:
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg> Popular Areas:
         </div>
         <button class="area-tag active" data-area="ALL">All Areas</button>
         <button class="area-tag" data-area="City Proper">City Proper</button>
@@ -219,7 +219,10 @@
           <!-- Search by Location / Map Card -->
           <div class="sidebar-card">
             <div class="card-title-row">
-              <h3 class="card-title">📍 Search by Location</h3>
+              <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                Search by Location
+              </h3>
               <select class="select-sm" id="mapCitySelector">
                 <option value="Koronadal City">Koronadal City</option>
               </select>
@@ -243,15 +246,19 @@
                 <button type="button" id="recenterMapBtn" style="background: none; border: none; color: var(--primary-dark); font-size: 11px; font-weight: 700; cursor: pointer;">↺ Reset</button>
               </div>
             </div>
-            <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
-              🛡️ <em>Privacy Shield Active:</em> Live interactive Google Map of Koronadal City. Exact residential GPS coordinates remain hidden to protect citizen privacy.
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; align-items: flex-start; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0; margin-top: 2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span><em>Privacy Shield Active:</em> Live interactive Google Map of Koronadal City. Exact residential GPS coordinates remain hidden to protect citizen privacy.</span>
             </p>
           </div>
 
           <!-- Recent Activity Feed -->
           <div class="sidebar-card">
             <div class="card-title-row">
-              <h3 class="card-title">🕒 Recent Activity</h3>
+              <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Recent Activity
+              </h3>
             </div>
             <div class="activity-list" id="recentActivityList">
               <!-- Dynamically populated -->
@@ -261,7 +268,9 @@
           <!-- Marbs Points Quick Teaser Card -->
           <div class="sidebar-card" style="background: linear-gradient(135deg, #fef8e7 0%, #fff 100%); border-color: rgba(246, 184, 25, 0.4);">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-              <span style="font-size: 24px;">🏆</span>
+              <div style="width: 38px; height: 38px; border-radius: var(--radius-full); background: rgba(246, 184, 25, 0.2); display: flex; align-items: center; justify-content: center; color: #b45309; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+              </div>
               <div>
                 <h4 style="font-size: 14px; font-weight: 800;">Marbs Points (MP)</h4>
                 <div style="font-size: 11px; color: var(--text-muted);">Reward legitimate community help</div>
@@ -289,37 +298,49 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
           <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
-            <div style="font-size: 28px; margin-bottom: 8px;">🪪</div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); color: #2563eb; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </div>
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">1. Real Legal Identity</h3>
             <p style="font-size: 12px; color: var(--text-muted);">Real name and ID verification are stored securely for safety, but public posts display only a privacy-safe alias (e.g., Verified Citizen #101).</p>
           </div>
 
           <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
-            <div style="font-size: 28px; margin-bottom: 8px;">📷</div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">2. Real-Time Camera Proof</h3>
             <p style="font-size: 12px; color: var(--text-muted);">Photos must be captured directly using the MarbsLF live camera with timestamp hashing to deter fake, duplicated, or internet photos.</p>
           </div>
 
           <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
-            <div style="font-size: 28px; margin-bottom: 8px;">🔒</div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); color: #d97706; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">3. Private Ownership Q&A</h3>
             <p style="font-size: 12px; color: var(--text-muted);">Claimants must answer specific identifying proof questions (serial numbers, hidden markings) reviewed privately by the finder.</p>
           </div>
 
           <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
-            <div style="font-size: 28px; margin-bottom: 8px;">🏛️</div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); color: #4f46e5; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><line x1="6" y1="21" x2="6" y2="10"/><line x1="18" y1="21" x2="18" y2="10"/><polygon points="12 3 2 10 22 10 12 3"/></svg>
+            </div>
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">4. Approved Safe Pickup Places</h3>
             <p style="font-size: 12px; color: var(--text-muted);">Returns happen ONLY at registered public spots (City Hall, Police Stations, Barangay Halls, KCC Mall, Robinsons, KNCHS Gate). No private homes allowed!</p>
           </div>
 
           <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
-            <div style="font-size: 28px; margin-bottom: 8px;">🤝</div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(14, 165, 233, 0.1); color: #0284c7; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </div>
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">5. Two-Way Return Handshake</h3>
             <p style="font-size: 12px; color: var(--text-muted);">After meetup, Owner clicks "ITEM RECEIVED" and Finder clicks "ITEM RETURNED". Both must confirm to resolve the post and release points/rewards.</p>
           </div>
 
           <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
-            <div style="font-size: 28px; margin-bottom: 8px;">🎁</div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(234, 88, 12, 0.1); color: #c2410c; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+            </div>
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">6. Marbs Points & Zero Scam Fee</h3>
             <p style="font-size: 12px; color: var(--text-muted);">Payment is NEVER required to claim or return an item. Finders receive Marbs Points (MP) redeemable for partner merchant vouchers.</p>
           </div>
@@ -341,13 +362,48 @@
           </div>
 
           <ul class="dash-menu">
-            <li class="dash-menu-item"><button class="active" onclick="showDashboardTab('overview')">📊 Overview & Posts</button></li>
-            <li class="dash-menu-item"><button onclick="showDashboardTab('meetups')">🤝 Safe Meetups</button></li>
-            <li class="dash-menu-item"><button onclick="openWalletModal()">🏆 Marbs Points Wallet</button></li>
-            <li class="dash-menu-item"><button onclick="$('#idVerificationModal').classList.add('active')">🪪 ID Verification</button></li>
-            <li class="dash-menu-item"><button onclick="window.marbsApp.openReportModal('LOST')">📝 Report Lost</button></li>
-            <li class="dash-menu-item"><button onclick="window.marbsApp.openReportModal('FOUND')">🔍 Report Found</button></li>
-            <li class="dash-menu-item"><button onclick="openScamReportModal('GENERAL')">🛡️ Help & Report Center</button></li>
+            <li class="dash-menu-item">
+              <button class="active" onclick="showDashboardTab('overview')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                Overview & Posts
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="showDashboardTab('meetups')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                Safe Meetups
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="openWalletModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                Marbs Points Wallet
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="$('#idVerificationModal').classList.add('active')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                ID Verification
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="window.marbsApp.openReportModal('LOST')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Report Lost
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="window.marbsApp.openReportModal('FOUND')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Report Found
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="openScamReportModal('GENERAL')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Help & Report Center
+              </button>
+            </li>
           </ul>
         </aside>
 
@@ -494,8 +550,9 @@
       <div id="adminTab_verifications" class="admin-tab-content" style="display: none;">
         <div class="sidebar-card">
           <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Citizen Identity Documents Review (Section 4)</h3>
-          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
-            ⚠️ <em>Privacy Rule:</em> Only authorized city administrators can review legal IDs. Never disclosed to public users.
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; display: flex; align-items: center; gap: 6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #d97706; flex-shrink: 0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span><em>Privacy Rule:</em> Only authorized city administrators can review legal IDs. Never disclosed to public users.</span>
           </p>
           <div class="table-responsive">
             <table class="data-table">
@@ -629,7 +686,10 @@
   <div class="modal-overlay" id="cameraModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">📷 MarbsLF Real-Time Camera Verification</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          MarbsLF Real-Time Camera Verification
+        </h3>
         <button class="modal-close-btn" id="cameraModalClose">×</button>
       </div>
       <div class="modal-body">
@@ -644,13 +704,16 @@
           <canvas id="cameraCanvas" style="display: none;"></canvas>
         </div>
 
-        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px;">
-          🛡️ Proof Guarantee: Ordinary gallery uploads are restricted for primary proof. Live capture burns timestamp & anti-tamper hash.
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Proof Guarantee: Ordinary gallery uploads are restricted for primary proof. Live capture burns timestamp & anti-tamper hash.
         </p>
 
         <!-- Live Controls -->
         <div id="cameraLiveControls" class="camera-controls-bar">
-          <button id="cameraSnapBtn" class="shutter-btn" title="Snap Photo">📸</button>
+          <button id="cameraSnapBtn" class="shutter-btn" title="Snap Photo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
         </div>
 
         <!-- Review Controls (Retake / Use Photo per Section 9) -->
@@ -666,14 +729,17 @@
   <div class="modal-overlay" id="reportLostModal" role="dialog" aria-modal="true">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">🐾 Report a Lost Item or Pet</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lost-color);"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Report a Lost Item or Pet
+        </h3>
         <button class="modal-close-btn" onclick="$('#reportLostModal').classList.remove('active')">×</button>
       </div>
       <form id="reportLostForm">
         <div class="modal-body">
           
           <div class="privacy-alert">
-            <span>🛡️</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Privacy Protection Active:</strong> Your exact GPS coordinates and residential address remain strictly confidential. Only general public zones (e.g., "Near Public Market") will appear publicly.
             </div>
@@ -746,11 +812,13 @@
             <div class="form-group full-width">
               <label class="form-label">Photo of Lost Item / Pet (Upload or Camera)</label>
               <div style="display: flex; gap: 10px; margin-bottom: 8px;">
-                <button type="button" class="btn btn-outline" id="lostUploadFileBtn" style="flex: 1; padding: 9px; font-size: 13px;">
-                  📁 Upload Photo from Device
+                <button type="button" class="btn btn-outline" id="lostUploadFileBtn" style="flex: 1; padding: 9px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload Photo from Device
                 </button>
-                <button type="button" class="btn btn-outline" id="lostCameraOpenBtn" style="flex: 1; padding: 9px; font-size: 13px;">
-                  📷 Take Photo with Camera
+                <button type="button" class="btn btn-outline" id="lostCameraOpenBtn" style="flex: 1; padding: 9px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  Take Photo with Camera
                 </button>
               </div>
               <input type="file" id="lostFileInput" accept="image/*" style="display: none;">
@@ -758,7 +826,9 @@
               <div class="photo-capture-box" id="reportLostCameraTrigger" style="cursor: default;">
                 <img id="lostPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Preview Photo">
                 <div id="lostCameraPrompt">
-                  <div style="font-size: 32px; margin-bottom: 6px;">🖼️</div>
+                  <div style="margin-bottom: 8px; color: var(--text-muted); display: flex; justify-content: center;">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  </div>
                   <strong style="color: var(--text-main);">Upload an existing photo or snap with camera</strong>
                   <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Helps the community identify your lost item or pet</p>
                 </div>
@@ -804,13 +874,16 @@
   <div class="modal-overlay" id="reportFoundModal" role="dialog" aria-modal="true">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">🔍 Report a Found Item or Pet</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--found-color);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Report a Found Item or Pet
+        </h3>
         <button class="modal-close-btn" onclick="$('#reportFoundModal').classList.remove('active')">×</button>
       </div>
       <form id="reportFoundForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <span>🤝</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #059669; flex-shrink: 0;"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
             <div>
               <strong>Earn +10 Marbs Points!</strong> Thank you for your civic responsibility. Once approved, you will earn points redeemable for partner discounts.
             </div>
@@ -871,10 +944,13 @@
               <div class="photo-capture-box" id="reportFoundCameraTrigger" style="border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.05); cursor: pointer;">
                 <img id="foundPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured Proof">
                 <div id="foundCameraPrompt">
-                  <div style="font-size: 34px; margin-bottom: 6px;">📷</div>
+                  <div style="margin-bottom: 8px; color: #d97706; display: flex; justify-content: center;">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  </div>
                   <strong style="color: var(--text-main); font-size: 14px;">Open Device Camera & Snap Found Item</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                    🔒 Strict Security: Gallery uploads are disabled for found items. You must snap the physical item right now using your device's camera.
+                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Strict Security: Gallery uploads are disabled for found items. You must snap the physical item right now using your device's camera.
                   </p>
                 </div>
                 <div id="foundPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
@@ -905,22 +981,29 @@
         </div>
 
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-          <span id="modalCameraVerifiedBadge" class="camera-verified-tag" style="position: static; font-size: 11px; padding: 4px 10px;">📷 Verified Real-time Capture</span>
+          <span id="modalCameraVerifiedBadge" class="camera-verified-tag" style="position: static; font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Verified Real-time Capture
+          </span>
           <span id="modalPostCategory" class="activity-badge" style="background: var(--surface-alt); color: var(--text-main); font-size: 11px; padding: 4px 10px;"></span>
         </div>
 
         <div style="margin-bottom: 16px;">
           <div class="post-meta-line" style="font-size: 14px;">
-            <span>📍 Location:</span> <strong id="modalPostLocation"></strong>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Location:</span> <strong id="modalPostLocation"></strong>
           </div>
           <div class="post-meta-line" style="font-size: 14px;">
-            <span>📅 Reported:</span> <strong id="modalPostDate"></strong>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-dark);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Reported:</span> <strong id="modalPostDate"></strong>
           </div>
           <div class="post-meta-line" style="font-size: 14px;">
-            <span>🎨 Color / Characteristics:</span> <span id="modalPostColor"></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-dark);"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg>
+            <span>Color / Characteristics:</span> <span id="modalPostColor"></span>
           </div>
           <div class="post-meta-line" style="font-size: 14px;">
-            <span>🏷️ Brand / Model:</span> <span id="modalPostBrand"></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-dark);"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/></svg>
+            <span>Brand / Model:</span> <span id="modalPostBrand"></span>
           </div>
         </div>
 
@@ -930,14 +1013,17 @@
         </div>
 
         <div id="modalPostRewardBox" style="background: #fef8e7; border: 1px solid rgba(246, 184, 25, 0.4); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; display: none;">
-          <div style="font-size: 13px; font-weight: 700; color: #92400e;" id="modalRewardAmount">★ Reward Offered</div>
+          <div style="font-size: 13px; font-weight: 700; color: #92400e; display: flex; align-items: center; gap: 6px;" id="modalRewardAmount">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+            Reward Offered
+          </div>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
             "Rewards are optional. MarbsLF does not require payment to claim or return a lost item."
           </div>
         </div>
 
         <div class="privacy-alert" style="font-size: 11px; margin-bottom: 0;">
-          <span>🔒</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <div>
             <strong>Identity Shield:</strong> Owner/Finder contact numbers, emails, and home addresses are never published to prevent extortion and unsolicited calls.
           </div>
@@ -946,8 +1032,14 @@
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <div style="display: flex; gap: 8px;">
-          <button id="reportPostBtn" class="btn btn-outline" style="color: var(--lost-color); font-size: 12px;">🚩 Report</button>
-          <button id="deletePostModalBtn" class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 12px; display: none;">🗑️ Delete Post</button>
+          <button id="reportPostBtn" class="btn btn-outline" style="color: var(--lost-color); font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            Report
+          </button>
+          <button id="deletePostModalBtn" class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 12px; display: none; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Delete Post
+          </button>
         </div>
         <button id="claimPostBtn" class="btn btn-primary">I Think This Is Mine</button>
       </div>
@@ -958,13 +1050,16 @@
   <div class="modal-overlay" id="ownershipClaimModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">🔐 Ownership Verification Questionnaire</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Ownership Verification Questionnaire
+        </h3>
         <button class="modal-close-btn" id="ownershipClaimClose">×</button>
       </div>
       <form id="ownershipClaimForm">
         <div class="modal-body">
           <div class="warning-alert">
-            <span>🛡️</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Private Verification Process:</strong> To prevent fraud, your answers are sent privately only to the finder. Administrators can intervene if disputed.
             </div>
@@ -1017,13 +1112,16 @@
   <div class="modal-overlay" id="meetupModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">📍 Arrange Return at Safe Pickup Place</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+          Arrange Return at Safe Pickup Place
+        </h3>
         <button class="modal-close-btn" id="meetupModalClose">×</button>
       </div>
       <form id="meetupScheduleForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <span>🛡️</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Non-Negotiable Rule (Section 15):</strong> Returns must use official Safe Pickup Places. Private homes, dark alleys, and isolated areas are strictly prohibited.
             </div>
@@ -1048,7 +1146,7 @@
           </div>
 
           <div class="warning-alert" style="font-size: 11px; margin-top: 10px;">
-            <span>⚠️</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #d97706; flex-shrink: 0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div>
               <strong>Safety Reminder:</strong> Meet during daylight or official facility operating hours. Never carry large amounts of cash. The facility security desk can witness the handover.
             </div>
@@ -1068,7 +1166,10 @@
     <div class="modal-card">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title">💬 Private Discussion</h3>
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Private Discussion
+          </h3>
           <div style="font-size: 11px; color: var(--text-muted);" id="chatPostName">Item Name</div>
         </div>
         <button class="modal-close-btn" id="chatModalClose">×</button>
@@ -1077,7 +1178,7 @@
         
         <!-- System Warning Banner per Section 14 -->
         <div class="warning-alert" style="padding: 8px 12px; font-size: 11px; margin-bottom: 12px;">
-          <span>⚠️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #d97706; flex-shrink: 0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div>
             <strong>System Security Warning:</strong> Never send your password, OTP, banking credentials, or advance fees to another user.
           </div>
@@ -1105,7 +1206,10 @@
   <div class="modal-overlay" id="pointsModal" role="dialog" aria-modal="true">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">🏆 Marbs Points (MP) Wallet & Rewards</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #b45309;"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+          Marbs Points (MP) Wallet & Rewards
+        </h3>
         <button class="modal-close-btn" id="pointsModalClose">×</button>
       </div>
       <div class="modal-body">
@@ -1119,7 +1223,10 @@
 
           <div style="background: var(--surface-alt); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
             <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Community Achievement Level</div>
-            <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin: 6px 0;" id="walletUserLevel">🌱 Community Member</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--text-main); margin: 6px 0; display: flex; align-items: center; gap: 8px;" id="walletUserLevel">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #059669;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Community Member</span>
+            </div>
             <div style="font-size: 11px; color: var(--text-muted);">
               0–99 MP: Community Member • 100–249 MP: Helper • 250–499 MP: Trusted • 500+ MP: Champion
             </div>
@@ -1156,13 +1263,16 @@
   <div class="modal-overlay" id="idVerificationModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">🪪 Identity Verification (PhilSys / School / Gov)</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Identity Verification (PhilSys / School / Gov)
+        </h3>
         <button class="modal-close-btn" id="idModalClose">×</button>
       </div>
       <form id="idVerificationForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <span>🔒</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <div>
               <strong>Strict Privacy Standard:</strong> Sensitive ID details are reviewed strictly by authorized city administrators and are NEVER revealed to other users or the public.
             </div>
@@ -1190,7 +1300,9 @@
             <div class="photo-capture-box" id="verifyIdCameraTrigger" style="cursor: pointer;">
               <img id="idPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured ID">
               <div id="idCameraPrompt">
-                <div style="font-size: 32px; margin-bottom: 6px;">🪪</div>
+                <div style="margin-bottom: 8px; color: var(--primary-dark); display: flex; justify-content: center;">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                </div>
                 <strong style="color: var(--text-main);">Tap to Capture ID</strong>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Hold your valid government/school ID inside the camera frame</p>
               </div>
@@ -1210,7 +1322,10 @@
   <div class="modal-overlay" id="scamReportModal" role="dialog" aria-modal="true">
     <div class="modal-card modal-sm">
       <div class="modal-header">
-        <h3 class="modal-title">🚩 Scam & Abuse Report</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lost-color);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Scam & Abuse Report
+        </h3>
         <button class="modal-close-btn" id="reportModalClose">×</button>
       </div>
       <form id="scamReportForm">
@@ -1286,7 +1401,7 @@
       <form id="registrationForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <span>🛡️</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Real Name Privacy Rule (Section 3):</strong> Users must provide their real legal name. However, your full legal name is NEVER displayed publicly. Only your privacy-safe alias (e.g. Verified Citizen #104) is shown.
             </div>
@@ -1369,7 +1484,10 @@
   <div class="modal-overlay" id="notificationsModal" role="dialog" aria-modal="true">
     <div class="modal-card modal-sm">
       <div class="modal-header">
-        <h3 class="modal-title">🔔 Notifications</h3>
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Notifications
+        </h3>
         <button class="modal-close-btn" onclick="$('#notificationsModal').classList.remove('active')">×</button>
       </div>
       <div class="modal-body" id="notifModalList">
@@ -1399,7 +1517,8 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <span>🪪</span> Citizen ID Document Inspection
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Citizen ID Document Inspection
         </h3>
         <button class="modal-close-btn" onclick="$('#adminIdDetailsModal').classList.remove('active')">×</button>
       </div>
@@ -1412,7 +1531,10 @@
               <img id="adminDetailIdImage" src="" alt="Captured Document" style="width: 100%; max-height: 280px; object-fit: contain; display: block;">
               <div id="adminDetailHashBadge" style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #86efac; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-family: monospace; text-align: center;"></div>
             </div>
-            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">📷 Captured via Koronadal City live camera verification.</p>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Captured via Koronadal City live camera verification.
+            </p>
           </div>
 
           <!-- Right Column: Verification Metadata -->
@@ -1476,6 +1598,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=18"></script>
   <script src="scripts/camera.js?v=16"></script>
-  <script src="scripts/app.js?v=21"></script>
+  <script src="scripts/app.js?v=22"></script>
 </body>
 </html>
