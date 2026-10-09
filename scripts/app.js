@@ -79,6 +79,7 @@
   }
 
   // 2. Navigation & Views Switching
+  function setupNavigation() {
     // Mobile menu drawer toggle
     const mobileToggle = $('#mobileMenuToggle');
     const navMenu = $('#navMenu');
