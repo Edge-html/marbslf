@@ -1172,7 +1172,7 @@
 
           <div class="form-group">
             <label class="form-label" for="idLegalName">Full Legal Name *</label>
-            <input type="text" id="idLegalName" class="form-input" placeholder="e.g. Maria Clara Santos dela Cruz" required>
+            <input type="text" id="idLegalName" class="form-input" placeholder="Enter your full legal name" required>
           </div>
 
           <div class="form-group">
@@ -1188,25 +1188,13 @@
 
           <div class="form-group">
             <label class="form-label">ID Document Verification Photo *</label>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-              <button type="button" class="btn btn-outline" id="verifyIdCameraBtn" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;">
-                <span>📷</span> Use Device Camera
-              </button>
-              <button type="button" class="btn btn-outline" id="verifyIdUploadBtn" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;">
-                <span>📁</span> Upload ID Image
-              </button>
-            </div>
-
-            <!-- Hidden file input for ID image upload -->
-            <input type="file" id="idFileInput" accept="image/*" style="display: none;">
-
             <!-- Preview / Prompt Box -->
             <div class="photo-capture-box" id="verifyIdCameraTrigger" style="cursor: pointer;">
               <img id="idPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured ID">
               <div id="idCameraPrompt">
                 <div style="font-size: 32px; margin-bottom: 6px;">🪪</div>
-                <strong style="color: var(--text-main);">Tap to Capture or Upload ID</strong>
-                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Hold your valid government/school ID inside the frame or upload from your device</p>
+                <strong style="color: var(--text-main);">Tap to Capture ID</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Hold your valid government/school ID inside the camera frame</p>
               </div>
               <div id="idPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
             </div>
