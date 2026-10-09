@@ -694,7 +694,11 @@ class MarbsLFDatabase {
         });
         this.data.posts = remotePosts;
         this.save();
-        if (window.renderFeed) window.renderFeed();
+        if (typeof window.setPostsLoading === 'function') {
+          window.setPostsLoading(false);
+        } else if (window.renderFeed) {
+          window.renderFeed();
+        }
         console.log('✓ Synced posts from Firebase Firestore');
       }
 

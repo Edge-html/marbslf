@@ -628,6 +628,74 @@ body {
   gap: 16px;
 }
 
+/* Skeleton Loading Shimmer for Recent Posts */
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes skeletonPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-img {
+  height: 180px;
+  width: 100%;
+}
+
+.skeleton-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-line.title {
+  width: 70%;
+  height: 18px;
+}
+
+.skeleton-line.meta {
+  width: 45%;
+  height: 12px;
+}
+
+.skeleton-line.desc {
+  width: 90%;
+  height: 12px;
+}
+
+.skeleton-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.skeleton-btn {
+  height: 30px;
+  width: 90px;
+  border-radius: var(--radius-sm);
+}
+
 .post-card {
   background: var(--surface);
   border: 1px solid var(--border);

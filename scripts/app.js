@@ -8,6 +8,7 @@
   'use strict';
 
   // State
+  let isPostsLoading = true;
   let currentFilter = 'ALL';
   let currentCategory = 'ALL';
   let currentArea = 'ALL';
@@ -20,6 +21,27 @@
   // DOM Elements cache helper
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => document.querySelectorAll(selector);
+
+  // Render Skeleton Loading Placeholder for Recent Posts
+  function renderSkeletonFeed() {
+    const grid = $('#postsGrid');
+    if (!grid) return;
+
+    grid.innerHTML = Array.from({ length: 4 }).map(() => `
+      <div class="skeleton-card">
+        <div class="skeleton-img skeleton-shimmer"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line title skeleton-shimmer"></div>
+          <div class="skeleton-line meta skeleton-shimmer"></div>
+          <div class="skeleton-line desc skeleton-shimmer"></div>
+          <div class="skeleton-footer">
+            <div class="skeleton-line skeleton-shimmer" style="width: 40px; height: 24px; border-radius: 12px;"></div>
+            <div class="skeleton-btn skeleton-shimmer"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
 
   // Initialize Application
   function initApp() {
@@ -39,10 +61,21 @@
     setupAdminPortal();
     setupInteractiveMap();
 
+    // Show initial skeleton loading state
     renderFeed();
     renderRecentActivity();
     renderUserPill();
     updateNotificationBadges();
+
+    // Reveal posts once data is ready (smooth transition with slight realistic loading buffer)
+    const revealPostsWhenReady = () => {
+      isPostsLoading = false;
+      renderFeed();
+      renderRecentActivity();
+    };
+
+    // If Firestore sync finishes or after a brief initial loading buffer
+    setTimeout(revealPostsWhenReady, 450);
 
     // Restore last visited view (e.g. admin or dashboard) on page reload
     try {
@@ -57,7 +90,11 @@
 
     // Sync posts from Firestore cloud so posts are always up to date for guests and logged-in users
     if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
-      window.marbsDB.syncWithFirestore();
+      window.marbsDB.syncWithFirestore().then(() => {
+        revealPostsWhenReady();
+      }).catch(() => {
+        revealPostsWhenReady();
+      });
     }
 
     // Check Firebase / session after all modules are initialized
@@ -289,6 +326,12 @@
   function renderFeed() {
     const grid = $('#postsGrid');
     if (!grid) return;
+
+    // Loading feature: show skeleton placeholders while data is preparing
+    if (isPostsLoading) {
+      renderSkeletonFeed();
+      return;
+    }
 
     // Show all active citizen posts (APPROVED, SUBMITTED, etc.) - never hide them
     let posts = marbsDB.data.posts.filter(p => p.status !== 'REJECTED' && p.status !== 'RESOLVED');
@@ -2271,6 +2314,10 @@
   window.showToast = showToast;
   window.renderUserPill = renderUserPill;
   window.renderFeed = renderFeed;
+  window.setPostsLoading = function(loading) {
+    isPostsLoading = !!loading;
+    renderFeed();
+  };
   window.closeModal = function(modalId) {
     const el = typeof modalId === 'string' ? document.getElementById(modalId) : modalId;
     if (el) el.classList.remove('active');
