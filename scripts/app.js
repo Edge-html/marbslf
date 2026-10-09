@@ -1065,6 +1065,8 @@
       renderFeed();
       renderRecentActivity();
       renderUserDashboard();
+      renderUserPill();
+      updateNotificationBadges();
     });
   }
 
@@ -1143,6 +1145,8 @@
       renderFeed();
       renderRecentActivity();
       renderUserDashboard();
+      renderUserPill();
+      updateNotificationBadges();
     });
   }
 
@@ -1200,20 +1204,27 @@
         const user = marbsDB.getCurrentUser();
         if (!activePostForModal) return;
 
-        const answers = {
-          location_lost: $('#claimAnswerLocation').value.trim(),
-          approx_time: $('#claimAnswerTime').value.trim(),
-          color: $('#claimAnswerColor').value.trim(),
-          identifying_marks: $('#claimAnswerMarks').value.trim(),
-          accessories: $('#claimAnswerAccessories').value.trim(),
-          inside_contents: $('#claimAnswerContents').value.trim(),
-          private_proof: $('#claimAnswerProof').value.trim()
+        const getVal = (id) => {
+          const el = document.getElementById(id);
+          return el ? el.value.trim() : '';
         };
+
+        const answers = {
+          location_lost: getVal('claimAnswerLocation'),
+          approx_time: getVal('claimAnswerTime'),
+          color: getVal('claimAnswerColor'),
+          identifying_marks: getVal('claimAnswerMarks'),
+          accessories: getVal('claimAnswerAccessories'),
+          inside_contents: getVal('claimAnswerContents'),
+          private_proof: getVal('claimAnswerProof')
+        };
+
+        const isFoundPost = activePostForModal.post_type === 'FOUND';
 
         const newMatch = {
           match_id: 'MAT-' + Date.now().toString().slice(-5),
-          lost_post_id: activePostForModal.post_type === 'LOST' ? activePostForModal.post_id : 'MANUAL_CLAIM',
-          found_post_id: activePostForModal.post_id,
+          lost_post_id: isFoundPost ? 'CLAIM-' + Date.now() : activePostForModal.post_id,
+          found_post_id: isFoundPost ? activePostForModal.post_id : 'FOUND_MATCH-' + Date.now(),
           claimant_id: user.user_id,
           status: 'VERIFICATION_IN_PROGRESS',
           match_score: 90,
@@ -1227,38 +1238,75 @@
         marbsDB.data.messages.push({
           message_id: 'MSG-' + Date.now().toString().slice(-4),
           sender_id: user.user_id,
-          receiver_id: activePostForModal.user_id,
+          receiver_id: activePostForModal.user_id || 'USR-ADMIN',
           post_id: activePostForModal.post_id,
-          message: `[System Notice] User ${user.public_alias} submitted an ownership claim with private identifying answers for review.`,
+          message: isFoundPost 
+            ? `[System Notice] User ${user.public_alias || user.first_name} submitted an ownership claim with private identifying answers for your found item.`
+            : `[System Notice] User ${user.public_alias || user.first_name} reported that they found your lost item with identifying details.`,
           timestamp: new Date().toISOString(),
           status: 'UNREAD'
         });
 
-        // Notify finder
-        marbsDB.addNotification(
-          activePostForModal.user_id,
-          'New Ownership Claim Received',
-          `A user claimed your found item "${activePostForModal.item_name}". Please review their private proof answers in your dashboard.`,
-          'CLAIM'
-        );
+        // Notify poster
+        if (activePostForModal.user_id) {
+          marbsDB.addNotification(
+            activePostForModal.user_id,
+            isFoundPost ? 'New Ownership Claim Received' : 'Found Match Lead Received',
+            isFoundPost 
+              ? `A user submitted ownership proof answers for your found post "${activePostForModal.item_name}".`
+              : `A user reported finding an item matching your lost post "${activePostForModal.item_name}".`,
+            'CLAIM'
+          );
+        }
 
         marbsDB.save();
         $('#ownershipClaimModal').classList.remove('active');
         claimForm.reset();
 
-        showToast('✓ Claim submitted! The finder has been notified to review your proof answers.');
+        showToast(isFoundPost 
+          ? '✓ Claim submitted! The finder has been notified to review your proof answers.'
+          : '✓ Details submitted! The owner has been notified of your report.');
       });
     }
   }
 
   function openOwnershipClaimModal(post) {
     const user = marbsDB.getCurrentUser();
-    if (!checkUserVerification(user, 'claim an item')) {
+    if (!checkUserVerification(user, post.post_type === 'LOST' ? 'report finding this item' : 'claim this found item')) {
       return;
     }
 
     activePostForModal = post;
+    const isLost = post.post_type === 'LOST';
+
     $('#claimModalItemName').textContent = post.item_name;
+
+    // Dynamically align questions with whether this is a Found post or Lost post
+    const q1Label = $('#claimLabelLocation');
+    const q1Input = $('#claimAnswerLocation');
+    const q2Label = $('#claimLabelTime');
+    const q2Input = $('#claimAnswerTime');
+    const q6Label = $('#claimLabelProof');
+    const q6Input = $('#claimAnswerProof');
+
+    if (isLost) {
+      // User is responding to a LOST post ("Found This?")
+      if (q1Label) q1Label.textContent = '1. Where did you find this item in Koronadal? *';
+      if (q1Input) q1Input.placeholder = 'e.g. Near KCC Mall 2nd Floor or KNCHS Main Gate';
+      if (q2Label) q2Label.textContent = '2. Approximately when did you find it? *';
+      if (q2Input) q2Input.placeholder = 'e.g. Yesterday afternoon around 3:30 PM';
+      if (q6Label) q6Label.textContent = '6. Details confirming this matches the owner\'s lost item: *';
+      if (q6Input) q6Input.placeholder = 'e.g. Current condition, exact custody location or turned over place';
+    } else {
+      // User is claiming a FOUND post ("I Think This Is Mine")
+      if (q1Label) q1Label.textContent = '1. Where did you lose your item in Koronadal? *';
+      if (q1Input) q1Input.placeholder = 'e.g. Beside tricycle terminal in Public Market';
+      if (q2Label) q2Label.textContent = '2. Approximately when did you lose it? *';
+      if (q2Input) q2Input.placeholder = 'e.g. Wednesday morning around 10:30 AM';
+      if (q6Label) q6Label.textContent = '6. What specific secret proof proves it belongs to you? *';
+      if (q6Input) q6Input.placeholder = 'e.g. Lock screen wallpaper photo, unique scratch, serial number ending in 4920';
+    }
+
     $('#ownershipClaimModal').classList.add('active');
   }
 
@@ -2125,6 +2173,8 @@
     renderFeed();
     renderRecentActivity();
     renderUserDashboard();
+    renderUserPill();
+    updateNotificationBadges();
     showToast(`✓ Post ${postId} approved and published publicly!`);
   };
 
@@ -2143,6 +2193,8 @@
     renderFeed();
     renderRecentActivity();
     renderUserDashboard();
+    renderUserPill();
+    updateNotificationBadges();
     showToast(`Post ${postId} has been rejected.`);
   };
 
@@ -2380,12 +2432,34 @@
     const loginBtn = $('#openLoginModalBtn');
     const registerBtn = $('#openRegisterModalBtn');
 
+    // Calculate pending moderation queue count
+    const pendingReviewPostsCount = (marbsDB.data.posts || []).filter(p => p.status === 'PENDING_REVIEW').length;
+    const adminNavBadge = $('#navAdminQueueBadge');
+    if (adminNavBadge) {
+      if (pendingReviewPostsCount > 0) {
+        adminNavBadge.style.display = 'inline-block';
+        adminNavBadge.textContent = pendingReviewPostsCount;
+      } else {
+        adminNavBadge.style.display = 'none';
+      }
+    }
+
     if (user && user.user_id) {
       if (pill) {
         pill.style.display = 'flex';
         pill.innerHTML = `
-          <div class="user-avatar-sm">${(user.first_name[0] || 'U').toUpperCase()}</div>
-          <span class="user-name-sm">${user.role === 'ADMIN' ? 'Admin Portal' : user.first_name}</span>
+          <div class="user-avatar-sm" style="position: relative;">
+            ${(user.first_name[0] || 'U').toUpperCase()}
+            ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
+              <span style="position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #ef4444; border: 2px solid #fff; border-radius: 50%;"></span>
+            ` : ''}
+          </div>
+          <span class="user-name-sm" style="display: flex; align-items: center; gap: 6px;">
+            ${user.role === 'ADMIN' ? 'Admin Portal' : user.first_name}
+            ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
+              <span style="background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">${pendingReviewPostsCount}</span>
+            ` : ''}
+          </span>
         `;
       }
       if (signOutBtn) signOutBtn.style.display = 'inline-flex';
@@ -2410,6 +2484,18 @@
         badge.textContent = count;
       } else {
         badge.style.display = 'none';
+      }
+    }
+
+    // Also sync admin queue badge count
+    const pendingReviewPostsCount = (marbsDB.data.posts || []).filter(p => p.status === 'PENDING_REVIEW').length;
+    const adminNavBadge = $('#navAdminQueueBadge');
+    if (adminNavBadge) {
+      if (pendingReviewPostsCount > 0) {
+        adminNavBadge.style.display = 'inline-block';
+        adminNavBadge.textContent = pendingReviewPostsCount;
+      } else {
+        adminNavBadge.style.display = 'none';
       }
     }
   }

@@ -46,7 +46,12 @@
           <li class="nav-item"><button class="nav-link-btn" data-view="lost-pets">Lost Pets</button></li>
           <li class="nav-item"><button class="nav-link-btn" data-view="found-pets">Found Pets</button></li>
           <li class="nav-item"><button class="nav-link-btn" data-view="how-it-works">How It Works</button></li>
-          <li class="nav-item"><button class="nav-link-btn" data-view="admin">Admin Portal</button></li>
+          <li class="nav-item">
+            <button class="nav-link-btn" data-view="admin" id="navAdminPortalBtn" style="position: relative; display: inline-flex; align-items: center; gap: 6px;">
+              Admin Portal
+              <span id="navAdminQueueBadge" style="display: none; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; min-width: 16px; text-align: center; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.4);">0</span>
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -1075,36 +1080,36 @@
           </div>
 
           <div style="font-size: 13px; margin-bottom: 16px;">
-            Item to Claim: <strong id="claimModalItemName">Item</strong>
+            Item: <strong id="claimModalItemName">Item</strong>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claimAnswerLocation">1. Where did you lose it?</label>
+            <label class="form-label" for="claimAnswerLocation" id="claimLabelLocation">1. Where did you lose / find it?</label>
             <input type="text" id="claimAnswerLocation" class="form-input" placeholder="e.g. Beside the tricycle terminal in Public Market" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claimAnswerTime">2. Approximately when did you lose it?</label>
+            <label class="form-label" for="claimAnswerTime" id="claimLabelTime">2. Approximately when did you lose / find it?</label>
             <input type="text" id="claimAnswerTime" class="form-input" placeholder="e.g. Wednesday morning around 10:30 AM" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claimAnswerColor">3. What color and exterior markings does it have?</label>
+            <label class="form-label" for="claimAnswerColor" id="claimLabelColor">3. What color and exterior markings does it have?</label>
             <input type="text" id="claimAnswerColor" class="form-input" placeholder="e.g. Navy blue with small scuff on upper corner" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claimAnswerMarks">4. What accessories, charms, or keychains were attached?</label>
+            <label class="form-label" for="claimAnswerMarks" id="claimLabelMarks">4. What accessories, charms, or keychains were attached?</label>
             <input type="text" id="claimAnswerMarks" class="form-input" placeholder="e.g. Red lanyard / black case">
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claimAnswerContents">5. What is inside it (if bag or wallet)?</label>
+            <label class="form-label" for="claimAnswerContents" id="claimLabelContents">5. What is inside it (if bag or wallet)?</label>
             <input type="text" id="claimAnswerContents" class="form-input" placeholder="e.g. Student ID, coins, specific loyalty card">
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="claimAnswerProof">6. What specific characteristic proves it belongs to you?</label>
+            <label class="form-label" for="claimAnswerProof" id="claimLabelProof">6. What specific characteristic proves it belongs to you?</label>
             <input type="text" id="claimAnswerProof" class="form-input" placeholder="e.g. Phone wallpaper photo, serial number ending in 4920" required>
           </div>
 
@@ -1607,6 +1612,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=20"></script>
   <script src="scripts/camera.js?v=16"></script>
-  <script src="scripts/app.js?v=25"></script>
+  <script src="scripts/app.js?v=26"></script>
 </body>
 </html>
