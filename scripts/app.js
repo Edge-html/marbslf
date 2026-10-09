@@ -421,6 +421,23 @@
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 Verified Capture
               </span>` : ''}
+            ${(() => {
+              const currentUser = marbsDB.getCurrentUser();
+              const isOwnPost = Boolean(currentUser && (
+                (post.user_id && currentUser.user_id === post.user_id) ||
+                (post.poster_id && currentUser.user_id === post.poster_id) ||
+                (currentUser.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
+              ));
+              if (isOwnPost && !post.reward_offered) {
+                return `
+                  <span class="badge-own-post">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Your Post
+                  </span>
+                `;
+              }
+              return '';
+            })()}
           </div>
           <div class="post-body">
             <h3 class="post-title">${escapeHtml(post.item_name)}</h3>
@@ -449,15 +466,18 @@
                 ));
 
                 if (isOwnPost) {
+                  // Count responses for this specific post
+                  const postAnswersCount = (marbsDB.data.matches || []).filter(m =>
+                    (m.lost_post_id === post.post_id || m.found_post_id === post.post_id) &&
+                    (!currentUser || m.claimant_id !== currentUser.user_id)
+                  ).length;
+
                   return `
-                    <div style="display: inline-flex; align-items: center; gap: 6px;">
-                      <span style="font-size: 11px; font-weight: 700; color: var(--primary-dark); background: #fef3c7; border: 1px solid #fde68a; padding: 4px 8px; border-radius: 6px;">
-                        Your Post
-                      </span>
-                      <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #2563eb; border-color: #93c5fd; border-radius: 6px;" title="View Verification Answers received for this post">
-                        View Answers
-                      </button>
-                    </div>
+                    <button type="button" class="post-answers-btn" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')" title="View private verification answers submitted for your item">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                      <span>Verification Answers</span>
+                      ${postAnswersCount > 0 ? `<span class="answers-badge-pill">${postAnswersCount}</span>` : ''}
+                    </button>
                   `;
                 }
 
