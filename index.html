@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarbsLF — Koronadal Lost & Found Platform</title>
+  <meta name="description" content="Centralized Lost and Found platform for Koronadal City. Report lost items, pets, verify ownership, and arrange safe returns through verified public meetup spots.">
+  
+  <!-- Modern Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles/main.css?v=2">
+</head>
+<body>
+
+  <!-- Main Website Header & Navigation -->
+  <header class="header">
+    <div class="nav-container">
+      <a href="javascript:void(0)" class="brand" id="brandLogo">
+        <div class="brand-icon">🐾</div>
+        <div class="brand-text">
+          <div class="brand-title">Marbs<span>LF</span></div>
+          <div class="brand-sub">Koronadal Lost & Found</div>
+        </div>
+      </a>
+
+      <nav aria-label="Main Navigation">
+        <ul class="nav-links">
+          <li class="nav-item"><button class="nav-link-btn active" data-view="home">Home</button></li>
+          <li class="nav-item"><button class="nav-link-btn" data-view="lost-items">Lost Items</button></li>
+          <li class="nav-item"><button class="nav-link-btn" data-view="found-items">Found Items</button></li>
+          <li class="nav-item"><button class="nav-link-btn" data-view="lost-pets">Lost Pets</button></li>
+          <li class="nav-item"><button class="nav-link-btn" data-view="found-pets">Found Pets</button></li>
+          <li class="nav-item"><button class="nav-link-btn" data-view="how-it-works">How It Works</button></li>
+          <li class="nav-item"><button class="nav-link-btn" data-view="admin">Admin Portal</button></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="icon-btn" id="navSearchBtn" title="Search items or pets">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+
+        <button class="icon-btn" id="navNotifBtn" title="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+        </button>
+
+        <div class="user-pill" id="navUserBtn" title="Click to view User Dashboard">
+          <div class="user-avatar-sm" id="navUserAvatar">M</div>
+          <span class="user-name-sm" id="navUserName">Maria Clara</span>
+        </div>
+
+        <button class="btn btn-outline" id="navSignOutBtn" onclick="window.signOutUser()" style="padding: 6px 12px; font-size: 12px;" title="Sign Out">Logout</button>
+        <button class="btn btn-outline" id="openLoginModalBtn">Login</button>
+        <button class="btn btn-primary" id="openRegisterModalBtn">Sign Up</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="app-container">
+
+    <!-- VIEW 1: HOME VIEW (Mockup exact layout) -->
+    <section id="homeView">
+      
+      <!-- Hero Wrapper -->
+      <div class="hero-wrapper">
+        <div class="hero-banner">
+          <h1 class="hero-tagline">Lost it? Found it?<br><span>MarbsLF</span> it.</h1>
+          <p class="hero-sub">A community platform for lost and found items and pets in Koronadal.</p>
+          <div class="hero-search-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="heroSearchInput" placeholder="Search items, pets, or keywords..." aria-label="Search items">
+            <button id="heroSearchBtn">Search</button>
+          </div>
+        </div>
+
+        <!-- Right Hero CTAs (Mockup feature) -->
+        <div class="hero-cta-col">
+          <div class="cta-card lost-cta" onclick="window.marbsApp.openReportModal('LOST')" role="button" tabindex="0">
+            <div class="cta-info">
+              <div class="cta-icon-box">🐾</div>
+              <div>
+                <div class="cta-title">Report a Lost Item</div>
+                <div class="cta-desc">Post details to get help from the community.</div>
+              </div>
+            </div>
+            <div class="cta-arrow">›</div>
+          </div>
+
+          <div class="cta-card found-cta" onclick="window.marbsApp.openReportModal('FOUND')" role="button" tabindex="0">
+            <div class="cta-info">
+              <div class="cta-icon-box">🔍</div>
+              <div>
+                <div class="cta-title">Report a Found Item</div>
+                <div class="cta-desc">Help return it safely to its rightful owner.</div>
+              </div>
+            </div>
+            <div class="cta-arrow">›</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Pills Strip -->
+      <div class="categories-bar" role="region" aria-label="Category Selection">
+        <button class="category-chip active" data-category="ALL">
+          <div class="category-icon">🌟</div>
+          <span class="category-label">All Items</span>
+        </button>
+        <button class="category-chip" data-category="Pets">
+          <div class="category-icon">🐾</div>
+          <span class="category-label">Pets</span>
+        </button>
+        <button class="category-chip" data-category="Electronics">
+          <div class="category-icon">📱</div>
+          <span class="category-label">Electronics</span>
+        </button>
+        <button class="category-chip" data-category="Personal Items">
+          <div class="category-icon">👜</div>
+          <span class="category-label">Personal Items</span>
+        </button>
+        <button class="category-chip" data-category="IDs & Documents">
+          <div class="category-icon">🪪</div>
+          <span class="category-label">IDs & Docs</span>
+        </button>
+        <button class="category-chip" data-category="Keys">
+          <div class="category-icon">🔑</div>
+          <span class="category-label">Keys</span>
+        </button>
+        <button class="category-chip" data-category="Clothing">
+          <div class="category-icon">👕</div>
+          <span class="category-label">Clothing</span>
+        </button>
+        <button class="category-chip" data-category="School Items">
+          <div class="category-icon">🎒</div>
+          <span class="category-label">School Items</span>
+        </button>
+        <button class="category-chip" data-category="Others">
+          <div class="category-icon">⋯</div>
+          <span class="category-label">Others</span>
+        </button>
+      </div>
+
+      <!-- Popular Areas Strip -->
+      <div class="areas-strip">
+        <div class="areas-label">
+          <span>📍</span> Popular Areas:
+        </div>
+        <button class="area-tag active" data-area="ALL">All Areas</button>
+        <button class="area-tag" data-area="City Proper">City Proper</button>
+        <button class="area-tag" data-area="Public Market">Public Market</button>
+        <button class="area-tag" data-area="Robinsons">Robinsons</button>
+        <button class="area-tag" data-area="KCC">KCC Mall</button>
+        <button class="area-tag" data-area="KNCHS">KNCHS</button>
+        <button class="area-tag" data-area="Notre Dame">Notre Dame</button>
+        <button class="area-tag" data-area="Zone">Brgy. Zones</button>
+      </div>
+
+      <!-- Main Two-Column Layout -->
+      <div class="main-grid">
+        
+        <!-- Left Column: Posts Feed -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">Recent Posts</h2>
+            <div class="feed-filters">
+              <button class="feed-filter-btn active" data-filter="ALL">All</button>
+              <button class="feed-filter-btn" data-filter="LOST_ITEMS">Lost Items</button>
+              <button class="feed-filter-btn" data-filter="FOUND_ITEMS">Found Items</button>
+              <button class="feed-filter-btn" data-filter="LOST_PETS">Lost Pets</button>
+            </div>
+          </div>
+
+          <div class="posts-grid" id="postsGrid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Right Column: Map & Activity Widgets -->
+        <aside class="sidebar">
+          
+          <!-- Search by Location / Map Card -->
+          <div class="sidebar-card">
+            <div class="card-title-row">
+              <h3 class="card-title">📍 Search by Location</h3>
+              <select class="select-sm" id="mapCitySelector">
+                <option value="Koronadal City">Koronadal City</option>
+              </select>
+            </div>
+            
+            <div class="map-widget-container">
+              <canvas id="interactiveMapCanvas" class="interactive-map-canvas"></canvas>
+              <div class="map-legend">
+                <div class="legend-item"><span class="legend-dot dot-safe"></span> Safe Pickup</div>
+                <div class="legend-item"><span class="legend-dot dot-lost"></span> Lost Area</div>
+                <div class="legend-item"><span class="legend-dot dot-found"></span> Found Area</div>
+              </div>
+            </div>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+              🛡️ <em>Privacy Shield Active:</em> Exact residential GPS coordinates remain hidden. Only general public zones are mapped.
+            </p>
+          </div>
+
+          <!-- Recent Activity Feed -->
+          <div class="sidebar-card">
+            <div class="card-title-row">
+              <h3 class="card-title">🕒 Recent Activity</h3>
+            </div>
+            <div class="activity-list" id="recentActivityList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Marbs Points Quick Teaser Card -->
+          <div class="sidebar-card" style="background: linear-gradient(135deg, #fef8e7 0%, #fff 100%); border-color: rgba(246, 184, 25, 0.4);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <span style="font-size: 24px;">🏆</span>
+              <div>
+                <h4 style="font-size: 14px; font-weight: 800;">Marbs Points (MP)</h4>
+                <div style="font-size: 11px; color: var(--text-muted);">Reward legitimate community help</div>
+              </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-main); margin-bottom: 12px;">
+              Earn +100 MP for verified returns and redeem for partner vouchers across Koronadal City!
+            </p>
+            <button class="btn btn-primary" id="openWalletBtn" style="width: 100%; font-size: 12px; padding: 6px 14px;">Open Marbs Wallet</button>
+          </div>
+
+        </aside>
+
+      </div>
+
+    </section>
+
+    <!-- VIEW 2: HOW IT WORKS VIEW (Explaining 37 Rules & System Workflow) -->
+    <section id="howItWorksView" style="display: none;">
+      <div style="max-width: 860px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px; box-shadow: var(--shadow-sm);">
+        <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 12px; text-align: center;">How MarbsLF Works in Koronadal City</h2>
+        <p style="font-size: 14px; color: var(--text-muted); text-align: center; max-width: 600px; margin: 0 auto 32px auto;">
+          Built to make lost-and-found easier, more trustworthy, safer, and organized than relying on scattered social media posts and physical flyers.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
+          <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
+            <div style="font-size: 28px; margin-bottom: 8px;">🪪</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">1. Real Legal Identity</h3>
+            <p style="font-size: 12px; color: var(--text-muted);">Real name and ID verification are stored securely for safety, but public posts display only a privacy-safe alias (e.g., Verified Citizen #101).</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
+            <div style="font-size: 28px; margin-bottom: 8px;">📷</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">2. Real-Time Camera Proof</h3>
+            <p style="font-size: 12px; color: var(--text-muted);">Photos must be captured directly using the MarbsLF live camera with timestamp hashing to deter fake, duplicated, or internet photos.</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
+            <div style="font-size: 28px; margin-bottom: 8px;">🔒</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">3. Private Ownership Q&A</h3>
+            <p style="font-size: 12px; color: var(--text-muted);">Claimants must answer specific identifying proof questions (serial numbers, hidden markings) reviewed privately by the finder.</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
+            <div style="font-size: 28px; margin-bottom: 8px;">🏛️</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">4. Approved Safe Pickup Places</h3>
+            <p style="font-size: 12px; color: var(--text-muted);">Returns happen ONLY at registered public spots (City Hall, Police Stations, Barangay Halls, KCC Mall, Robinsons, KNCHS Gate). No private homes allowed!</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
+            <div style="font-size: 28px; margin-bottom: 8px;">🤝</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">5. Two-Way Return Handshake</h3>
+            <p style="font-size: 12px; color: var(--text-muted);">After meetup, Owner clicks "ITEM RECEIVED" and Finder clicks "ITEM RETURNED". Both must confirm to resolve the post and release points/rewards.</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--surface-alt); border-radius: var(--radius-md);">
+            <div style="font-size: 28px; margin-bottom: 8px;">🎁</div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">6. Marbs Points & Zero Scam Fee</h3>
+            <p style="font-size: 12px; color: var(--text-muted);">Payment is NEVER required to claim or return an item. Finders receive Marbs Points (MP) redeemable for partner merchant vouchers.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: USER DASHBOARD (Section 6) -->
+    <section id="dashboardView" style="display: none;">
+      <div class="dashboard-layout">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-nav">
+          <div class="dash-user-card">
+            <div class="dash-user-avatar" id="dashAvatarText">M</div>
+            <div class="dash-user-name" id="dashUserLegalName">Maria Clara</div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="dashUserAlias">Verified Citizen #101</div>
+            <span class="dash-user-badge" id="dashUserStatus">VERIFIED</span>
+          </div>
+
+          <ul class="dash-menu">
+            <li class="dash-menu-item"><button class="active" onclick="showDashboardTab('overview')">📊 Overview & Posts</button></li>
+            <li class="dash-menu-item"><button onclick="showDashboardTab('meetups')">🤝 Safe Meetups</button></li>
+            <li class="dash-menu-item"><button onclick="openWalletModal()">🏆 Marbs Points Wallet</button></li>
+            <li class="dash-menu-item"><button onclick="$('#idVerificationModal').classList.add('active')">🪪 ID Verification</button></li>
+            <li class="dash-menu-item"><button onclick="window.marbsApp.openReportModal('LOST')">📝 Report Lost</button></li>
+            <li class="dash-menu-item"><button onclick="window.marbsApp.openReportModal('FOUND')">🔍 Report Found</button></li>
+            <li class="dash-menu-item"><button onclick="openScamReportModal('GENERAL')">🛡️ Help & Report Center</button></li>
+          </ul>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <div class="dash-content">
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">My Active Posts</div>
+              <div class="stat-value" id="dashMyPostsCount">0</div>
+              <div class="stat-desc">Approved & pending posts</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Marbs Points Balance</div>
+              <div class="stat-value" id="dashPointsCount" style="color: var(--primary-dark);">0 MP</div>
+              <div class="stat-desc">Earned from good deeds</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Active Matches</div>
+              <div class="stat-value" id="dashMatchesCount">0</div>
+              <div class="stat-desc">Potential returns</div>
+            </div>
+          </div>
+
+          <!-- Section: My Posts -->
+          <div style="margin-bottom: 32px;">
+            <div class="section-header">
+              <h3 style="font-size: 17px; font-weight: 800;">My Reported Items & Pets</h3>
+              <button class="btn btn-primary" style="font-size: 12px; padding: 4px 12px;" onclick="window.marbsApp.openReportModal('LOST')">+ New Post</button>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Item / Pet</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Moderation Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="myPostsTbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section: Safe Meetups & 2-Way Handshake (Section 17) -->
+          <div>
+            <div class="section-header">
+              <h3 style="font-size: 17px; font-weight: 800;">Safe Pickup Meetups & Return Confirmations</h3>
+              <span style="font-size: 12px; color: var(--text-muted);">Both parties confirm return to resolve</span>
+            </div>
+            
+            <div id="myMeetupsContainer">
+              <!-- Dynamically populated handshake cards -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 4: ADMIN DASHBOARD (Section 32) -->
+    <section id="adminView" style="display: none;">
+      <div style="background: #0f172a; color: #fff; padding: 24px; border-radius: var(--radius-lg); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;">City Government of Koronadal</div>
+            <h2 style="font-size: 24px; font-weight: 800;">MarbsLF Central Admin Portal</h2>
+            <p style="font-size: 13px; color: #94a3b8;">System Moderator & Verification Authority Dashboard</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.3);" onclick="navigateToView('home')">← Back to Public Website</button>
+          </div>
+        </div>
+
+        <!-- Analytics Overview per Section 32 -->
+        <div class="stats-grid" style="margin-top: 24px; margin-bottom: 0;">
+          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
+            <div class="stat-label" style="color: #94a3b8;">Lost Posts</div>
+            <div class="stat-value" id="adminStatLostCount" style="color: #ef4444;">0</div>
+          </div>
+          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
+            <div class="stat-label" style="color: #94a3b8;">Found Posts</div>
+            <div class="stat-value" id="adminStatFoundCount" style="color: #10b981;">0</div>
+          </div>
+          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
+            <div class="stat-label" style="color: #94a3b8;">Successful Returns</div>
+            <div class="stat-value" id="adminStatResolvedCount" style="color: var(--primary);">0</div>
+          </div>
+          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
+            <div class="stat-label" style="color: #94a3b8;">Pet Reunions</div>
+            <div class="stat-value" id="adminStatPetReunions" style="color: #60a5fa;">0</div>
+          </div>
+          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
+            <div class="stat-label" style="color: #94a3b8;">Points Distributed</div>
+            <div class="stat-value" id="adminStatPointsTotal" style="color: #f59e0b;">0 MP</div>
+          </div>
+          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
+            <div class="stat-label" style="color: #94a3b8;">Registered Users</div>
+            <div class="stat-value" id="adminStatActiveUsers" style="color: #fff;">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Navigation Tabs -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; overflow-x: auto;">
+        <button class="feed-filter-btn admin-tab-btn active" data-admintab="posts">Posts Moderation</button>
+        <button class="feed-filter-btn admin-tab-btn" data-admintab="verifications">ID Verifications</button>
+        <button class="feed-filter-btn admin-tab-btn" data-admintab="safeplaces">Safe Pickup Places</button>
+        <button class="feed-filter-btn admin-tab-btn" data-admintab="reports">Scam & Abuse Reports</button>
+        <button class="feed-filter-btn admin-tab-btn" data-admintab="audit">Audit Ledger Logs</button>
+      </div>
+
+      <!-- Tab 1: Posts Moderation -->
+      <div id="adminTab_posts" class="admin-tab-content">
+        <div class="sidebar-card">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Post Moderation Queue (Section 10)</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Post ID</th>
+                  <th>Item / Pet</th>
+                  <th>Type</th>
+                  <th>General Location</th>
+                  <th>Status</th>
+                  <th>Moderation Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminPostsTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: ID Verifications -->
+      <div id="adminTab_verifications" class="admin-tab-content" style="display: none;">
+        <div class="sidebar-card">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Citizen Identity Documents Review (Section 4)</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+            ⚠️ <em>Privacy Rule:</em> Only authorized city administrators can review legal IDs. Never disclosed to public users.
+          </p>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Verification ID</th>
+                  <th>User ID</th>
+                  <th>Legal Name</th>
+                  <th>Document Type</th>
+                  <th>Camera Photo</th>
+                  <th>Verification Date</th>
+                  <th>Reviewer</th>
+                  <th>Status</th>
+                  <th>Admin Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminVerificationsTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Safe Pickup Places -->
+      <div id="adminTab_safeplaces" class="admin-tab-content" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="sidebar-card">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 14px;">Official Safe Pickup Places Database</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Place Name</th>
+                    <th>Address</th>
+                    <th>Hours</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="adminSafePlacesTbody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="sidebar-card">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 14px;">Add New Safe Pickup Location</h3>
+            <form id="adminAddSafePlaceForm">
+              <div class="form-group">
+                <label class="form-label">Location / Station Name</label>
+                <input type="text" id="adminSafePlaceName" class="form-input" placeholder="e.g. Barangay Hall Zone IV" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">General Address in Koronadal</label>
+                <input type="text" id="adminSafePlaceAddress" class="form-input" placeholder="e.g. Alunan Avenue, Koronadal City" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Operating / Station Hours</label>
+                <input type="text" id="adminSafePlaceHours" class="form-input" placeholder="e.g. Mon-Fri: 8:00 AM - 5:00 PM" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Facility Type</label>
+                <select id="adminSafePlaceType" class="form-select">
+                  <option value="Barangay Hall">Barangay Hall</option>
+                  <option value="Police Station">Police Station</option>
+                  <option value="School Gate">School / Campus Gate</option>
+                  <option value="City Hall">City Hall</option>
+                  <option value="Mall Customer Desk">Mall Customer Desk</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">+ Save Safe Pickup Place</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Scam & Abuse Reports -->
+      <div id="adminTab_reports" class="admin-tab-content" style="display: none;">
+        <div class="sidebar-card">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Scam & Abuse Investigations (Section 31)</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Report ID</th>
+                  <th>Flag Reason</th>
+                  <th>Details & Context</th>
+                  <th>Status</th>
+                  <th>Resolution</th>
+                </tr>
+              </thead>
+              <tbody id="adminReportsTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Audit Ledger Logs -->
+      <div id="adminTab_audit" class="admin-tab-content" style="display: none;">
+        <div class="sidebar-card">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Administrative Audit Logs (Section 34 & 36)</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Log ID</th>
+                  <th>Action Type</th>
+                  <th>Audit Description</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="adminAuditLogsTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODALS SYSTEM (Sections 4, 7, 8, 9, 11, 13, 14, 16, 21, 31)
+       ========================================================================= -->
+
+  <!-- 1. Real-Time Camera Modal (Section 9 & 4) -->
+  <div class="modal-overlay" id="cameraModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">📷 MarbsLF Real-Time Camera Verification</h3>
+        <button class="modal-close-btn" id="cameraModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="cameraStatusBanner" class="camera-banner live">
+          ● LIVE MARBSLF CAMERA FEED (KORONADAL SECURE PROOF)
+        </div>
+
+        <div class="camera-viewfinder-box">
+          <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
+          <img id="cameraPreviewImg" class="camera-preview-img" alt="Captured Preview">
+          <div id="cameraFlash" class="camera-flash-overlay"></div>
+          <canvas id="cameraCanvas" style="display: none;"></canvas>
+        </div>
+
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px;">
+          🛡️ Proof Guarantee: Ordinary gallery uploads are restricted for primary proof. Live capture burns timestamp & anti-tamper hash.
+        </p>
+
+        <!-- Live Controls -->
+        <div id="cameraLiveControls" class="camera-controls-bar">
+          <button id="cameraSnapBtn" class="shutter-btn" title="Snap Photo">📸</button>
+        </div>
+
+        <!-- Review Controls (Retake / Use Photo per Section 9) -->
+        <div id="cameraReviewControls" class="camera-controls-bar" style="display: none;">
+          <button id="cameraRetakeBtn" class="btn btn-outline">↺ Retake</button>
+          <button id="cameraUseBtn" class="btn btn-primary">✓ Use Photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Report Lost Item Modal (Section 7, 9, 23, 24) -->
+  <div class="modal-overlay" id="reportLostModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">🐾 Report a Lost Item or Pet</h3>
+        <button class="modal-close-btn" onclick="$('#reportLostModal').classList.remove('active')">×</button>
+      </div>
+      <form id="reportLostForm">
+        <div class="modal-body">
+          
+          <div class="privacy-alert">
+            <span>🛡️</span>
+            <div>
+              <strong>Privacy Protection Active:</strong> Your exact GPS coordinates and residential address remain strictly confidential. Only general public zones (e.g., "Near Public Market") will appear publicly.
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="lostCategory">Category *</label>
+              <select id="lostCategory" class="form-select" required>
+                <option value="Pets">Pets (Dogs, Cats, etc.)</option>
+                <option value="Electronics">Electronics (Phones, Laptops, Gadgets)</option>
+                <option value="Personal Items" selected>Personal Items (Wallets, Bags)</option>
+                <option value="IDs & Documents">IDs & Official Documents</option>
+                <option value="Keys">Keys & Remote Fobs</option>
+                <option value="Clothing">Clothing & Accessories</option>
+                <option value="School Items">School Supplies & Books</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostItemName">Item / Pet Name *</label>
+              <input type="text" id="lostItemName" class="form-input" placeholder="e.g. Black Redmi Phone or Persian Cat 'Mochi'" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostDate">Date Lost *</label>
+              <input type="date" id="lostDate" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostTime">Approximate Time Lost</label>
+              <input type="text" id="lostTime" class="form-input" placeholder="e.g. Around 4:30 PM">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostColor">Color</label>
+              <input type="text" id="lostColor" class="form-input" placeholder="e.g. Midnight Black / White and Gray">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostBrand">Brand / Breed</label>
+              <input type="text" id="lostBrand" class="form-input" placeholder="e.g. Xiaomi / Aspin / Toyota">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostModel">Model / Pet Size</label>
+              <input type="text" id="lostModel" class="form-input" placeholder="e.g. Note 12 / Medium 4kg">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lostSerial">
+                Serial Number / Secret Identifying Detail
+                <span class="form-hint">(Private for verification)</span>
+              </label>
+              <input type="text" id="lostSerial" class="form-input" placeholder="Kept hidden: used to test claimants">
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="lostLocation">Where did you last see the item in Koronadal? *</label>
+              <input type="text" id="lostLocation" class="form-input" placeholder="e.g. Near KCC Mall Food Court or KNCHS Gate" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="lostDescription">Detailed Public Description *</label>
+              <textarea id="lostDescription" class="form-textarea" placeholder="Describe the item or pet without giving away secret proof details..." required></textarea>
+            </div>
+
+            <!-- Real-time Camera Trigger (Section 9) -->
+            <div class="form-group full-width">
+              <label class="form-label">Real-Time Photo Proof (MarbsLF Camera) *</label>
+              <div class="photo-capture-box" id="reportLostCameraTrigger">
+                <img id="lostPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured Proof">
+                <div id="lostCameraPrompt">
+                  <div style="font-size: 32px; margin-bottom: 6px;">📷</div>
+                  <strong style="color: var(--text-main);">Click to Open Real-Time Camera</strong>
+                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Required to capture authenticated real-time proof image</p>
+                </div>
+                <div id="lostPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
+              </div>
+            </div>
+
+            <!-- Optional Owner Reward (Section 23 & 24) -->
+            <div class="form-group full-width" style="background: var(--surface-alt); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div>
+                  <strong>Optional Reward Offering (Section 23)</strong>
+                  <div style="font-size: 11px; color: var(--text-muted);">Rewards are 100% voluntary. Payment is NEVER required to claim or return.</div>
+                </div>
+                <input type="checkbox" id="lostRewardToggle" style="width: 18px; height: 18px;">
+              </div>
+
+              <div id="rewardOptionsGroup" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 180px;">
+                  <label class="form-label" for="lostRewardAmount">Reward Amount (₱)</label>
+                  <input type="number" id="lostRewardAmount" class="form-input" placeholder="e.g. 500" value="500">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 24px;">
+                  <input type="checkbox" id="lostRewardPrivacy" checked>
+                  <label for="lostRewardPrivacy" style="font-size: 12px; cursor: pointer;">
+                    <strong>Hide exact amount publicly</strong> (Recommended default per Sec 24)
+                  </label>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="$('#reportLostModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Report for Moderation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Report Found Item Modal (Section 8, 9) -->
+  <div class="modal-overlay" id="reportFoundModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">🔍 Report a Found Item or Pet</h3>
+        <button class="modal-close-btn" onclick="$('#reportFoundModal').classList.remove('active')">×</button>
+      </div>
+      <form id="reportFoundForm">
+        <div class="modal-body">
+          <div class="privacy-alert">
+            <span>🤝</span>
+            <div>
+              <strong>Earn +10 Marbs Points!</strong> Thank you for your civic responsibility. Once approved, you will earn points redeemable for partner discounts.
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="foundCategory">Category *</label>
+              <select id="foundCategory" class="form-select" required>
+                <option value="Personal Items" selected>Personal Items (Wallet, Bag)</option>
+                <option value="Electronics">Electronics (Phones, Tech)</option>
+                <option value="Pets">Pets (Dogs, Cats)</option>
+                <option value="IDs & Documents">IDs & Documents</option>
+                <option value="Keys">Keys</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="foundItemName">Item / Pet Found *</label>
+              <input type="text" id="foundItemName" class="form-input" placeholder="e.g. Black Leather Wallet or Stray Dog" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="foundDate">Date Found *</label>
+              <input type="date" id="foundDate" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="foundTime">Approximate Time</label>
+              <input type="text" id="foundTime" class="form-input" placeholder="e.g. 1:15 PM">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="foundColor">Color</label>
+              <input type="text" id="foundColor" class="form-input" placeholder="e.g. Black">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="foundBrand">Brand / Identifying Model</label>
+              <input type="text" id="foundBrand" class="form-input" placeholder="e.g. Seiko / Leather">
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="foundLocation">Where did you find the item in Koronadal? *</label>
+              <input type="text" id="foundLocation" class="form-input" placeholder="e.g. KCC Mall Food Court near 2nd floor benches" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="foundDescription">Description *</label>
+              <textarea id="foundDescription" class="form-textarea" placeholder="Keep some specific details private to verify the real owner later..." required></textarea>
+            </div>
+
+            <!-- Real-time Camera Trigger -->
+            <div class="form-group full-width">
+              <label class="form-label">Real-Time Photo Proof (MarbsLF Camera) *</label>
+              <div class="photo-capture-box" id="reportFoundCameraTrigger">
+                <img id="foundPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured Proof">
+                <div id="foundCameraPrompt">
+                  <div style="font-size: 32px; margin-bottom: 6px;">📸</div>
+                  <strong style="color: var(--text-main);">Click to Capture Real-Time Photo</strong>
+                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Opens camera to record tamper-proof capture</p>
+                </div>
+                <div id="foundPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="$('#reportFoundModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Found Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Public Item Page / Detail Modal (Section 11, 33) -->
+  <div class="modal-overlay" id="postDetailModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalPostTitle">Item Detail</h3>
+        <button class="modal-close-btn" id="postDetailModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        
+        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 16px; background: #000; height: 260px;">
+          <img id="modalPostImage" src="" alt="Post image" style="width: 100%; height: 100%; object-fit: contain;">
+          <span id="modalPostType" class="post-badge" style="position: absolute; top: 12px; left: 12px;"></span>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+          <span id="modalCameraVerifiedBadge" class="camera-verified-tag" style="position: static; font-size: 11px; padding: 4px 10px;">📷 Verified Real-time Capture</span>
+          <span id="modalPostCategory" class="activity-badge" style="background: var(--surface-alt); color: var(--text-main); font-size: 11px; padding: 4px 10px;"></span>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <div class="post-meta-line" style="font-size: 14px;">
+            <span>📍 Location:</span> <strong id="modalPostLocation"></strong>
+          </div>
+          <div class="post-meta-line" style="font-size: 14px;">
+            <span>📅 Reported:</span> <strong id="modalPostDate"></strong>
+          </div>
+          <div class="post-meta-line" style="font-size: 14px;">
+            <span>🎨 Color / Characteristics:</span> <span id="modalPostColor"></span>
+          </div>
+          <div class="post-meta-line" style="font-size: 14px;">
+            <span>🏷️ Brand / Model:</span> <span id="modalPostBrand"></span>
+          </div>
+        </div>
+
+        <div style="background: var(--surface-alt); padding: 14px; border-radius: var(--radius-md); margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Description</div>
+          <p id="modalPostDescription" style="font-size: 13px; color: var(--text-main); margin-top: 4px; line-height: 1.5;"></p>
+        </div>
+
+        <div id="modalPostRewardBox" style="background: #fef8e7; border: 1px solid rgba(246, 184, 25, 0.4); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; display: none;">
+          <div style="font-size: 13px; font-weight: 700; color: #92400e;" id="modalRewardAmount">★ Reward Offered</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            "Rewards are optional. MarbsLF does not require payment to claim or return a lost item."
+          </div>
+        </div>
+
+        <div class="privacy-alert" style="font-size: 11px; margin-bottom: 0;">
+          <span>🔒</span>
+          <div>
+            <strong>Identity Shield:</strong> Owner/Finder contact numbers, emails, and home addresses are never published to prevent extortion and unsolicited calls.
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; gap: 8px;">
+          <button id="reportPostBtn" class="btn btn-outline" style="color: var(--lost-color); font-size: 12px;">🚩 Report</button>
+          <button id="deletePostModalBtn" class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 12px; display: none;">🗑️ Delete Post</button>
+        </div>
+        <button id="claimPostBtn" class="btn btn-primary">I Think This Is Mine</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Ownership Verification Questionnaire Modal (Section 13) -->
+  <div class="modal-overlay" id="ownershipClaimModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🔐 Ownership Verification Questionnaire</h3>
+        <button class="modal-close-btn" id="ownershipClaimClose">×</button>
+      </div>
+      <form id="ownershipClaimForm">
+        <div class="modal-body">
+          <div class="warning-alert">
+            <span>🛡️</span>
+            <div>
+              <strong>Private Verification Process:</strong> To prevent fraud, your answers are sent privately only to the finder. Administrators can intervene if disputed.
+            </div>
+          </div>
+
+          <div style="font-size: 13px; margin-bottom: 16px;">
+            Item to Claim: <strong id="claimModalItemName">Item</strong>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="claimAnswerLocation">1. Where did you lose it?</label>
+            <input type="text" id="claimAnswerLocation" class="form-input" placeholder="e.g. Beside the tricycle terminal in Public Market" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="claimAnswerTime">2. Approximately when did you lose it?</label>
+            <input type="text" id="claimAnswerTime" class="form-input" placeholder="e.g. Wednesday morning around 10:30 AM" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="claimAnswerColor">3. What color and exterior markings does it have?</label>
+            <input type="text" id="claimAnswerColor" class="form-input" placeholder="e.g. Navy blue with small scuff on upper corner" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="claimAnswerMarks">4. What accessories, charms, or keychains were attached?</label>
+            <input type="text" id="claimAnswerMarks" class="form-input" placeholder="e.g. Red lanyard / black case">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="claimAnswerContents">5. What is inside it (if bag or wallet)?</label>
+            <input type="text" id="claimAnswerContents" class="form-input" placeholder="e.g. Student ID, coins, specific loyalty card">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="claimAnswerProof">6. What specific characteristic proves it belongs to you?</label>
+            <input type="text" id="claimAnswerProof" class="form-input" placeholder="e.g. Phone wallpaper photo, serial number ending in 4920" required>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="$('#ownershipClaimModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Private Verification Answers</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Safe Pickup Place & Meetup Scheduler Modal (Section 15 & 16) -->
+  <div class="modal-overlay" id="meetupModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">📍 Arrange Return at Safe Pickup Place</h3>
+        <button class="modal-close-btn" id="meetupModalClose">×</button>
+      </div>
+      <form id="meetupScheduleForm">
+        <div class="modal-body">
+          <div class="privacy-alert">
+            <span>🛡️</span>
+            <div>
+              <strong>Non-Negotiable Rule (Section 15):</strong> Returns must use official Safe Pickup Places. Private homes, dark alleys, and isolated areas are strictly prohibited.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="meetupSafePlaceSelect">Select Approved Safe Pickup Place *</label>
+            <select id="meetupSafePlaceSelect" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="meetupDate">Meetup Date *</label>
+              <input type="date" id="meetupDate" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="meetupTime">Meetup Time *</label>
+              <input type="time" id="meetupTime" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="warning-alert" style="font-size: 11px; margin-top: 10px;">
+            <span>⚠️</span>
+            <div>
+              <strong>Safety Reminder:</strong> Meet during daylight or official facility operating hours. Never carry large amounts of cash. The facility security desk can witness the handover.
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="$('#meetupModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Safe Meetup Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. Private Messaging Drawer / Modal (Section 14 & 28) -->
+  <div class="modal-overlay" id="chatModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">💬 Private Discussion</h3>
+          <div style="font-size: 11px; color: var(--text-muted);" id="chatPostName">Item Name</div>
+        </div>
+        <button class="modal-close-btn" id="chatModalClose">×</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        
+        <!-- System Warning Banner per Section 14 -->
+        <div class="warning-alert" style="padding: 8px 12px; font-size: 11px; margin-bottom: 12px;">
+          <span>⚠️</span>
+          <div>
+            <strong>System Security Warning:</strong> Never send your password, OTP, banking credentials, or advance fees to another user.
+          </div>
+        </div>
+
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessagesContainer">
+            <!-- Messages rendered dynamically -->
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="chatInput" class="form-input" placeholder="Type a message..." style="flex-grow: 1;">
+            <button id="chatSendBtn" class="btn btn-primary" style="padding: 8px 16px;">Send</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn btn-outline" style="font-size: 11px; color: var(--lost-color);" onclick="openScamReportModal('USER')">Report User</button>
+        <button class="btn btn-primary" style="font-size: 12px;" onclick="$('#chatModal').classList.remove('active'); $('#meetupModal').classList.add('active');">Arrange Safe Meetup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Marbs Points Wallet & Redemption Modal (Section 19, 21, 22) -->
+  <div class="modal-overlay" id="pointsModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">🏆 Marbs Points (MP) Wallet & Rewards</h3>
+        <button class="modal-close-btn" id="pointsModalClose">×</button>
+      </div>
+      <div class="modal-body">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+          <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 24px; border-radius: var(--radius-md);">
+            <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Available Points</div>
+            <div style="font-size: 38px; font-weight: 800; color: var(--primary); margin: 6px 0;" id="walletPointsAvailable">0</div>
+            <div style="font-size: 12px; color: #cbd5e1;">Earned from legitimate item returns and community help.</div>
+          </div>
+
+          <div style="background: var(--surface-alt); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Community Achievement Level</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin: 6px 0;" id="walletUserLevel">🌱 Community Member</div>
+            <div style="font-size: 11px; color: var(--text-muted);">
+              0–99 MP: Community Member • 100–249 MP: Helper • 250–499 MP: Trusted • 500+ MP: Champion
+            </div>
+          </div>
+        </div>
+
+        <h4 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Redeem for Partner Vouchers in Koronadal (Section 22)</h4>
+        <div id="vouchersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <h4 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">Points History Log</h4>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tx ID</th>
+                <th>Reason / Action</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="pointsHistoryTbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. Citizen Identity Verification Modal (Section 4) -->
+  <div class="modal-overlay" id="idVerificationModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🪪 Identity Verification (PhilSys / School / Gov)</h3>
+        <button class="modal-close-btn" id="idModalClose">×</button>
+      </div>
+      <form id="idVerificationForm">
+        <div class="modal-body">
+          <div class="privacy-alert">
+            <span>🔒</span>
+            <div>
+              <strong>Strict Privacy Standard:</strong> Sensitive ID details are reviewed strictly by authorized city administrators and are NEVER revealed to other users or the public.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="idLegalName">Full Legal Name *</label>
+            <input type="text" id="idLegalName" class="form-input" placeholder="e.g. Maria Clara Santos dela Cruz" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="idTypeSelect">Select Accepted Identification Type *</label>
+            <select id="idTypeSelect" class="form-select" required>
+              <option value="School ID">School ID (KNCHS, NDMU, etc.)</option>
+              <option value="National ID" selected>National ID (PhilSys)</option>
+              <option value="Driver's License">Driver's License (LTO)</option>
+              <option value="Passport">Passport</option>
+              <option value="Other administrator-approved identification">Other administrator-approved identification (Barangay / Voter's / Postal / PRC)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ID Document Verification Photo *</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <button type="button" class="btn btn-outline" id="verifyIdCameraBtn" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;">
+                <span>📷</span> Use Device Camera
+              </button>
+              <button type="button" class="btn btn-outline" id="verifyIdUploadBtn" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;">
+                <span>📁</span> Upload ID Image
+              </button>
+            </div>
+
+            <!-- Hidden file input for ID image upload -->
+            <input type="file" id="idFileInput" accept="image/*" style="display: none;">
+
+            <!-- Preview / Prompt Box -->
+            <div class="photo-capture-box" id="verifyIdCameraTrigger" style="cursor: pointer;">
+              <img id="idPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured ID">
+              <div id="idCameraPrompt">
+                <div style="font-size: 32px; margin-bottom: 6px;">🪪</div>
+                <strong style="color: var(--text-main);">Tap to Capture or Upload ID</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Hold your valid government/school ID inside the frame or upload from your device</p>
+              </div>
+              <div id="idPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="$('#idVerificationModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit for Admin Review</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 10. Scam and Abuse Reporting Modal (Section 31) -->
+  <div class="modal-overlay" id="scamReportModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">🚩 Scam & Abuse Report</h3>
+        <button class="modal-close-btn" id="reportModalClose">×</button>
+      </div>
+      <form id="scamReportForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="reportReasonSelect">Reason for Report *</label>
+            <select id="reportReasonSelect" class="form-select" required>
+              <option value="Suspicious Reward Request">Suspicious Reward Request / Demanding Money</option>
+              <option value="Fake Post">Fake or Stolen Post</option>
+              <option value="Fake Claim">Fraudulent Ownership Claim</option>
+              <option value="Scam">Attempted Scam / Phishing</option>
+              <option value="Harassment">Harassment or Inappropriate Language</option>
+              <option value="Incorrect Information">Misleading Location / Information</option>
+              <option value="Other">Other Violation</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reportDetailsInput">Explanation & Details *</label>
+            <textarea id="reportDetailsInput" class="form-textarea" placeholder="Describe the incident to help moderators investigate..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="$('#scamReportModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--lost-color); color: #fff;">File Official Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 11. Login Modal (Section 5) -->
+  <div class="modal-overlay" id="loginModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Log in to MarbsLF</h3>
+        <button class="modal-close-btn" id="loginModalClose">×</button>
+      </div>
+      <form id="loginForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="loginIdentifier">Email or Username</label>
+            <input type="text" id="loginIdentifier" class="form-input" placeholder="e.g. mariacruz or maria@example.com" value="mariacruz" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" class="form-input" value="password123" required>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 8px;">
+            <a href="javascript:void(0)" onclick="alert('Password reset link has been dispatched to your verified email.')" style="color: var(--primary-dark);">Forgot Password?</a>
+            <a href="javascript:void(0)" id="switchToRegisterBtn" style="color: var(--primary-dark);">Need an account?</a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 12. Account Registration Modal (Section 3) -->
+  <div class="modal-overlay" id="registerModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Citizen Account</h3>
+        <button class="modal-close-btn" id="registerModalClose">×</button>
+      </div>
+      <form id="registrationForm">
+        <div class="modal-body">
+          <div class="privacy-alert">
+            <span>🛡️</span>
+            <div>
+              <strong>Real Name Privacy Rule (Section 3):</strong> Users must provide their real legal name. However, your full legal name is NEVER displayed publicly. Only your privacy-safe alias (e.g. Verified Citizen #104) is shown.
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="regFirstName">First Name *</label>
+              <input type="text" id="regFirstName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regMiddleName">Middle Name</label>
+              <input type="text" id="regMiddleName" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regLastName">Last Name *</label>
+              <input type="text" id="regLastName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regDob">Date of Birth *</label>
+              <input type="date" id="regDob" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regPhone">Mobile Number *</label>
+              <input type="tel" id="regPhone" class="form-input" placeholder="09XX-XXX-XXXX" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regEmail">Email Address *</label>
+              <input type="email" id="regEmail" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regUsername">Username *</label>
+              <input type="text" id="regUsername" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regBarangay">Barangay (Koronadal) *</label>
+              <select id="regBarangay" class="form-select" required>
+                <option value="Zone I">Zone I (Poblacion)</option>
+                <option value="Zone II" selected>Zone II</option>
+                <option value="Zone III">Zone III</option>
+                <option value="Zone IV">Zone IV</option>
+                <option value="Morales">Morales</option>
+                <option value="General Paulino Santos">General Paulino Santos</option>
+                <option value="San Isidro">San Isidro</option>
+                <option value="Santa Cruz">Santa Cruz</option>
+                <option value="Carpenter Hill">Carpenter Hill</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regPassword">Password *</label>
+              <input type="password" id="regPassword" class="form-input" placeholder="Create a password (min 6 chars)" required minlength="6">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regConfirmPassword">Confirm Password *</label>
+              <input type="password" id="regConfirmPassword" class="form-input" placeholder="Re-type password" required minlength="6">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="switchToLoginBtn" class="btn btn-outline">Already Registered?</button>
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 13. System Notifications Drawer Modal (Section 30) -->
+  <div class="modal-overlay" id="notificationsModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">🔔 Notifications</h3>
+        <button class="modal-close-btn" onclick="$('#notificationsModal').classList.remove('active')">×</button>
+      </div>
+      <div class="modal-body" id="notifModalList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. Generic Notice / Confirmation Dialog Modal -->
+  <div class="modal-overlay" id="genericNoticeModal" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="genericNoticeTitle">Notice</h3>
+        <button class="modal-close-btn" onclick="$('#genericNoticeModal').classList.remove('active')">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="genericNoticeMessage" style="font-size: 14px; line-height: 1.5; color: var(--text-main);"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="genericNoticeActionBtn" class="btn btn-primary" style="width: 100%;">Understood</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Cloud SDK & Connector -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="scripts/firebaseClient.js"></script>
+
+  <!-- Application Scripts -->
+  <script src="scripts/data.js?v=10"></script>
+  <script src="scripts/camera.js?v=10"></script>
+  <script src="scripts/app.js?v=10"></script>
+</body>
+</html>
