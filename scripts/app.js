@@ -570,12 +570,45 @@
     $('#cameraUseBtn').addEventListener('click', () => marbsCamera.usePhoto());
 
     // Trigger buttons from Forms
-    $('#reportLostCameraTrigger').addEventListener('click', () => {
-      activeCameraContext = 'lost';
-      marbsCamera.open({
-        category: 'lost_item',
-        onCapture: handlePhotoCaptured
+    // Lost Item: supports both direct file upload or camera
+    const lostUploadBtn = $('#lostUploadFileBtn');
+    const lostCameraBtn = $('#lostCameraOpenBtn');
+    const lostFileInput = $('#lostFileInput');
+
+    if (lostUploadBtn && lostFileInput) {
+      lostUploadBtn.addEventListener('click', () => lostFileInput.click());
+      lostFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          activeCameraContext = 'lost';
+          handlePhotoCaptured({
+            image_data: evt.target.result,
+            image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            timestamp: new Date().toISOString()
+          });
+          showToast('✓ Lost item photo uploaded from device!');
+        };
+        reader.readAsDataURL(file);
       });
+    }
+
+    if (lostCameraBtn) {
+      lostCameraBtn.addEventListener('click', () => {
+        activeCameraContext = 'lost';
+        marbsCamera.open({
+          category: 'lost_item',
+          onCapture: handlePhotoCaptured
+        });
+      });
+    }
+
+    // Default trigger box on Lost item form
+    $('#reportLostCameraTrigger').addEventListener('click', () => {
+      // If photo already selected, do nothing on click
+      if (capturedPhotoPayload && activeCameraContext === 'lost') return;
+      if (lostFileInput) lostFileInput.click();
     });
 
     $('#reportFoundCameraTrigger').addEventListener('click', () => {
@@ -862,8 +895,17 @@
       const timeFound = $('#foundTime').value;
       const color = $('#foundColor').value.trim();
       const brand = $('#foundBrand').value.trim();
-      const model = $('#foundModel').value.trim();
       const location = $('#foundLocation').value.trim();
+
+      // Strict enforcement: Found items MUST use the device camera
+      if (!capturedPhotoPayload || activeCameraContext !== 'found' || !capturedPhotoPayload.image_data) {
+        alert('🔒 Device Camera Required:\n\nTo prevent fake claims and verify authenticity in Koronadal City, Found Items MUST be photographed right now using your device camera.\n\nPlease click "Open Device Camera & Snap Found Item".');
+        marbsCamera.open({
+          category: 'found_item',
+          onCapture: handlePhotoCaptured
+        });
+        return;
+      }
 
       const newPostId = 'POST-' + Date.now().toString().slice(-4);
       const post = {

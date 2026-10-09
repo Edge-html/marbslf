@@ -86,27 +86,33 @@ class MarbsCamera {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         let stream = null;
         try {
-          // Try back camera on mobile first
+          // On smartphones/tablets, try the environment (back) camera
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' } }
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
           });
         } catch (e1) {
-          // Fallback to front camera or PC webcam
+          // Try any available camera sensor (webcam, front camera)
           stream = await navigator.mediaDevices.getUserMedia({
-            video: true
+            video: true,
+            audio: false
           });
         }
 
         if (stream) {
           this.stream = stream;
           videoEl.srcObject = stream;
-          videoEl.play();
+          videoEl.setAttribute('playsinline', 'true');
+          await videoEl.play();
           return;
         }
       }
       this.fallbackSimulatedStream(videoEl);
     } catch (err) {
-      console.warn('Physical camera unavailable or permission denied:', err);
+      console.warn('Physical camera sensor notice:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        alert('📷 Camera Permission Needed:\nPlease allow camera access in your browser so MarbsLF can capture the found item proof.');
+      }
       this.fallbackSimulatedStream(videoEl);
     }
   }

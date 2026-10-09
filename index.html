@@ -701,15 +701,25 @@
               <textarea id="lostDescription" class="form-textarea" placeholder="Describe the item or pet without giving away secret proof details..." required></textarea>
             </div>
 
-            <!-- Real-time Camera Trigger (Section 9) -->
+            <!-- Photo Options for Lost Post: Upload Photo or Optional Camera -->
             <div class="form-group full-width">
-              <label class="form-label">Real-Time Photo Proof (MarbsLF Camera) *</label>
-              <div class="photo-capture-box" id="reportLostCameraTrigger">
-                <img id="lostPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured Proof">
+              <label class="form-label">Photo of Lost Item / Pet (Upload or Camera)</label>
+              <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                <button type="button" class="btn btn-outline" id="lostUploadFileBtn" style="flex: 1; padding: 9px; font-size: 13px;">
+                  📁 Upload Photo from Device
+                </button>
+                <button type="button" class="btn btn-outline" id="lostCameraOpenBtn" style="flex: 1; padding: 9px; font-size: 13px;">
+                  📷 Take Photo with Camera
+                </button>
+              </div>
+              <input type="file" id="lostFileInput" accept="image/*" style="display: none;">
+              
+              <div class="photo-capture-box" id="reportLostCameraTrigger" style="cursor: default;">
+                <img id="lostPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Preview Photo">
                 <div id="lostCameraPrompt">
-                  <div style="font-size: 32px; margin-bottom: 6px;">📷</div>
-                  <strong style="color: var(--text-main);">Click to Open Real-Time Camera</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Required to capture authenticated real-time proof image</p>
+                  <div style="font-size: 32px; margin-bottom: 6px;">🖼️</div>
+                  <strong style="color: var(--text-main);">Upload an existing photo or snap with camera</strong>
+                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Helps the community identify your lost item or pet</p>
                 </div>
                 <div id="lostPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
               </div>
@@ -814,15 +824,17 @@
               <textarea id="foundDescription" class="form-textarea" placeholder="Keep some specific details private to verify the real owner later..." required></textarea>
             </div>
 
-            <!-- Real-time Camera Trigger -->
+            <!-- Strict Device Camera Verification for Found Posts -->
             <div class="form-group full-width">
-              <label class="form-label">Real-Time Photo Proof (MarbsLF Camera) *</label>
-              <div class="photo-capture-box" id="reportFoundCameraTrigger">
+              <label class="form-label">Real-Time Photo Proof (Device Camera Required) *</label>
+              <div class="photo-capture-box" id="reportFoundCameraTrigger" style="border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.05); cursor: pointer;">
                 <img id="foundPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured Proof">
                 <div id="foundCameraPrompt">
-                  <div style="font-size: 32px; margin-bottom: 6px;">📸</div>
-                  <strong style="color: var(--text-main);">Click to Capture Real-Time Photo</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Opens camera to record tamper-proof capture</p>
+                  <div style="font-size: 34px; margin-bottom: 6px;">📷</div>
+                  <strong style="color: var(--text-main); font-size: 14px;">Open Device Camera & Snap Found Item</strong>
+                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                    🔒 Strict Security: Gallery uploads are disabled for found items. You must snap the physical item right now using your device's camera.
+                  </p>
                 </div>
                 <div id="foundPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
               </div>
@@ -1342,8 +1354,8 @@
   <script src="scripts/firebaseClient.js"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=10"></script>
-  <script src="scripts/camera.js?v=10"></script>
-  <script src="scripts/app.js?v=10"></script>
+  <script src="scripts/data.js?v=11"></script>
+  <script src="scripts/camera.js?v=11"></script>
+  <script src="scripts/app.js?v=11"></script>
 </body>
 </html>
