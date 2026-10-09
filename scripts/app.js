@@ -1447,6 +1447,27 @@
       openLoginModal();
     });
 
+    // Password visibility togglers
+    $$('.password-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        const eyeOpen = btn.querySelector('.eye-open');
+        const eyeClosed = btn.querySelector('.eye-closed');
+
+        if (input.type === 'password') {
+          input.type = 'text';
+          if (eyeOpen) eyeOpen.style.display = 'none';
+          if (eyeClosed) eyeClosed.style.display = 'block';
+        } else {
+          input.type = 'password';
+          if (eyeOpen) eyeOpen.style.display = 'block';
+          if (eyeClosed) eyeClosed.style.display = 'none';
+        }
+      });
+    });
+
     const loginForm = $('#loginForm');
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
@@ -1603,7 +1624,16 @@
   }
 
   function openLoginModal() {
-    $('#loginModal').classList.add('active');
+    const loginModal = $('#loginModal');
+    if (loginModal) {
+      loginModal.classList.add('active');
+      const passInput = $('#loginPassword');
+      if (passInput) passInput.type = 'password';
+      const eyeOpen = loginModal.querySelector('.password-toggle-btn .eye-open');
+      const eyeClosed = loginModal.querySelector('.password-toggle-btn .eye-closed');
+      if (eyeOpen) eyeOpen.style.display = 'block';
+      if (eyeClosed) eyeClosed.style.display = 'none';
+    }
   }
 
   function openRegisterModal() {
