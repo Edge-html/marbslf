@@ -16,13 +16,15 @@ try {
         parsed.current_user_id = null;
       }
       parsed.users = (parsed.users || []).filter(u => !['USR-101', 'USR-102', 'USR-103'].includes(u.user_id));
-      // Delete any junk spam test posts
+      // Delete mock posts and any junk spam test posts
+      const mockIds = ['POST-001', 'POST-002', 'POST-003', 'POST-004', 'POST-005'];
       if (Array.isArray(parsed.posts)) {
         parsed.posts = parsed.posts.filter(p => {
+          if (mockIds.includes(p.post_id)) return false;
           const name = (p.item_name || '').toLowerCase();
           const desc = (p.description || '').toLowerCase();
           const loc = (p.general_location || '').toLowerCase();
-          return !(loc.includes('dwadawda') || desc.includes('dawawdawdawdaw'));
+          return !(name.includes('mochi') || name.includes('toyota car key') || name.includes('redmi note') || name.includes('black leather bifold') || name.includes('brown aspin') || loc.includes('dwadawda') || desc.includes('dawawdawdawdaw'));
         });
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
@@ -136,154 +138,9 @@ const DEFAULT_USERS = [
 ];
 
 
-// Community Posts list - Visible to all citizens (logged in or logged out)
-const DEFAULT_POSTS = [
-  {
-    post_id: 'POST-001',
-    user_id: 'USR-ADMIN',
-    post_type: 'LOST',
-    category: 'Pets',
-    item_name: 'Persian Mix Cat (Mochi)',
-    pet_type: 'Cat',
-    breed: 'Persian Mix',
-    description: 'White and ginger coat, wearing a blue bell collar. Very friendly and answers to Mochi. Last seen near KNCHS main gate.',
-    date: '2026-09-20',
-    approximate_time: '4:30 PM',
-    color: 'White and Ginger',
-    brand: '',
-    model: '',
-    serial_number_private: '',
-    general_location: 'KNCHS, Koronadal City',
-    private_coordinates: { lat: 6.5042, lng: 124.8480, address_notes: 'Near School Main Entrance' },
-    status: 'APPROVED',
-    reward_status: 'REWARD_OFFERED',
-    reward_offered: true,
-    reward_amount: 1000,
-    reward_amount_private: false,
-    image: 'assets/cat_persian.jpg',
-    camera_verified: true,
-    photo_hash: 'HASH_CAT_KOR_001',
-    likes_count: 5,
-    liked_by: [],
-    created_at: '2026-09-20T16:45:00Z'
-  },
-  {
-    post_id: 'POST-002',
-    user_id: 'USR-ADMIN',
-    post_type: 'FOUND',
-    category: 'Keys',
-    item_name: 'Toyota Car Key Fob & Gym Tag',
-    pet_type: '',
-    breed: '',
-    description: 'Found black key fob with red gym pass ribbon and small ring near Gaisano Grand parking area. Turned over for safe custody.',
-    date: '2026-09-19',
-    approximate_time: '11:15 AM',
-    color: 'Black and Silver',
-    brand: 'Toyota',
-    model: 'Smart Key',
-    serial_number_private: 'CHIP-98421',
-    general_location: 'Gaisano Grand, Koronadal City',
-    private_coordinates: { lat: 6.4975, lng: 124.8420, address_notes: 'South Entrance Parking' },
-    status: 'APPROVED',
-    reward_status: 'NO_REWARD',
-    reward_offered: false,
-    reward_amount: 0,
-    reward_amount_private: false,
-    image: 'assets/car_key.jpg',
-    camera_verified: true,
-    photo_hash: 'HASH_KEY_KOR_002',
-    likes_count: 3,
-    liked_by: [],
-    created_at: '2026-09-19T11:30:00Z'
-  },
-  {
-    post_id: 'POST-003',
-    user_id: 'USR-ADMIN',
-    post_type: 'LOST',
-    category: 'Electronics',
-    item_name: 'Redmi Note Smartphone',
-    pet_type: '',
-    breed: '',
-    description: 'Midnight blue back with matte translucent protective case. Has a family wallpaper on lockscreen.',
-    date: '2026-09-18',
-    approximate_time: '2:15 PM',
-    color: 'Midnight Blue',
-    brand: 'Xiaomi / Redmi',
-    model: 'Note 12',
-    serial_number_private: 'IMEI-8642019482',
-    general_location: 'KCC Mall of Marbel',
-    private_coordinates: { lat: 6.5015, lng: 124.8455, address_notes: 'Food Court Area 2nd Floor' },
-    status: 'APPROVED',
-    reward_status: 'REWARD_OFFERED',
-    reward_offered: true,
-    reward_amount: 500,
-    reward_amount_private: false,
-    image: 'assets/phone_redmi.jpg',
-    camera_verified: true,
-    photo_hash: 'HASH_PHONE_KOR_003',
-    likes_count: 8,
-    liked_by: [],
-    created_at: '2026-09-18T14:30:00Z'
-  },
-  {
-    post_id: 'POST-004',
-    user_id: 'USR-ADMIN',
-    post_type: 'FOUND',
-    category: 'Personal Items',
-    item_name: 'Black Leather Bifold Wallet',
-    pet_type: '',
-    breed: '',
-    description: 'Black genuine leather wallet with cards and student IDs found on bench at Koronadal Public Market.',
-    date: '2026-09-17',
-    approximate_time: '9:00 AM',
-    color: 'Black',
-    brand: 'Seiko / Local Leather',
-    model: 'Bifold',
-    serial_number_private: '',
-    general_location: 'Public Market, Koronadal City',
-    private_coordinates: { lat: 6.4990, lng: 124.8440, address_notes: 'Dry Goods Section' },
-    status: 'APPROVED',
-    reward_status: 'NO_REWARD',
-    reward_offered: false,
-    reward_amount: 0,
-    reward_amount_private: false,
-    image: 'assets/wallet_black.jpg',
-    camera_verified: true,
-    photo_hash: 'HASH_WALLET_KOR_004',
-    likes_count: 4,
-    liked_by: [],
-    created_at: '2026-09-17T09:15:00Z'
-  },
-  {
-    post_id: 'POST-005',
-    user_id: 'USR-ADMIN',
-    post_type: 'LOST',
-    category: 'Pets',
-    item_name: 'Brown Aspin Dog (Bantay)',
-    pet_type: 'Dog',
-    breed: 'Aspin',
-    description: 'Friendly golden brown local dog with white patch on chest and floppy ears. Missing since Tuesday morning near City Hall.',
-    date: '2026-09-16',
-    approximate_time: '8:00 AM',
-    color: 'Golden Brown',
-    brand: '',
-    model: '',
-    serial_number_private: '',
-    general_location: 'City Proper, Koronadal City',
-    private_coordinates: { lat: 6.5028, lng: 124.8468, address_notes: 'City Hall Area' },
-    status: 'APPROVED',
-    reward_status: 'REWARD_OFFERED',
-    reward_offered: true,
-    reward_amount: 500,
-    reward_amount_private: false,
-    image: 'assets/aspin_dog.jpg',
-    camera_verified: true,
-    photo_hash: 'HASH_DOG_KOR_005',
-    likes_count: 6,
-    liked_by: [],
-    created_at: '2026-09-16T08:30:00Z'
-  }
-];
+// Community Posts list - Starts clean, only real posts submitted by citizens
+const DEFAULT_POSTS = [];
+
 
 const DEFAULT_MATCHES = [
   {
@@ -634,13 +491,13 @@ class MarbsLFDatabase {
 
     this.save();
 
-    // Sync reaction count to Firestore if available
+    // Sync reaction count to Firestore if available (use set with merge to avoid 'No document to update' error)
     if (window.firestoreDb) {
       try {
-        window.firestoreDb.collection('posts').doc(postId).update({
+        window.firestoreDb.collection('posts').doc(postId).set({
           likes_count: post.likes_count,
           liked_by: post.liked_by
-        }).catch(err => console.warn('Could not update Firestore likes:', err));
+        }, { merge: true }).catch(() => {});
       } catch (err) {}
     }
 
@@ -699,13 +556,18 @@ class MarbsLFDatabase {
       const postsSnap = await window.firestoreDb.collection('posts').get();
       if (!postsSnap.empty) {
         const remotePosts = [];
+        const mockIds = ['POST-001', 'POST-002', 'POST-003', 'POST-004', 'POST-005'];
         postsSnap.forEach(doc => {
           const p = doc.data();
+          const docId = doc.id;
           const name = (p.item_name || '').toLowerCase();
           const desc = (p.description || '').toLowerCase();
           const loc = (p.general_location || '').toLowerCase();
-          if (name.includes('black wallet') || loc.includes('dwadawda') || desc.includes('dawawdawdawdaw')) {
-            // Delete from Firestore directly
+          const isMock = mockIds.includes(docId) || mockIds.includes(p.post_id) || name.includes('mochi') || name.includes('toyota car key') || name.includes('redmi note') || name.includes('black leather bifold') || name.includes('brown aspin');
+          const isSpam = name.includes('black wallet') || loc.includes('dwadawda') || desc.includes('dawawdawdawdaw');
+          
+          if (isMock || isSpam) {
+            // Delete mock or spam from Firestore directly
             doc.ref.delete().catch(() => {});
           } else {
             remotePosts.push(p);

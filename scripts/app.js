@@ -430,6 +430,11 @@
               <button class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
                 ${isLost ? 'Found this?' : 'I Think This Is Mine'}
               </button>
+              ${(marbsDB.getCurrentUser() && (marbsDB.getCurrentUser().role === 'ADMIN' || marbsDB.getCurrentUser().user_id === post.user_id || post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST')) ? `
+                <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); window.marbsApp.deletePost('${post.post_id}')" style="padding: 4px 8px; font-size: 11px; color: #ef4444; border-color: #fca5a5; border-radius: 6px;" title="Delete Post">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              ` : ''}
             </div>
           </div>
         </article>
