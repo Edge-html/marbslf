@@ -315,6 +315,7 @@
     };
 
     if (heroBtn && heroInput) {
+      heroInput.addEventListener('input', executeSearch);
       heroBtn.addEventListener('click', executeSearch);
       heroInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') executeSearch();
