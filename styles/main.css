@@ -474,12 +474,13 @@ h1, h2, h3, .hero-tagline, .section-title {
 }
 
 .hero-tagline {
-  font-family: var(--font-serif);
-  font-size: 32px;
-  font-weight: 600;
-  line-height: 1.25;
+  font-family: var(--font-sans);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.15;
   margin-bottom: 8px;
   color: #ffffff;
+  letter-spacing: -0.5px;
 }
 
 .hero-sub {
@@ -492,7 +493,7 @@ h1, h2, h3, .hero-tagline, .section-title {
 
 .brand-hero-accent {
   color: var(--primary-yellow);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .hero-search-box {
