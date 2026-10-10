@@ -134,13 +134,16 @@
 
   // 2. Navigation & Views Switching
   function setupNavigation() {
-    // Mobile menu drawer toggle
+    // Mobile menu drawer toggle (Sidebar Nav)
     const mobileToggle = $('#mobileMenuToggle');
+    const sidebarNav = $('#sidebarNav');
     const navMenu = $('#navMenu');
-    if (mobileToggle && navMenu) {
+    
+    if (mobileToggle) {
       mobileToggle.addEventListener('click', () => {
         mobileToggle.classList.toggle('active');
-        navMenu.classList.toggle('active');
+        if (sidebarNav) sidebarNav.classList.toggle('active');
+        if (navMenu) navMenu.classList.toggle('active');
       });
     }
 
@@ -155,37 +158,44 @@
         }
 
         // Automatically close mobile menu drawer upon link click
-        if (mobileToggle && navMenu) {
-          mobileToggle.classList.remove('active');
-          navMenu.classList.remove('active');
-        }
+        if (mobileToggle) mobileToggle.classList.remove('active');
+        if (sidebarNav) sidebarNav.classList.remove('active');
+        if (navMenu) navMenu.classList.remove('active');
 
         const view = btn.dataset.view;
         if (view) navigateToView(view);
       });
     });
 
-    $('#brandLogo').addEventListener('click', () => {
-      navigateToView('home');
-      $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
-      const homeBtn = document.querySelector('[data-view="home"]');
-      if (homeBtn) homeBtn.classList.add('active');
-      if (mobileToggle && navMenu) {
-        mobileToggle.classList.remove('active');
-        navMenu.classList.remove('active');
-      }
-    });
+    const brandLogo = $('#brandLogo');
+    if (brandLogo) {
+      brandLogo.addEventListener('click', () => {
+        navigateToView('home');
+        $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
+        const homeBtn = document.querySelector('[data-view="home"]');
+        if (homeBtn) homeBtn.classList.add('active');
+        if (mobileToggle) mobileToggle.classList.remove('active');
+        if (sidebarNav) sidebarNav.classList.remove('active');
+        if (navMenu) navMenu.classList.remove('active');
+      });
+    }
 
-    $('#navUserBtn').addEventListener('click', () => {
-      const user = marbsDB.getCurrentUser();
-      if (user.role === 'ADMIN') {
-        navigateToView('admin');
-      } else {
-        navigateToView('dashboard');
-      }
-    });
+    const navUserBtn = $('#navUserBtn');
+    if (navUserBtn) {
+      navUserBtn.addEventListener('click', () => {
+        const user = marbsDB.getCurrentUser();
+        if (user.role === 'ADMIN') {
+          navigateToView('admin');
+        } else {
+          navigateToView('dashboard');
+        }
+      });
+    }
 
-    $('#navNotifBtn').addEventListener('click', openNotificationsModal);
+    const navNotifBtn = $('#navNotifBtn');
+    if (navNotifBtn) {
+      navNotifBtn.addEventListener('click', openNotificationsModal);
+    }
   }
 
   function navigateToView(viewName) {
