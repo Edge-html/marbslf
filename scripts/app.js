@@ -36,7 +36,7 @@
           <div class="skeleton-line meta skeleton-shimmer"></div>
           <div class="skeleton-line desc skeleton-shimmer"></div>
           <div class="skeleton-footer">
-            <div class="skeleton-line skeleton-shimmer" style="width: 40px; height: 24px; border-radius: 12px;"></div>
+            <div class="skeleton-line skeleton-shimmer" style="width: 40px; height: 20px; border-radius: 4px;"></div>
             <div class="skeleton-btn skeleton-shimmer"></div>
           </div>
         </div>
