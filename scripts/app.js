@@ -144,10 +144,15 @@
       });
     }
 
-    $$('.nav-link-btn').forEach(btn => {
+    $$('.nav-link-btn, .dropdown-item').forEach(btn => {
       btn.addEventListener('click', () => {
         $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        if (btn.classList.contains('nav-link-btn')) {
+          btn.classList.add('active');
+        } else {
+          const browseBtn = $('#browseDropdownBtn');
+          if (browseBtn) browseBtn.classList.add('active');
+        }
 
         // Automatically close mobile menu drawer upon link click
         if (mobileToggle && navMenu) {
@@ -156,7 +161,7 @@
         }
 
         const view = btn.dataset.view;
-        navigateToView(view);
+        if (view) navigateToView(view);
       });
     });
 
@@ -397,102 +402,73 @@
 
     grid.innerHTML = posts.map(post => {
       const isLost = post.post_type === 'LOST';
-      const badgeClass = isLost ? 'badge-lost' : 'badge-found';
-      const badgeText = isLost ? 'Lost' : 'Found';
+      const statusText = isLost ? 'Lost' : 'Found';
+      const statusDotClass = isLost ? 'lost' : 'found';
       const isLiked = Array.isArray(post.liked_by) && post.liked_by.includes(currentUserId);
       const likesCount = typeof post.likes_count === 'number' ? post.likes_count : 0;
+      
+      const currentUser = marbsDB.getCurrentUser();
+      const isOwnPost = Boolean(currentUser && (
+        (post.user_id && currentUser.user_id === post.user_id) ||
+        (post.poster_id && currentUser.user_id === post.poster_id) ||
+        (currentUser.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
+      ));
+
+      const canManage = Boolean(currentUser && (currentUser.role === 'ADMIN' || isOwnPost));
 
       return `
         <article class="post-card" onclick="window.marbsApp.openPostDetailModal('${post.post_id}')">
           <div class="post-image-container">
             <img src="${post.image}" alt="${escapeHtml(post.item_name)}" class="post-image" onerror="this.src='assets/images.jpg'">
-            <span class="post-badge ${badgeClass}">${badgeText}</span>
-            ${(Array.isArray(post.images) && post.images.length > 1) ? `
-              <span style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                ${post.images.length}
-              </span>` : ''}
-            ${post.reward_offered ? `
-              <span class="reward-tag" style="display: inline-flex; align-items: center; gap: 4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-                Reward Offered
-              </span>` : ''}
-            ${post.camera_verified ? `
-              <span class="camera-verified-tag" style="display: inline-flex; align-items: center; gap: 4px;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Verified Capture
-              </span>` : ''}
-            ${(() => {
-              const currentUser = marbsDB.getCurrentUser();
-              const isOwnPost = Boolean(currentUser && (
-                (post.user_id && currentUser.user_id === post.user_id) ||
-                (post.poster_id && currentUser.user_id === post.poster_id) ||
-                (currentUser.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
-              ));
-              if (isOwnPost && !post.reward_offered) {
-                return `
-                  <span class="badge-own-post">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Your Post
-                  </span>
-                `;
-              }
-              return '';
-            })()}
           </div>
           <div class="post-body">
-            <h3 class="post-title">${escapeHtml(post.item_name)}</h3>
-            <div class="post-meta-line">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span>${escapeHtml(post.general_location)}</span>
+            <div class="card-status-row">
+              <span class="status-dot ${statusDotClass}"></span>
+              <span class="status-label ${statusDotClass}">${statusText}</span>
+              <span class="meta-sep">•</span>
+              <span class="card-location">${escapeHtml(post.general_location)}</span>
+              <span class="meta-sep">•</span>
+              <span class="card-date">${post.date}</span>
             </div>
-            <div class="post-meta-line">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span>${post.date}</span>
-            </div>
+            <h3 class="post-title" title="${escapeHtml(post.item_name)}">${escapeHtml(post.item_name)}</h3>
             <p class="post-desc">${escapeHtml(post.description)}</p>
             <div class="post-footer">
               <button type="button" class="post-like-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post.post_id}" onclick="event.stopPropagation(); window.marbsApp.toggleLike('${post.post_id}')" title="Heart this post">
                 <span class="heart-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                 </span>
                 <span class="like-count" id="like-count-${post.post_id}">${likesCount}</span>
               </button>
-              ${(() => {
-                const currentUser = marbsDB.getCurrentUser();
-                const isOwnPost = Boolean(currentUser && (
-                  (post.user_id && currentUser.user_id === post.user_id) ||
-                  (post.poster_id && currentUser.user_id === post.poster_id) ||
-                  (currentUser.user_id === 'USR-ADMIN' && (post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST'))
-                ));
 
-                if (isOwnPost) {
-                  // Count responses for this specific post
-                  const postAnswersCount = (marbsDB.data.matches || []).filter(m =>
-                    (m.lost_post_id === post.post_id || m.found_post_id === post.post_id) &&
-                    (!currentUser || m.claimant_id !== currentUser.user_id)
-                  ).length;
+              <div style="display: flex; align-items: center; gap: 8px;">
+                ${isOwnPost ? `<span class="quiet-own-post">Your post</span>` : ''}
+                ${(() => {
+                  if (isOwnPost) {
+                    const postAnswersCount = (marbsDB.data.matches || []).filter(m =>
+                      (m.lost_post_id === post.post_id || m.found_post_id === post.post_id) &&
+                      (!currentUser || m.claimant_id !== currentUser.user_id)
+                    ).length;
+
+                    return `
+                      <button type="button" class="post-answers-btn" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')" title="View verification answers">
+                        <span>Verification Answers ${postAnswersCount > 0 ? `(${postAnswersCount})` : ''}</span>
+                      </button>
+                    `;
+                  }
 
                   return `
-                    <button type="button" class="post-answers-btn" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')" title="View private verification answers submitted for your item">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                      <span>Verification Answers</span>
-                      ${postAnswersCount > 0 ? `<span class="answers-badge-pill">${postAnswersCount}</span>` : ''}
+                    <button type="button" class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
+                      ${isLost ? 'Found this?' : 'I Think This Is Mine'}
                     </button>
                   `;
-                }
+                })()}
 
-                return `
-                  <button class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
-                    ${isLost ? 'Found this?' : 'I Think This Is Mine'}
+                ${canManage ? `
+                  <button type="button" class="icon-btn" style="width: 26px; height: 26px; border: none; background: transparent; padding: 0;" onclick="event.stopPropagation(); window.marbsApp.deletePost('${post.post_id}')" title="Post options">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                   </button>
-                `;
-              })()}
-              ${(marbsDB.getCurrentUser() && (marbsDB.getCurrentUser().role === 'ADMIN' || marbsDB.getCurrentUser().user_id === post.user_id || post.user_id === 'USR-ADMIN' || post.user_id === 'USR-GUEST')) ? `
-                <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); window.marbsApp.deletePost('${post.post_id}')" style="padding: 4px 8px; font-size: 11px; color: #ef4444; border-color: #fca5a5; border-radius: 6px;" title="Delete Post">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-              ` : ''}
+                ` : ''}
+              </div>
             </div>
           </div>
         </article>

@@ -10,13 +10,13 @@
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
 
-  <!-- Modern Inter Font -->
+  <!-- Google Fonts: Source Serif 4 for headings, Inter for UI & body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=5">
+  <link rel="stylesheet" href="styles/main.css?v=6">
 </head>
 <body>
 
@@ -41,21 +41,22 @@
       <nav aria-label="Main Navigation" class="nav-menu" id="navMenu">
         <ul class="nav-links">
           <li class="nav-item"><button class="nav-link-btn active" data-view="home">Home</button></li>
-          <li class="nav-item"><button class="nav-link-btn" data-view="lost-items">Lost Items</button></li>
-          <li class="nav-item"><button class="nav-link-btn" data-view="found-items">Found Items</button></li>
-          <li class="nav-item"><button class="nav-link-btn" data-view="lost-pets">Lost Pets</button></li>
-          <li class="nav-item"><button class="nav-link-btn" data-view="found-pets">Found Pets</button></li>
+          <li class="nav-item dropdown" id="browseDropdown">
+            <button class="nav-link-btn dropdown-toggle" id="browseDropdownBtn" type="button" aria-expanded="false">
+              Browse <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 3px; display: inline-block; vertical-align: middle;"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="dropdown-menu" id="browseDropdownMenu">
+              <button class="dropdown-item" data-view="lost-items">Lost Items</button>
+              <button class="dropdown-item" data-view="found-items">Found Items</button>
+              <button class="dropdown-item" data-view="lost-pets">Lost Pets</button>
+              <button class="dropdown-item" data-view="found-pets">Found Pets</button>
+            </div>
+          </li>
           <li class="nav-item"><button class="nav-link-btn" data-view="how-it-works">How It Works</button></li>
           <li class="nav-item">
             <button class="nav-link-btn" data-view="verifications" id="navVerificationsBtn" style="position: relative; display: inline-flex; align-items: center; gap: 6px;">
               Verification
-              <span id="navVerificationsBadge" style="display: none; background: #2563eb; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; min-width: 16px; text-align: center;">0</span>
-            </button>
-          </li>
-          <li class="nav-item">
-            <button class="nav-link-btn" data-view="admin" id="navAdminPortalBtn" style="position: relative; display: inline-flex; align-items: center; gap: 6px;">
-              Admin Portal
-              <span id="navAdminQueueBadge" style="display: none; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; min-width: 16px; text-align: center;">0</span>
+              <span id="navVerificationsBadge" style="display: none; background: #e2e8f0; color: #1e293b; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">0</span>
             </button>
           </li>
         </ul>
@@ -63,20 +64,20 @@
 
       <div class="nav-actions">
         <button class="icon-btn" id="navSearchBtn" title="Search items or pets">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
 
         <button class="icon-btn" id="navNotifBtn" title="Notifications">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
         </button>
 
-        <div class="user-pill" id="navUserBtn" title="Click to view User Dashboard" style="display: none;">
+        <div class="user-pill" id="navUserBtn" title="User Dashboard Menu" style="display: none;">
           <div class="user-avatar-sm" id="navUserAvatar">U</div>
           <span class="user-name-sm" id="navUserName"></span>
         </div>
 
-        <button class="btn btn-outline" id="navSignOutBtn" onclick="window.signOutUser()" style="padding: 6px 12px; font-size: 12px; display: none;" title="Sign Out">Logout</button>
+        <button class="btn btn-outline" id="navSignOutBtn" onclick="window.signOutUser()" style="padding: 6px 12px; font-size: 13px; display: none;" title="Sign Out">Logout</button>
         <button class="btn btn-outline" id="openLoginModalBtn">Login</button>
         <button class="btn btn-primary" id="openRegisterModalBtn">Sign Up</button>
       </div>
@@ -86,47 +87,47 @@
   <!-- Main Content Layout -->
   <main class="app-container">
 
-    <!-- VIEW 1: HOME VIEW (Mockup exact layout) -->
+    <!-- VIEW 1: HOME VIEW -->
     <section id="homeView">
       
       <!-- Hero Wrapper -->
       <div class="hero-wrapper">
         <div class="hero-banner">
-          <h1 class="hero-tagline">Lost it? Found it?<br><span>MarbsLF</span> it.</h1>
-          <p class="hero-sub">A community platform for lost and found items and pets in Koronadal.</p>
+          <h1 class="hero-tagline">Lost something in Koronadal?<br>Let's help you find it.</h1>
+          <p class="hero-sub">A community platform for reporting and recovering lost items and pets.</p>
           <div class="hero-search-box">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="heroSearchInput" placeholder="Search items, pets, or keywords..." aria-label="Search items">
-            <button id="heroSearchBtn">Search</button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="heroSearchInput" placeholder="Search by keyword, item name, or location..." aria-label="Search items">
+            <button id="heroSearchBtn" class="btn-hero-search">Search</button>
           </div>
         </div>
 
-        <!-- Right Hero CTAs (Mockup feature) -->
+        <!-- Right Hero CTAs -->
         <div class="hero-cta-col">
-          <div class="cta-card lost-cta" onclick="window.marbsApp.openReportModal('LOST')" role="button" tabindex="0">
+          <div class="cta-card cta-primary" onclick="window.marbsApp.openReportModal('LOST')" role="button" tabindex="0">
             <div class="cta-info">
               <div class="cta-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
               <div>
                 <div class="cta-title">Report a Lost Item</div>
-                <div class="cta-desc">Post details to get help from the community.</div>
+                <div class="cta-desc">Post details so the community can assist.</div>
               </div>
             </div>
-            <div class="cta-arrow">›</div>
+            <div class="cta-arrow">→</div>
           </div>
 
-          <div class="cta-card found-cta" onclick="window.marbsApp.openReportModal('FOUND')" role="button" tabindex="0">
+          <div class="cta-card cta-secondary" onclick="window.marbsApp.openReportModal('FOUND')" role="button" tabindex="0">
             <div class="cta-info">
               <div class="cta-icon-box">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </div>
               <div>
                 <div class="cta-title">Report a Found Item</div>
-                <div class="cta-desc">Help return it safely to its rightful owner.</div>
+                <div class="cta-desc">Help return it safely to its owner.</div>
               </div>
             </div>
-            <div class="cta-arrow">›</div>
+            <div class="cta-arrow">→</div>
           </div>
         </div>
       </div>
