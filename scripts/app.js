@@ -293,19 +293,7 @@
       });
     });
 
-    $$('.area-tag').forEach(tag => {
-      tag.addEventListener('click', () => {
-        $$('.area-tag').forEach(t => t.classList.remove('active'));
-        tag.classList.add('active');
-        currentArea = tag.dataset.area;
-        renderFeed();
 
-        // Pan Map to the selected Koronadal area
-        if (window.setMapLocation) {
-          window.setMapLocation(currentArea);
-        }
-      });
-    });
 
     $$('.feed-filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -574,9 +562,6 @@
       resetBtn.addEventListener('click', () => {
         updateMapLocation('ALL');
         currentArea = 'ALL';
-        $$('.area-tag').forEach(t => t.classList.remove('active'));
-        const allTag = document.querySelector('.area-tag[data-area="ALL"]');
-        if (allTag) allTag.classList.add('active');
         renderFeed();
         showToast('📍 Map reset to Koronadal City');
       });

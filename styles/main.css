@@ -672,49 +672,7 @@ h1, h2, h3, .hero-tagline, .section-title {
   stroke-width: 1.8;
 }
 
-/* Popular Areas Strip */
-.areas-strip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  margin-bottom: 24px;
-  overflow-x: auto;
-}
 
-.areas-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
-}
-
-.area-tag {
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 4px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: var(--transition);
-}
-
-.area-tag:hover,
-.area-tag.active {
-  background: var(--primary-yellow);
-  color: var(--primary-yellow-ink);
-  border-color: var(--primary-yellow-hover);
-  font-weight: 600;
-}
 
 /* Two-Column Grid: Feed vs Sidebar */
 .main-grid {
@@ -2093,17 +2051,7 @@ h1, h2, h3, .hero-tagline, .section-title {
     font-size: 11px;
   }
 
-  /* Areas strip */
-  .areas-strip {
-    padding: 8px 12px;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
 
-  .areas-strip::-webkit-scrollbar {
-    display: none;
-  }
 
   /* Section header & filters */
   .section-header {
