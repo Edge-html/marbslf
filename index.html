@@ -188,11 +188,13 @@
            ========================================================================= -->
       <section id="landingPageView" style="display: none;">
       
-      <!-- PAGE 1: HERO / INTRODUCTION "Lost Something?" -->
+      <!-- PAGE 1: HERO / INTRODUCTION "Lost Something?" (FULL BACKGROUND GRADIENT) -->
       <section class="lp-section lp-hero-section" id="lpPage1">
-        <div class="lp-hero-bg-backdrop">
-          <img src="assets/koronadal.jpg" alt="Koronadal City Landmark" class="lp-hero-bg-img" onerror="this.src='assets/images.jpg'">
-          <div class="lp-hero-bg-gradient"></div>
+        <!-- Full Background Image with Cinematic Gradient Masking -->
+        <div class="lp-hero-bg-layer">
+          <img src="assets/koronadal.jpg" alt="Koronadal City Landmark" class="lp-hero-backdrop-img" onerror="this.src='assets/images.jpg'">
+          <div class="lp-hero-gradient-overlay"></div>
+          <div class="lp-hero-radial-glow"></div>
         </div>
 
         <div class="lp-hero-container">
@@ -202,7 +204,7 @@
               Official Civic Lost &amp; Found Platform &bull; Koronadal City
             </div>
             <h1 class="lp-hero-title">
-              Lost Something in <span class="lp-highlight">Koronadal City?</span>
+              Lost Something in <br><span class="lp-highlight">Koronadal City?</span>
             </h1>
             <p class="lp-hero-subtitle">
               The centralized, secure community network to report, locate, and reunite lost items and pets with real verified citizens. Safe meetups at official public pick-up points across Marbel.
@@ -234,17 +236,13 @@
             </div>
           </div>
 
-          <div class="lp-hero-visual">
-            <div class="lp-visual-frame">
-              <img src="assets/koronadal.jpg" alt="Koronadal City Roundabout Landmark" class="lp-hero-img" onerror="this.src='assets/images.jpg'">
-              <div class="lp-visual-glow"></div>
-              <div class="lp-visual-overlay"></div>
-              <div class="lp-visual-caption">
-                <div class="lp-caption-icon">📍</div>
-                <div>
-                  <strong>City of Koronadal (Marbel)</strong>
-                  <span>South Cotabato &bull; Official Community Hub</span>
-                </div>
+          <!-- Subtle City Indicator Tag on Right -->
+          <div class="lp-hero-ambient-corner">
+            <div class="lp-landmark-tag">
+              <span class="lp-landmark-pin">📍</span>
+              <div>
+                <strong>City of Koronadal (Marbel)</strong>
+                <span>South Cotabato &bull; Official Community Hub</span>
               </div>
             </div>
           </div>

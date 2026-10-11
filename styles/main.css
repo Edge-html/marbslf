@@ -3351,79 +3351,94 @@ h1, h2, h3, .hero-tagline, .section-title {
   box-sizing: border-box;
 }
 
-/* Page 1: Hero Section (Atmospheric Dark Gradient Inspired by Reference) */
+/* Page 1: Hero Section (Full Background Image with Dark Seamless Gradient) */
 .lp-hero-section {
   width: 100%;
   position: relative;
-  min-height: 82vh;
+  min-height: 88vh;
   display: flex;
   align-items: center;
-  padding: 80px 32px 100px;
+  padding: 100px 32px 110px;
   background-color: #0c1220;
-  background-image: 
-    radial-gradient(ellipse 70% 60% at 75% 45%, rgba(242, 179, 27, 0.16) 0%, transparent 65%),
-    radial-gradient(ellipse 60% 70% at 20% 80%, rgba(30, 58, 138, 0.25) 0%, transparent 70%),
-    radial-gradient(circle at 50% 0%, rgba(51, 65, 85, 0.3) 0%, transparent 60%),
-    linear-gradient(180deg, #0b101d 0%, #0f172a 50%, #090d16 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
   overflow: hidden;
 }
 
-/* Subtle Full Backdrop Blend */
-.lp-hero-bg-backdrop {
+/* Full Background Image Layer with Cinematic Gradient Fade */
+.lp-hero-bg-layer {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
 }
 
-.lp-hero-bg-img {
-  width: 100%;
+.lp-hero-backdrop-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 68%;
   height: 100%;
   object-fit: cover;
-  object-position: center right;
-  opacity: 0.15;
-  filter: blur(24px) saturate(1.2);
-  transform: scale(1.1);
+  object-position: center center;
+  opacity: 0.88;
+  filter: contrast(1.05) brightness(0.92);
 }
 
-.lp-hero-bg-gradient {
+.lp-hero-gradient-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #0c1220 30%, rgba(12, 18, 32, 0.85) 60%, rgba(12, 18, 32, 0.4) 100%),
-              linear-gradient(180deg, rgba(12, 18, 32, 0.6) 0%, transparent 50%, #0c1220 100%);
+  /* Strong dark fade on left for readable typography, fading smoothly into the photo on right */
+  background: 
+    linear-gradient(90deg, #0c1220 0%, #0c1220 38%, rgba(12, 18, 32, 0.88) 52%, rgba(12, 18, 32, 0.45) 72%, rgba(12, 18, 32, 0.15) 100%),
+    linear-gradient(180deg, rgba(12, 18, 32, 0.7) 0%, transparent 20%, transparent 75%, #0c1220 100%);
+}
+
+.lp-hero-radial-glow {
+  position: absolute;
+  top: 15%;
+  right: 25%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(242, 179, 27, 0.18) 0%, rgba(37, 99, 235, 0.12) 45%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
 }
 
 .lp-hero-container {
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.15fr 0.95fr;
-  gap: 56px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   position: relative;
   z-index: 2;
   box-sizing: border-box;
 }
 
+.lp-hero-content {
+  max-width: 660px;
+}
+
 .lp-pill-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(8px);
+  background: rgba(12, 18, 32, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
   color: #e2e8f0;
-  padding: 6px 16px;
+  padding: 7px 18px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .lp-pill-badge.yellow {
@@ -3442,31 +3457,32 @@ h1, h2, h3, .hero-tagline, .section-title {
 
 .lp-hero-title {
   font-family: var(--font-sans);
-  font-size: 52px;
+  font-size: 56px;
   font-weight: 800;
-  line-height: 1.12;
+  line-height: 1.1;
   color: #ffffff;
   margin-bottom: 22px;
-  letter-spacing: -1px;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  letter-spacing: -1.2px;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.7);
 }
 
 .lp-highlight {
   color: #f2b31b;
   position: relative;
   display: inline-block;
-  background: linear-gradient(135deg, #ffd768 0%, #f2b31b 60%, #eab308 100%);
+  background: linear-gradient(135deg, #ffe082 0%, #f2b31b 60%, #eab308 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 24px rgba(242, 179, 27, 0.45));
+  filter: drop-shadow(0 4px 28px rgba(242, 179, 27, 0.55));
 }
 
 .lp-hero-subtitle {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.7;
-  color: #94a3b8;
+  color: #cbd5e1;
   max-width: 580px;
-  margin-bottom: 34px;
+  margin-bottom: 36px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .lp-hero-cta-group {
@@ -3494,25 +3510,25 @@ h1, h2, h3, .hero-tagline, .section-title {
 .lp-btn-primary {
   background: linear-gradient(135deg, #ffd566 0%, #f2b31b 100%);
   color: #0f172a;
-  box-shadow: 0 8px 24px -4px rgba(242, 179, 27, 0.45), 0 0 0 1px rgba(242, 179, 27, 0.2);
+  box-shadow: 0 8px 24px -4px rgba(242, 179, 27, 0.5), 0 0 0 1px rgba(242, 179, 27, 0.25);
 }
 
 .lp-btn-primary:hover {
   background: linear-gradient(135deg, #ffe082 0%, #eab308 100%);
   transform: translateY(-2px);
-  box-shadow: 0 14px 32px -4px rgba(242, 179, 27, 0.6);
+  box-shadow: 0 14px 32px -4px rgba(242, 179, 27, 0.65);
 }
 
 .lp-btn-ghost {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(15, 23, 42, 0.7);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
 }
 
 .lp-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
 }
 
@@ -3521,18 +3537,18 @@ h1, h2, h3, .hero-tagline, .section-title {
   gap: 14px;
   flex-wrap: wrap;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .lp-stat-pill {
   display: flex;
   flex-direction: column;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(12, 18, 32, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 10px 18px;
   border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .lp-stat-num {
@@ -3551,65 +3567,51 @@ h1, h2, h3, .hero-tagline, .section-title {
   margin-top: 3px;
 }
 
-/* Visual Frame in Hero */
-.lp-hero-visual {
-  position: relative;
+/* Subtle City Landmark Tag on Right of Hero */
+.lp-hero-ambient-corner {
+  align-self: flex-end;
+  margin-bottom: 20px;
 }
 
-.lp-visual-glow {
-  position: absolute;
-  inset: -15px;
-  background: radial-gradient(circle, rgba(242, 179, 27, 0.22) 0%, rgba(37, 99, 235, 0.15) 50%, transparent 75%);
-  filter: blur(28px);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.lp-visual-frame {
-  position: relative;
-  z-index: 2;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75),
-              0 0 0 1px rgba(255, 255, 255, 0.16),
-              0 0 45px rgba(242, 179, 27, 0.16);
-  background: #000;
-}
-
-.lp-hero-img {
-  width: 100%;
-  height: 460px;
-  object-fit: cover;
-  display: block;
-  transform: scale(1.02);
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lp-visual-frame:hover .lp-hero-img {
-  transform: scale(1.05);
-}
-
-.lp-visual-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(12, 18, 32, 0.05) 0%, rgba(12, 18, 32, 0.4) 60%, rgba(12, 18, 32, 0.9) 100%);
-  pointer-events: none;
-}
-
-.lp-visual-caption {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  background: rgba(12, 18, 32, 0.82);
+.lp-landmark-tag {
+  background: rgba(12, 18, 32, 0.78);
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  padding: 12px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 14px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.lp-landmark-pin {
+  font-size: 24px;
+}
+
+.lp-landmark-tag strong {
+  display: block;
+  font-size: 14px;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.lp-landmark-tag span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+@media (max-width: 992px) {
+  .lp-hero-backdrop-img {
+    width: 100%;
+    opacity: 0.35;
+  }
+  .lp-hero-gradient-overlay {
+    background: linear-gradient(180deg, rgba(12, 18, 32, 0.85) 0%, rgba(12, 18, 32, 0.95) 100%);
+  }
+  .lp-hero-ambient-corner {
+    display: none;
+  }
 }
 
 .lp-caption-icon {
