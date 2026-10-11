@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=18">
+  <link rel="stylesheet" href="styles/main.css?v=19">
 </head>
 <body>
 
@@ -72,6 +72,12 @@
               <button type="button" class="nav-link-btn" data-view="verifications" id="navVerificationsBtn">
                 <span>Verification</span>
                 <span id="navVerificationsBadge" class="sidebar-badge" style="display: none;">0</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-link-btn" data-view="meetups" id="navMeetupsBtn">
+                <span>Meetups</span>
+                <span id="navMeetupsBadge" class="sidebar-badge" style="display: none;">0</span>
               </button>
             </li>
             <li class="nav-item" id="navAdminPortalLi" style="display: none;">
@@ -156,6 +162,12 @@
             <button type="button" class="nav-link-btn" data-view="verifications">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
               <span>Verification</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-link-btn" data-view="meetups">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Meetups</span>
             </button>
           </li>
           <li id="mobileAdminPortalLi" style="display: none;">
@@ -572,6 +584,18 @@
             <div class="dash-user-name" id="dashUserLegalName">Citizen</div>
             <div style="font-size: 11px; color: var(--text-muted);" id="dashUserAlias">Active Member</div>
             <span class="dash-user-badge" id="dashUserStatus">UNVERIFIED</span>
+
+            <!-- Reliability Rating & Stars Display -->
+            <div class="dash-reliability-box" id="dashProfileReliability" style="margin-top: 10px; background: #fffbeb; border: 1px solid #fef08a; border-radius: 8px; padding: 8px; width: 100%; text-align: center;">
+              <div style="font-size: 10px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 0.5px;">Reliability Rating</div>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 2px;">
+                <span style="color: #f59e0b; font-size: 14px;" id="dashProfileStars">★★★★★</span>
+                <span style="font-weight: 800; font-size: 13px; color: #713f12;" id="dashProfileAvg">5.0</span>
+              </div>
+              <div style="font-size: 11px; color: #16a34a; font-weight: 700; margin-top: 2px;" id="dashProfileTier">Highly Reliable Citizen</div>
+              <div style="font-size: 10px; color: var(--text-muted);" id="dashProfileCount">Based on confirmed returns</div>
+            </div>
+
             <button type="button" class="btn btn-outline" onclick="window.openEditProfileModal()" style="width: 100%; margin-top: 10px; font-size: 11px; padding: 5px 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Edit profile information and photo">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Edit Profile
@@ -693,7 +717,61 @@
       </div>
     </section>
 
-    <!-- VIEW 4: ADMIN DASHBOARD (Section 32) -->
+    <!-- VIEW 4: CONFIRMED SAFE MEETUPS & COMPLETED TRANSACTIONS -->
+    <section id="meetupsView" style="display: none; padding-bottom: 60px;">
+      <div style="max-width: 1000px; margin: 0 auto;">
+        
+        <!-- Hero & Safety Shield Header -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; padding: 26px 28px; border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(37,99,235,0.25); color: #93c5fd; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Official Safe Pickup Places (Section 15 & 16)
+              </div>
+              <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 6px 0; color: #fff;">Confirmed Safe Meetup Schedules</h2>
+              <p style="font-size: 13px; color: #cbd5e1; margin: 0; max-width: 640px; line-height: 1.5;">
+                All handovers are scheduled strictly at designated official public locations in Koronadal City. Once your item is handed over or retrieved safely, mark it as <strong>Retrieved / Complete</strong> to finalize the transaction and rate the finder's reliability!
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.3); font-size: 12px;" onclick="window.openVerificationsModal()">
+                💬 Open Messages
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meetups Navigation Tabs -->
+        <div class="meetup-tabs-bar" style="display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px;">
+          <button type="button" class="meetup-tab-btn active" id="meetupsTabActiveBtn" onclick="window.switchMeetupsTab('active')">
+            <span>Active Safe Meetups</span>
+            <span class="badge" id="meetupsActiveCountBadge" style="background: #2563eb; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+          </button>
+          <button type="button" class="meetup-tab-btn" id="meetupsTabHistoryBtn" onclick="window.switchMeetupsTab('history')">
+            <span>History of Meetups & Done Transactions</span>
+            <span class="badge" id="meetupsHistoryCountBadge" style="background: #10b981; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+          </button>
+        </div>
+
+        <!-- Tab 1: Active Meetups Schedule -->
+        <div id="meetupsActiveTabContent">
+          <div id="activeMeetupsList" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Tab 2: History of Done Transactions -->
+        <div id="meetupsHistoryTabContent" style="display: none;">
+          <div id="historyMeetupsList" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 5: ADMIN DASHBOARD (Section 32) -->
     <section id="adminView" style="display: none;">
       <div style="background: #0f172a; color: #fff; padding: 24px; border-radius: var(--radius-lg); margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
@@ -1394,17 +1472,33 @@
     </div>
   </div>
 
-  <!-- 5B. Post Verification Answers Review Modal (For Post Owners to review claimants' responses) -->
+  <!-- 5B. Post Verification Answers Review Modal & Real-Time Messenger -->
   <div class="modal-overlay" id="postVerificationsModal" role="dialog" aria-modal="true">
-    <div class="modal-card" style="max-width: 740px;">
+    <div class="modal-card" style="max-width: 880px; width: 95%;">
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-          Private Verification Answers
+          <span id="verifModalHeaderTitle">Private Verification & Messages</span>
         </h3>
         <button class="modal-close-btn" onclick="$('#postVerificationsModal').classList.remove('active')">×</button>
       </div>
-      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+
+      <!-- Top Nav Tabs in Verification: Verification Answers vs Messages -->
+      <div class="verif-tab-nav" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding: 10px 20px 0 20px; background: #f8fafc;">
+        <button type="button" class="verif-tab-btn active" id="verifTabAnswersBtn" onclick="window.switchVerifModalTab('answers')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <span>Verification Answers</span>
+          <span class="badge" id="verifAnswersTabCount" style="background: #2563eb; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+        </button>
+        <button type="button" class="verif-tab-btn" id="verifTabMessagesBtn" onclick="window.switchVerifModalTab('messages')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Messages</span>
+          <span class="badge" id="verifMessagesTabCount" style="background: #10b981; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+        </button>
+      </div>
+
+      <!-- Tab Content 1: Verification Answers Review -->
+      <div id="verifTabContentAnswers" class="modal-body" style="max-height: 70vh; overflow-y: auto;">
         <div class="warning-alert" style="background: #eff6ff; border-color: #bfdbfe; margin-bottom: 16px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <div style="font-size: 13px; color: #1e3a8a;">
@@ -1425,6 +1519,69 @@
           <!-- Dynamically populated -->
         </div>
       </div>
+
+      <!-- Tab Content 2: Real-time Messenger with Facebook Marketplace Item Banner -->
+      <div id="verifTabContentMessages" class="modal-body" style="display: none; padding: 0; max-height: 72vh; overflow: hidden;">
+        <div class="messenger-container">
+          <!-- Sidebar: Threads list -->
+          <div class="messenger-sidebar" id="messengerThreadsList">
+            <!-- Threads rendered dynamically -->
+          </div>
+
+          <!-- Main Chat Panel -->
+          <div class="messenger-main">
+            <!-- Facebook Marketplace Item Preview Header at Top of Chat -->
+            <div class="marketplace-item-banner" id="marketplaceItemBanner">
+              <img id="marketplaceItemImg" src="assets/images.jpg" alt="Item preview" onerror="this.src='assets/images.jpg'">
+              <div class="marketplace-item-info">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span class="post-badge badge-found" id="marketplaceItemType">FOUND</span>
+                  <strong id="marketplaceItemTitle" style="font-size: 14px; color: var(--text-main);">Item Name</strong>
+                  <span class="activity-badge" id="marketplaceItemStatusBadge" style="background: #dbeafe; color: #1e40af; font-size: 10px;">MATCH CONFIRMED</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                  <span id="marketplaceItemLocation">Koronadal City</span>
+                  <span>•</span>
+                  <span id="marketplaceItemCounterparty">Talking with: <strong>Citizen</strong></span>
+                </div>
+              </div>
+              <div class="marketplace-item-actions">
+                <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 5px 12px; white-space: nowrap;" onclick="window.triggerScheduleFromChat()">
+                  📅 Safe Meetup
+                </button>
+              </div>
+            </div>
+
+            <!-- Security Alert Banner -->
+            <div style="background: #eff6ff; border-bottom: 1px solid #dbeafe; padding: 6px 14px; font-size: 11px; color: #1e40af; display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span><strong>Real-Time Safe Messenger:</strong> Always coordinate handover at official Safe Pickup Places. Never send money or passwords.</span>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="messenger-messages" id="messengerMessagesContainer">
+              <!-- Dynamically populated bubbles -->
+            </div>
+
+            <!-- Quick Replies (FB Marketplace style) -->
+            <div class="messenger-quick-replies" id="messengerQuickReplies">
+              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('Hello! Is this item still in your possession?')">"Is this item still with you?"</button>
+              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('I reviewed your answers. Let\'s schedule the meetup at Koronadal City Hall.')">"Meet at City Hall?"</button>
+              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('When is your available time for safe return handover?')">"What time is best for you?"</button>
+            </div>
+
+            <!-- Real-Time Input Bar -->
+            <div class="messenger-input-bar">
+              <input type="text" id="messengerInput" class="form-input" placeholder="Type a message in real-time..." style="flex-grow: 1;">
+              <button type="button" id="messengerSendBtn" class="btn btn-primary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+                <span>Send</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="modal-footer" style="display: flex; justify-content: flex-end;">
         <button type="button" class="btn btn-outline" onclick="$('#postVerificationsModal').classList.remove('active')">Close</button>
       </div>
@@ -1522,6 +1679,74 @@
         <button class="btn btn-outline" style="font-size: 11px; color: var(--lost-color);" onclick="openScamReportModal('USER')">Report User</button>
         <button class="btn btn-primary" style="font-size: 12px;" onclick="$('#chatModal').classList.remove('active'); $('#meetupModal').classList.add('active');">Arrange Safe Meetup</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 7B. Citizen Reliability Rating Modal (Stars & Reviews) -->
+  <div class="modal-overlay" id="ratingModal" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span style="color: #f59e0b; font-size: 20px;">⭐</span>
+          Rate Citizen Reliability
+        </h3>
+        <button class="modal-close-btn" onclick="$('#ratingModal').classList.remove('active')">×</button>
+      </div>
+      <form id="citizenRatingForm" onsubmit="window.submitCitizenRating(event)">
+        <div class="modal-body" style="padding: 20px 24px; text-align: center;">
+          <!-- Target Person Card -->
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; text-align: left;">
+            <div class="user-avatar-sm" id="ratingTargetAvatar" style="width: 48px; height: 48px; font-size: 18px; flex-shrink: 0; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800;">
+              C
+            </div>
+            <div style="flex-grow: 1;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Rating Verified Citizen</div>
+              <strong id="ratingTargetName" style="font-size: 15px; color: var(--text-main); display: block; margin-top: 1px;">Verified Citizen</strong>
+              <div style="font-size: 11px; color: #15803d; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                <span>✓ Safe Item Return Confirmed</span>
+                <span id="ratingItemNameTag" style="color: var(--text-muted); font-weight: normal;">• Item</span>
+              </div>
+            </div>
+          </div>
+
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+            How honest and reliable was this citizen throughout the safe return process? Your star rating updates their public reliability score!
+          </p>
+
+          <!-- Interactive 5-Star Rating Picker -->
+          <div class="interactive-star-picker" id="starPickerContainer">
+            <button type="button" class="star-btn active" data-star="1" onclick="window.setRatingStars(1)">★</button>
+            <button type="button" class="star-btn active" data-star="2" onclick="window.setRatingStars(2)">★</button>
+            <button type="button" class="star-btn active" data-star="3" onclick="window.setRatingStars(3)">★</button>
+            <button type="button" class="star-btn active" data-star="4" onclick="window.setRatingStars(4)">★</button>
+            <button type="button" class="star-btn active" data-star="5" onclick="window.setRatingStars(5)">★</button>
+          </div>
+          <div id="starPickerLabel" style="font-weight: 800; font-size: 13px; color: #b45309; margin-top: 6px; margin-bottom: 18px;">
+            ⭐⭐⭐⭐⭐ 5 Stars — Exceptional & Highly Reliable Citizen
+          </div>
+
+          <!-- Quick Feedback Tags -->
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px;">
+            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">✓ Very Honest</button>
+            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">✓ On Time at Safe Spot</button>
+            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">✓ Friendly & Cooperative</button>
+            <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Smooth Handover</button>
+            <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Fast Communication</button>
+          </div>
+
+          <!-- Optional Comments Textarea -->
+          <div class="form-group" style="text-align: left;">
+            <label class="form-label" style="font-size: 12px; font-weight: 700;">Share Your Experience (Optional)</label>
+            <textarea id="ratingCommentText" class="form-input" rows="3" placeholder="e.g., Arrived promptly at Koronadal City Hall. The item was completely intact and handled honestly. Thank you!"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="$('#ratingModal').classList.remove('active')">Skip</button>
+          <button type="submit" class="btn btn-primary" style="background: #f59e0b; border-color: #d97706; color: #000; font-weight: 800; padding: 8px 18px;">
+            Submit Rating ⭐
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

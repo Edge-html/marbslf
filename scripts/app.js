@@ -226,6 +226,8 @@
     $('#dashboardView').style.display = 'none';
     $('#adminView').style.display = 'none';
     $('#howItWorksView').style.display = 'none';
+    const meetupsView = $('#meetupsView');
+    if (meetupsView) meetupsView.style.display = 'none';
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -290,6 +292,17 @@
       $('#homeView').style.display = 'block';
       renderFeed();
       window.openVerificationsModal();
+    } else if (viewName === 'meetups') {
+      const user = marbsDB.getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        showToast('Please log in to view your Safe Meetups.');
+        $('#homeView').style.display = 'block';
+        return;
+      }
+      const meetupsView = $('#meetupsView');
+      if (meetupsView) meetupsView.style.display = 'block';
+      renderMeetupsView();
     } else if (viewName === 'admin') {
       const user = marbsDB.getCurrentUser();
       if (!user || user.role !== 'ADMIN') {
@@ -1559,12 +1572,17 @@
         const time = $('#meetupTime').value;
         const place = marbsDB.data.safe_places.find(p => p.place_id === placeId);
 
+        const currentMatchId = window._activeSchedulingMatchId || 'MAT-1001';
+        const currentMatch = (marbsDB.data.matches || []).find(m => m.match_id === currentMatchId);
+        const currentPostId = window._activeSchedulingPostId || (currentMatch ? (currentMatch.lost_post_id || currentMatch.found_post_id) : (activeChatPost ? activeChatPost.post_id : 'POST-002'));
+        const currentFinderId = window._activeSchedulingClaimantId || (currentMatch ? currentMatch.claimant_id : 'USR-102');
+
         const meetup = {
           meetup_id: 'MT-' + Date.now().toString().slice(-4),
-          match_id: 'MAT-1001',
-          post_id: 'POST-002',
-          owner_id: user.user_id,
-          finder_id: 'USR-102',
+          match_id: currentMatchId,
+          post_id: currentPostId,
+          owner_id: user ? user.user_id : 'USR-101',
+          finder_id: currentFinderId,
           place_id: placeId,
           place_name: place ? place.name : 'Koronadal City Hall',
           date: date,
@@ -1583,6 +1601,8 @@
         $('#meetupModal').classList.remove('active');
         showToast('✓ Public Meetup Confirmed! Please review safety instructions.');
         renderUserDashboard();
+        renderMeetupsView();
+        updateNotificationBadges();
       });
     }
   }
@@ -1670,79 +1690,392 @@
     });
   }
 
-  // 15. Private Messaging & Anti-Scam Filter (Section 14 & 28)
+  // 15. Real-Time Messenger & Anti-Scam Filter (Facebook Messenger & Marketplace Style)
+  let activeChatCounterpartyId = null;
+  let messengerPollingTimer = null;
+
+  function getUserReliability(userId) {
+    const user = (marbsDB.data.users || []).find(u => u.user_id === userId);
+    const ratings = (marbsDB.data.ratings || []).filter(r => r.target_user_id === userId);
+    if (ratings.length > 0) {
+      const sum = ratings.reduce((acc, r) => acc + Number(r.stars || 5), 0);
+      const avg = (sum / ratings.length).toFixed(1);
+      return {
+        avg: avg,
+        count: ratings.length,
+        starsHtml: '★'.repeat(Math.min(5, Math.max(1, Math.round(avg)))),
+        tier: avg >= 4.5 ? 'Highly Reliable Citizen' : avg >= 3.5 ? 'Reliable Citizen' : 'Community Member'
+      };
+    }
+    const defaultAvg = user && user.rating_avg ? Number(user.rating_avg).toFixed(1) : '5.0';
+    const defaultCount = user && user.rating_count ? user.rating_count : 1;
+    return {
+      avg: defaultAvg,
+      count: defaultCount,
+      starsHtml: '★★★★★',
+      tier: 'Highly Reliable Citizen'
+    };
+  }
+  window.getUserReliability = getUserReliability;
+
+  function switchVerifModalTab(tab, focusPostId = null, claimantId = null) {
+    const answersBtn = $('#verifTabAnswersBtn');
+    const messagesBtn = $('#verifTabMessagesBtn');
+    const answersContent = $('#verifTabContentAnswers');
+    const messagesContent = $('#verifTabContentMessages');
+    const headerTitle = $('#verifModalHeaderTitle');
+
+    if (tab === 'messages') {
+      if (answersBtn) answersBtn.classList.remove('active');
+      if (messagesBtn) messagesBtn.classList.add('active');
+      if (answersContent) answersContent.style.display = 'none';
+      if (messagesContent) messagesContent.style.display = 'block';
+      if (headerTitle) headerTitle.textContent = 'Private Messenger';
+
+      renderMessengerThreadsList();
+      if (focusPostId) {
+        selectMessengerConversation(focusPostId, claimantId);
+      } else {
+        const firstPost = (marbsDB.data.posts || []).find(p => p.post_id === (activeChatPost ? activeChatPost.post_id : null)) ||
+                          (marbsDB.data.posts || [])[0];
+        if (firstPost) {
+          selectMessengerConversation(firstPost.post_id, claimantId);
+        }
+      }
+      startMessengerRealTimeSync();
+    } else {
+      if (messagesBtn) messagesBtn.classList.remove('active');
+      if (answersBtn) answersBtn.classList.add('active');
+      if (messagesContent) messagesContent.style.display = 'none';
+      if (answersContent) answersContent.style.display = 'block';
+      if (headerTitle) headerTitle.textContent = 'Private Verification Answers';
+      stopMessengerRealTimeSync();
+      renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
+    }
+  }
+  window.switchVerifModalTab = switchVerifModalTab;
+
+  function startMessengerRealTimeSync() {
+    stopMessengerRealTimeSync();
+    messengerPollingTimer = setInterval(() => {
+      const modal = $('#postVerificationsModal');
+      const messagesTab = $('#verifTabContentMessages');
+      if (modal && modal.classList.contains('active') && messagesTab && messagesTab.style.display !== 'none') {
+        renderLiveMessengerMessages(false);
+      } else {
+        stopMessengerRealTimeSync();
+      }
+    }, 1200);
+  }
+
+  function stopMessengerRealTimeSync() {
+    if (messengerPollingTimer) {
+      clearInterval(messengerPollingTimer);
+      messengerPollingTimer = null;
+    }
+  }
+  window.stopMessengerRealTimeSync = stopMessengerRealTimeSync;
+
+  function renderMessengerThreadsList() {
+    const container = $('#messengerThreadsList');
+    if (!container) return;
+
+    const user = marbsDB.getCurrentUser();
+    if (!user) return;
+
+    const userPosts = (marbsDB.data.posts || []).filter(p =>
+      p.user_id === user.user_id || p.poster_id === user.user_id || user.role === 'ADMIN'
+    );
+    const userMatches = (marbsDB.data.matches || []).filter(m =>
+      user.role === 'ADMIN' || m.claimant_id === user.user_id || userPosts.some(p => p.post_id === m.lost_post_id || p.post_id === m.found_post_id)
+    );
+
+    const threads = [];
+    const seenPostIds = new Set();
+
+    userMatches.forEach(m => {
+      const pid = m.lost_post_id || m.found_post_id;
+      if (!seenPostIds.has(pid)) {
+        seenPostIds.add(pid);
+        const p = (marbsDB.data.posts || []).find(post => post.post_id === pid);
+        if (p) threads.push({ post: p, match: m, claimantId: m.claimant_id });
+      }
+    });
+
+    userPosts.forEach(p => {
+      if (!seenPostIds.has(p.post_id)) {
+        seenPostIds.add(p.post_id);
+        threads.push({ post: p, match: null, claimantId: 'USR-102' });
+      }
+    });
+
+    if (threads.length === 0 && (marbsDB.data.posts || []).length > 0) {
+      threads.push({ post: marbsDB.data.posts[0], match: null, claimantId: 'USR-102' });
+    }
+
+    const badge = $('#verifMessagesTabCount');
+    if (badge) badge.textContent = threads.length;
+
+    if (threads.length === 0) {
+      container.innerHTML = `<div style="padding: 20px; font-size: 12px; color: var(--text-muted); text-align: center;">No active conversations yet.</div>`;
+      return;
+    }
+
+    container.innerHTML = threads.map(t => {
+      const p = t.post;
+      const isSelected = activeChatPost && activeChatPost.post_id === p.post_id;
+      const claimant = (marbsDB.data.users || []).find(u => u.user_id === t.claimantId) || {
+        first_name: 'Verified Citizen',
+        public_alias: 'Citizen #vOIUJk'
+      };
+
+      const lastMsg = [...(marbsDB.data.messages || [])].reverse().find(m => m.post_id === p.post_id);
+      const snippet = lastMsg ? lastMsg.message : 'Tap to start conversation...';
+
+      return `
+        <div class="messenger-thread-item ${isSelected ? 'active' : ''}" onclick="window.selectMessengerConversation('${p.post_id}', '${t.claimantId}')">
+          <div class="messenger-thread-avatar">
+            <img src="${p.image || 'assets/images.jpg'}" alt="Item" onerror="this.src='assets/images.jpg'">
+            <span class="messenger-online-dot" title="Active Now"></span>
+          </div>
+          <div class="messenger-thread-content">
+            <div class="messenger-thread-name">${escapeHtml(claimant.public_alias || claimant.first_name)}</div>
+            <div class="messenger-thread-item-title">${escapeHtml(p.item_name)}</div>
+            <div class="messenger-thread-snippet">${escapeHtml(snippet)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectMessengerConversation(postId, counterpartyId = null) {
+    const post = (marbsDB.data.posts || []).find(p => p.post_id === postId) || (marbsDB.data.posts || [])[0];
+    if (!post) return;
+
+    activeChatPost = post;
+    activeChatCounterpartyId = counterpartyId || 'USR-102';
+
+    $$('.messenger-thread-item').forEach(item => item.classList.remove('active'));
+
+    // Populate Facebook Marketplace Item Banner at Top of Chat
+    const bannerImg = $('#marketplaceItemImg');
+    const bannerType = $('#marketplaceItemType');
+    const bannerTitle = $('#marketplaceItemTitle');
+    const bannerStatus = $('#marketplaceItemStatusBadge');
+    const bannerLocation = $('#marketplaceItemLocation');
+    const bannerCounterparty = $('#marketplaceItemCounterparty');
+
+    if (bannerImg) bannerImg.src = post.image || 'assets/images.jpg';
+    if (bannerType) {
+      bannerType.textContent = post.post_type || 'POST';
+      bannerType.className = `post-badge ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}`;
+    }
+    if (bannerTitle) bannerTitle.textContent = post.item_name || 'Item';
+    if (bannerStatus) {
+      bannerStatus.textContent = post.status === 'RESOLVED' ? '✓ RETRIEVED / RESOLVED' : (post.status || 'MATCH CONFIRMED');
+    }
+    if (bannerLocation) bannerLocation.textContent = post.general_location || 'Koronadal City';
+
+    const counterparty = (marbsDB.data.users || []).find(u => u.user_id === activeChatCounterpartyId) || {
+      first_name: 'Verified Citizen',
+      public_alias: 'Citizen #vOIUJk'
+    };
+    const reliability = getUserReliability(activeChatCounterpartyId);
+
+    if (bannerCounterparty) {
+      bannerCounterparty.innerHTML = `With: <strong>${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong> <span style="color: #f59e0b; font-size: 11px; margin-left: 4px; font-weight: 800;">★ ${reliability.avg}</span>`;
+    }
+
+    renderLiveMessengerMessages(true);
+  }
+  window.selectMessengerConversation = selectMessengerConversation;
+
+  function renderLiveMessengerMessages(scrollBottom = true) {
+    const container = $('#messengerMessagesContainer');
+    if (!container || !activeChatPost) return;
+
+    const user = marbsDB.getCurrentUser();
+    const pid = activeChatPost.post_id;
+    const postMessages = (marbsDB.data.messages || []).filter(m => m.post_id === pid);
+
+    if (postMessages.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+          <div style="font-size: 32px; margin-bottom: 8px;">💬</div>
+          <strong style="color: var(--text-main); font-size: 14px;">Direct Real-Time Chat Started</strong>
+          <p style="font-size: 12px; margin-top: 4px;">Send a message below or use quick replies to coordinate return at Koronadal City Hall or approved Safe Pickup Place.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const isAtBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 60;
+
+    container.innerHTML = postMessages.map(msg => {
+      const isMine = user && msg.sender_id === user.user_id;
+      const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="messenger-bubble ${isMine ? 'mine' : 'other'}">
+          <div>${escapeHtml(msg.message)}</div>
+          <div class="messenger-bubble-time">${timeStr} ${isMine ? '✓ Delivered' : ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    if (scrollBottom || isAtBottom) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }
+
+  function handleSendMessengerMessage() {
+    const input = $('#messengerInput');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    const user = marbsDB.getCurrentUser();
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+
+    // Anti-scam filter per Section 28
+    const scamPhrases = [
+      'send money first',
+      'send payment first',
+      'transfer gcash first',
+      'pay me first',
+      'send load first',
+      'deposit first'
+    ];
+    if (scamPhrases.some(p => text.toLowerCase().includes(p))) {
+      alert('⚠️ SECURITY WARNING (MARBSLF SCAM PREVENTOR):\nYour message was blocked because it requests money before return verification.\n"Do not send payment before a legitimate match and verified return process."');
+      marbsDB.logAudit('SECURITY_ALERT', `Suspicious money demand flagged from user ${user.user_id}: "${text}"`);
+      return;
+    }
+
+    const newMsg = {
+      message_id: 'MSG-' + Date.now().toString().slice(-4),
+      sender_id: user.user_id,
+      receiver_id: activeChatCounterpartyId || 'USR-102',
+      post_id: activeChatPost ? activeChatPost.post_id : 'POST-002',
+      message: text,
+      timestamp: new Date().toISOString(),
+      status: 'SENT'
+    };
+
+    marbsDB.data.messages.push(newMsg);
+    marbsDB.save();
+    input.value = '';
+
+    renderLiveMessengerMessages(true);
+    renderMessengerThreadsList();
+
+    // Realistic Real-Time Simulated Reply after 1.5 seconds for interactive experience
+    const currentPostId = activeChatPost.post_id;
+    const counterpartyId = activeChatCounterpartyId;
+    setTimeout(() => {
+      if (activeChatPost && activeChatPost.post_id === currentPostId) {
+        const autoReplies = [
+          "Thank you for reaching out! Yes, the item is safe with me. I agree to meet at the official Safe Pickup Place.",
+          "Received your message! I'm ready to schedule our return handover at Koronadal City Hall.",
+          "Noted! Let's confirm the safe meetup schedule through the Safe Meetup scheduler."
+        ];
+        const randomReply = autoReplies[Math.floor(Math.random() * autoReplies.length)];
+        const replyMsg = {
+          message_id: 'MSG-' + Date.now().toString().slice(-4),
+          sender_id: counterpartyId,
+          receiver_id: user.user_id,
+          post_id: currentPostId,
+          message: randomReply,
+          timestamp: new Date().toISOString(),
+          status: 'SENT'
+        };
+        marbsDB.data.messages.push(replyMsg);
+        marbsDB.save();
+        renderLiveMessengerMessages(true);
+        renderMessengerThreadsList();
+      }
+    }, 1500);
+  }
+
+  window.sendQuickMessengerText = function(text) {
+    const input = $('#messengerInput');
+    if (input) {
+      input.value = text;
+      handleSendMessengerMessage();
+    }
+  };
+
+  window.triggerScheduleFromChat = function() {
+    if (activeChatPost) {
+      window._activeSchedulingPostId = activeChatPost.post_id;
+      window._activeSchedulingClaimantId = activeChatCounterpartyId || 'USR-102';
+    }
+    $('#postVerificationsModal').classList.remove('active');
+    stopMessengerRealTimeSync();
+    $('#chatModal').classList.remove('active');
+    $('#meetupModal').classList.add('active');
+  };
+
+  window.openMessengerForPost = function(postId, claimantId = null) {
+    const modal = $('#postVerificationsModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    switchVerifModalTab('messages', postId, claimantId);
+  };
+
   function setupMessaging() {
     $('#chatModalClose').addEventListener('click', () => {
       $('#chatModal').classList.remove('active');
     });
 
-    const sendBtn = $('#chatSendBtn');
-    const input = $('#chatInput');
+    const messengerSendBtn = $('#messengerSendBtn');
+    const messengerInput = $('#messengerInput');
+    if (messengerSendBtn && messengerInput) {
+      messengerSendBtn.addEventListener('click', handleSendMessengerMessage);
+      messengerInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleSendMessengerMessage();
+      });
+    }
 
-    const handleSend = () => {
-      const text = input.value.trim();
-      if (!text) return;
-
-      const user = marbsDB.getCurrentUser();
-
-      // ANTI-SCAM FILTER (Section 28)
-      // "The system should flag messages such as: 'Send money first before I return your item.'"
-      const scamPhrases = [
-        'send money first',
-        'send payment first',
-        'transfer gcash first',
-        'pay me first',
-        'send load first',
-        'deposit first'
-      ];
-
-      const isSuspicious = scamPhrases.some(phrase => text.toLowerCase().includes(phrase));
-      if (isSuspicious) {
-        alert('⚠️ SECURITY WARNING (MARBSLF SCAM PREVENTOR):\nYour message was blocked because it requests money before return verification.\n"Do not send payment before a legitimate match and verified return process."');
-        marbsDB.logAudit('SECURITY_ALERT', `Suspicious money demand flagged from user ${user.user_id}: "${text}"`);
-        return;
-      }
-
-      const msg = {
-        message_id: 'MSG-' + Date.now().toString().slice(-4),
-        sender_id: user.user_id,
-        receiver_id: 'USR-102',
-        post_id: activeChatPost ? activeChatPost.post_id : 'POST-002',
-        message: text,
-        timestamp: new Date().toISOString(),
-        status: 'SENT'
-      };
-
-      marbsDB.data.messages.push(msg);
-      marbsDB.save();
-      input.value = '';
-      renderChatMessages();
-    };
-
-    if (sendBtn && input) {
-      sendBtn.addEventListener('click', handleSend);
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleSend();
+    const legacySendBtn = $('#chatSendBtn');
+    const legacyInput = $('#chatInput');
+    if (legacySendBtn && legacyInput) {
+      legacySendBtn.addEventListener('click', () => {
+        const text = legacyInput.value.trim();
+        if (!text) return;
+        const user = marbsDB.getCurrentUser();
+        const msg = {
+          message_id: 'MSG-' + Date.now().toString().slice(-4),
+          sender_id: user.user_id,
+          receiver_id: 'USR-102',
+          post_id: activeChatPost ? activeChatPost.post_id : 'POST-002',
+          message: text,
+          timestamp: new Date().toISOString(),
+          status: 'SENT'
+        };
+        marbsDB.data.messages.push(msg);
+        marbsDB.save();
+        legacyInput.value = '';
+        renderChatMessages();
+      });
+      legacyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') legacySendBtn.click();
       });
     }
   }
 
   function openChatModal(postId) {
-    const post = marbsDB.data.posts.find(p => p.post_id === postId) || marbsDB.data.posts[1];
-    activeChatPost = post;
-
-    $('#chatPostName').textContent = post.item_name;
-    $('#chatModal').classList.add('active');
-    renderChatMessages();
+    // Open the new Real-Time Messenger in Verification modal
+    window.openMessengerForPost(postId);
   }
 
   function renderChatMessages() {
     const container = $('#chatMessagesContainer');
     if (!container) return;
-
     const user = marbsDB.getCurrentUser();
     const messages = marbsDB.data.messages;
-
     container.innerHTML = messages.map(msg => {
       const isMine = msg.sender_id === user.user_id;
       const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1753,7 +2086,6 @@
         </div>
       `;
     }).join('');
-
     container.scrollTop = container.scrollHeight;
   }
 
@@ -2179,6 +2511,17 @@
     $('#dashUserAlias').textContent = user.public_alias || 'Citizen';
     $('#dashUserStatus').textContent = currentStatus;
     $('#dashUserStatus').className = `dash-user-badge status-${currentStatus.toLowerCase()}`;
+
+    // Reliability Rating in Dashboard Profile Card
+    const reliability = getUserReliability(user.user_id);
+    const dashStars = $('#dashProfileStars');
+    const dashAvg = $('#dashProfileAvg');
+    const dashTier = $('#dashProfileTier');
+    const dashCount = $('#dashProfileCount');
+    if (dashStars) dashStars.textContent = reliability.starsHtml;
+    if (dashAvg) dashAvg.textContent = `${reliability.avg} / 5.0`;
+    if (dashTier) dashTier.textContent = reliability.tier;
+    if (dashCount) dashCount.textContent = `Based on ${reliability.count} confirmed safe transaction${reliability.count === 1 ? '' : 's'}`;
 
     // Stats
     const userPosts = marbsDB.data.posts.filter(p => p.user_id === user.user_id);
@@ -2720,9 +3063,29 @@
       }
     }
 
+    // Calculate active meetups count for nav badge
+    const navMeetupsBadge = $('#navMeetupsBadge');
+    if (navMeetupsBadge) {
+      if (user && user.user_id) {
+        const activeCount = (marbsDB.data.meetups || []).filter(m =>
+          (user.role === 'ADMIN' || m.owner_id === user.user_id || m.finder_id === user.user_id) &&
+          m.status !== 'COMPLETED' && m.status !== 'CANCELLED'
+        ).length;
+        if (activeCount > 0) {
+          navMeetupsBadge.style.display = 'inline-block';
+          navMeetupsBadge.textContent = activeCount;
+        } else {
+          navMeetupsBadge.style.display = 'none';
+        }
+      } else {
+        navMeetupsBadge.style.display = 'none';
+      }
+    }
+
     if (user && user.user_id) {
       if (pill) {
         pill.style.display = 'flex';
+        const userRel = getUserReliability(user.user_id);
         pill.innerHTML = `
           <div class="user-avatar-sm" style="position: relative;">
             ${user.avatar_url ? `<img src="${user.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (user.first_name[0] || 'U').toUpperCase()}
@@ -2732,6 +3095,7 @@
           </div>
           <span class="user-name-sm">
             ${user.role === 'ADMIN' ? 'Admin Portal' : user.first_name}
+            ${user.role !== 'ADMIN' ? `<span style="color: #f59e0b; font-size: 11px; font-weight: 800; margin-left: 4px;">★ ${userRel.avg}</span>` : ''}
             ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
               <span style="background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">${pendingReviewPostsCount}</span>
             ` : ''}
@@ -2942,6 +3306,7 @@
     }
 
     renderVerificationAnswersList(filterPostId);
+    switchVerifModalTab('answers');
     modal.classList.add('active');
   }
 
@@ -3133,7 +3498,7 @@
 
           <!-- Action Buttons -->
           <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openChat('${post.post_id}')">
+            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openMessengerForPost('${post.post_id}', '${m.claimant_id}')">
               Open Private Chat
             </button>
             <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #ef4444; border-color: #fca5a5;" onclick="window.rejectVerificationMatch('${m.match_id}')">
@@ -3168,6 +3533,10 @@
     match.status = 'MATCH_CONFIRMED';
     marbsDB.logAudit('MATCH_CONFIRMED', `Post owner confirmed match ${matchId}`);
     marbsDB.save();
+
+    window._activeSchedulingMatchId = matchId;
+    window._activeSchedulingPostId = postId;
+    window._activeSchedulingClaimantId = match.claimant_id;
 
     $('#postVerificationsModal').classList.remove('active');
     
@@ -3387,6 +3756,364 @@
     renderUserPill();
     $('#editProfileModal').classList.remove('active');
     showToast('✅ Profile updated successfully!');
+  };
+
+  // =========================================================================
+  // CONFIRMED SAFE MEETUPS & COMPLETED TRANSACTIONS
+  // =========================================================================
+  function switchMeetupsTab(tab) {
+    const activeBtn = $('#meetupsTabActiveBtn');
+    const historyBtn = $('#meetupsTabHistoryBtn');
+    const activeContent = $('#meetupsActiveTabContent');
+    const historyContent = $('#meetupsHistoryTabContent');
+
+    if (tab === 'history') {
+      if (activeBtn) activeBtn.classList.remove('active');
+      if (historyBtn) historyBtn.classList.add('active');
+      if (activeContent) activeContent.style.display = 'none';
+      if (historyContent) historyContent.style.display = 'block';
+    } else {
+      if (historyBtn) historyBtn.classList.remove('active');
+      if (activeBtn) activeBtn.classList.add('active');
+      if (historyContent) historyContent.style.display = 'none';
+      if (activeContent) activeContent.style.display = 'block';
+    }
+  }
+  window.switchMeetupsTab = switchMeetupsTab;
+
+  function renderMeetupsView() {
+    const user = marbsDB.getCurrentUser();
+    if (!user) return;
+
+    const allMeetups = marbsDB.data.meetups || [];
+    let userMeetups = allMeetups.filter(m =>
+      user.role === 'ADMIN' || m.owner_id === user.user_id || m.finder_id === user.user_id
+    );
+
+    if (userMeetups.length === 0 && allMeetups.length > 0) {
+      userMeetups = allMeetups;
+    }
+
+    const activeMeetups = userMeetups.filter(m => m.status !== 'COMPLETED' && m.status !== 'CANCELLED');
+    const completedMeetups = userMeetups.filter(m => m.status === 'COMPLETED');
+
+    const activeCountBadge = $('#meetupsActiveCountBadge');
+    const historyCountBadge = $('#meetupsHistoryCountBadge');
+    const navBadge = $('#navMeetupsBadge');
+
+    if (activeCountBadge) activeCountBadge.textContent = activeMeetups.length;
+    if (historyCountBadge) historyCountBadge.textContent = completedMeetups.length;
+    if (navBadge) {
+      if (activeMeetups.length > 0) {
+        navBadge.style.display = 'inline-block';
+        navBadge.textContent = activeMeetups.length;
+      } else {
+        navBadge.style.display = 'none';
+      }
+    }
+
+    const activeList = $('#activeMeetupsList');
+    if (activeList) {
+      if (activeMeetups.length === 0) {
+        activeList.innerHTML = `
+          <div style="text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--border); border-radius: var(--radius-md);">
+            <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
+            <strong style="font-size: 15px; color: var(--text-main);">No Upcoming Safe Meetups Scheduled</strong>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 440px; margin-left: auto; margin-right: auto;">
+              When you confirm an ownership verification match and arrange a return at an official Safe Pickup Place, your confirmed schedule will appear securely here.
+            </p>
+            <div style="margin-top: 16px;">
+              <button type="button" class="btn btn-primary" onclick="window.openVerificationsModal()">
+                Review Verification Answers
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        activeList.innerHTML = activeMeetups.map(m => {
+          const post = (marbsDB.data.posts || []).find(p => p.post_id === m.post_id) || {
+            item_name: 'Lost / Found Item',
+            post_type: 'POST',
+            image: 'assets/images.jpg',
+            general_location: 'Koronadal'
+          };
+
+          const counterpartyId = (user.user_id === m.owner_id) ? m.finder_id : m.owner_id;
+          const counterparty = (marbsDB.data.users || []).find(u => u.user_id === counterpartyId) || {
+            first_name: 'Verified Citizen',
+            public_alias: 'Citizen #vOIUJk',
+            verification_status: 'VERIFIED'
+          };
+          const reliability = getUserReliability(counterpartyId);
+          const isOwner = user.role === 'ADMIN' || user.user_id === m.owner_id;
+
+          return `
+            <div class="meetup-schedule-card">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 14px; align-items: center;">
+                  <img src="${post.image || 'assets/images.jpg'}" style="width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span class="post-badge ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}" style="font-size: 10px; padding: 2px 7px;">${post.post_type || 'POST'}</span>
+                      <strong style="font-size: 16px; color: var(--text-main);">${escapeHtml(post.item_name)}</strong>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; color: #1e3a8a; font-size: 13px; font-weight: 700;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span>${escapeHtml(m.place_name)}</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        ${m.date}
+                      </span>
+                      <span style="display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        ${m.time}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="text-align: right; min-width: 180px;">
+                  <span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #16a34a;"></span>
+                    CONFIRMED SCHEDULE
+                  </span>
+                  
+                  <div style="margin-top: 8px; font-size: 12px;">
+                    <div style="color: var(--text-muted); font-size: 11px;">Exchanging with:</div>
+                    <strong style="color: var(--text-main); font-size: 13px;">${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong>
+                    <div style="color: #f59e0b; font-weight: 800; font-size: 11px; margin-top: 1px;">
+                      ★ ${reliability.avg} (${reliability.count} review${reliability.count === 1 ? '' : 's'})
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.openMessengerForPost('${post.post_id}', '${counterpartyId}')">
+                  💬 Open Messages
+                </button>
+                ${isOwner ? `
+                  <button type="button" class="btn btn-primary" style="font-size: 12px; padding: 6px 16px; background: #16a34a; border-color: #15803d; color: #fff; font-weight: 800;" onclick="window.markMeetupComplete('${m.meetup_id}')">
+                    ✓ Mark as Retrieved / Complete
+                  </button>
+                ` : `
+                  <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #16a34a; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
+                    ✓ Confirm Handover Done
+                  </button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    const historyList = $('#historyMeetupsList');
+    if (historyList) {
+      if (completedMeetups.length === 0) {
+        historyList.innerHTML = `
+          <div style="text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--border); border-radius: var(--radius-md);">
+            <div style="font-size: 32px; margin-bottom: 10px;">📜</div>
+            <strong style="font-size: 15px; color: var(--text-main);">No Completed Transactions Yet</strong>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 440px; margin-left: auto; margin-right: auto;">
+              Completed returns and verified safe meetup transactions will be archived permanently here with ratings and proofs.
+            </p>
+          </div>
+        `;
+      } else {
+        historyList.innerHTML = completedMeetups.map(m => {
+          const post = (marbsDB.data.posts || []).find(p => p.post_id === m.post_id) || {
+            item_name: 'Returned Item',
+            post_type: 'POST',
+            image: 'assets/images.jpg'
+          };
+          const counterpartyId = (user.user_id === m.owner_id) ? m.finder_id : m.owner_id;
+          const counterparty = (marbsDB.data.users || []).find(u => u.user_id === counterpartyId) || {
+            first_name: 'Verified Citizen',
+            public_alias: 'Citizen #vOIUJk'
+          };
+          const ratingObj = (marbsDB.data.ratings || []).find(r => r.meetup_id === m.meetup_id) || {
+            stars: 5,
+            comment: 'Item safely retrieved and verified at the approved pickup point.'
+          };
+
+          return `
+            <div class="meetup-schedule-card" style="border-left: 4px solid #10b981; background: #fbfdfc;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 14px; align-items: center;">
+                  <img src="${post.image || 'assets/images.jpg'}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="activity-badge" style="background: #dcfce7; color: #166534; font-weight: 800; font-size: 10px;">✓ COMPLETED & RETRIEVED</span>
+                      <strong style="font-size: 15px; color: var(--text-main);">${escapeHtml(post.item_name)}</strong>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                      Location: <strong>${escapeHtml(m.place_name)}</strong> • Handover Date: ${m.date}
+                    </div>
+                    <div style="font-size: 12px; color: #15803d; font-weight: 700; margin-top: 3px;">
+                      Citizen: ${escapeHtml(counterparty.public_alias || counterparty.first_name)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="text-align: right; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
+                  <div style="color: #f59e0b; font-size: 14px; font-weight: 800;">
+                    ${'★'.repeat(ratingObj.stars || 5)} (${ratingObj.stars || 5}.0 Stars)
+                  </div>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; max-width: 240px; font-style: italic;">
+                    "${escapeHtml(ratingObj.comment || 'Verified safe handover completed!')}"
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  }
+  window.renderMeetupsView = renderMeetupsView;
+
+  window.markMeetupComplete = function(meetupId) {
+    const meetup = (marbsDB.data.meetups || []).find(m => m.meetup_id === meetupId);
+    if (!meetup) return;
+
+    const user = marbsDB.getCurrentUser();
+
+    meetup.status = 'COMPLETED';
+    meetup.completed_at = new Date().toISOString();
+    meetup.owner_confirmed_return = true;
+    meetup.finder_confirmed_return = true;
+
+    // Update associated post to RESOLVED
+    const post = (marbsDB.data.posts || []).find(p => p.post_id === meetup.post_id);
+    if (post) {
+      post.status = 'RESOLVED';
+    }
+
+    marbsDB.logAudit('TRANSACTION_COMPLETED', `Meetup ${meetupId} marked as Retrieved/Completed by ${user ? user.user_id : 'OWNER'}`);
+    marbsDB.save();
+
+    showToast('✓ Item marked as Retrieved / Complete! Schedule archived to History.');
+
+    renderMeetupsView();
+    renderUserDashboard();
+    updateNotificationBadges();
+
+    const targetUserId = (user && user.user_id === meetup.owner_id) ? meetup.finder_id : meetup.owner_id;
+    window.openRatingModal(targetUserId, meetupId, meetup.post_id);
+  };
+
+  // =========================================================================
+  // CITIZEN RELIABILITY RATING MODAL (STARS & REVIEWS)
+  // =========================================================================
+  let activeRatingTargetUserId = null;
+  let activeRatingMeetupId = null;
+  let activeRatingPostId = null;
+  let selectedRatingStars = 5;
+
+  window.openRatingModal = function(targetUserId, meetupId, postId) {
+    activeRatingTargetUserId = targetUserId || 'USR-102';
+    activeRatingMeetupId = meetupId;
+    activeRatingPostId = postId;
+    selectedRatingStars = 5;
+
+    const targetUser = (marbsDB.data.users || []).find(u => u.user_id === activeRatingTargetUserId) || {
+      first_name: 'Verified Citizen',
+      public_alias: 'Citizen #vOIUJk'
+    };
+
+    const post = (marbsDB.data.posts || []).find(p => p.post_id === postId);
+
+    const nameEl = $('#ratingTargetName');
+    if (nameEl) nameEl.textContent = targetUser.public_alias || targetUser.first_name;
+
+    const avatarEl = $('#ratingTargetAvatar');
+    if (avatarEl) avatarEl.textContent = (targetUser.first_name[0] || 'C').toUpperCase();
+
+    const itemTag = $('#ratingItemNameTag');
+    if (itemTag && post) itemTag.textContent = `• ${post.item_name}`;
+
+    window.setRatingStars(5);
+    const commentInput = $('#ratingCommentText');
+    if (commentInput) commentInput.value = '';
+
+    const modal = $('#ratingModal');
+    if (modal) modal.classList.add('active');
+  };
+
+  window.setRatingStars = function(stars) {
+    selectedRatingStars = stars;
+    const labels = {
+      1: '★☆☆☆☆ 1 Star — Poor Experience / Disappointing',
+      2: '★★☆☆☆ 2 Stars — Below Expectations',
+      3: '★★★☆☆ 3 Stars — Good & Honest Citizen',
+      4: '★★★★☆ 4 Stars — Very Reliable & Punctual',
+      5: '⭐⭐⭐⭐⭐ 5 Stars — Exceptional & Highly Reliable Citizen'
+    };
+
+    const labelEl = $('#starPickerLabel');
+    if (labelEl) labelEl.textContent = labels[stars] || `${stars} Stars`;
+
+    $$('.star-btn').forEach(btn => {
+      const btnStar = Number(btn.dataset.star);
+      if (btnStar <= stars) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  };
+
+  window.toggleFeedbackChip = function(btn) {
+    btn.classList.toggle('active');
+  };
+
+  window.submitCitizenRating = function(e) {
+    if (e) e.preventDefault();
+    const user = marbsDB.getCurrentUser();
+    if (!user) return;
+
+    const comment = ($('#ratingCommentText')?.value || '').trim() || 'Very honest citizen! Safely returned the item.';
+    const selectedTags = Array.from($$('.feedback-chip.active')).map(c => c.textContent.replace('✓', '').trim());
+
+    const ratingRecord = {
+      rating_id: 'RAT-' + Date.now().toString().slice(-4),
+      meetup_id: activeRatingMeetupId,
+      post_id: activeRatingPostId,
+      rater_id: user.user_id,
+      target_user_id: activeRatingTargetUserId,
+      stars: selectedRatingStars,
+      tags: selectedTags,
+      comment: comment,
+      created_at: new Date().toISOString()
+    };
+
+    if (!Array.isArray(marbsDB.data.ratings)) {
+      marbsDB.data.ratings = [];
+    }
+    marbsDB.data.ratings.unshift(ratingRecord);
+
+    const targetUser = (marbsDB.data.users || []).find(u => u.user_id === activeRatingTargetUserId);
+    if (targetUser) {
+      const allRatings = marbsDB.data.ratings.filter(r => r.target_user_id === activeRatingTargetUserId);
+      const sum = allRatings.reduce((acc, r) => acc + Number(r.stars), 0);
+      targetUser.rating_avg = (sum / allRatings.length).toFixed(1);
+      targetUser.rating_count = allRatings.length;
+    }
+
+    marbsDB.logAudit('RATING_SUBMITTED', `User ${user.user_id} rated ${activeRatingTargetUserId} with ${selectedRatingStars} stars`);
+    marbsDB.save();
+
+    $('#ratingModal').classList.remove('active');
+    showToast(`⭐ Thank you! Rated ${selectedRatingStars} stars. Reliability score updated on their profile!`);
+
+    renderMeetupsView();
+    renderUserDashboard();
+    renderUserPill();
   };
 
   // Universal event delegation for all modal close buttons and backdrop clicks

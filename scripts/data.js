@@ -133,6 +133,8 @@ const DEFAULT_USERS = [
     account_status: 'ACTIVE',
     verification_status: 'VERIFIED',
     points_balance: 9999,
+    rating_avg: 5.0,
+    rating_count: 5,
     created_at: '2026-01-01T00:00:00Z'
   }
 ];
@@ -199,6 +201,20 @@ const DEFAULT_MESSAGES = [
     message: 'Hi! Yes, I reviewed your identifying marks and it matches the item exactly. Let us schedule a return at KCC Mall Customer Service.',
     timestamp: '2026-09-19T14:22:00Z',
     status: 'READ'
+  }
+];
+
+const DEFAULT_RATINGS = [
+  {
+    rating_id: 'RAT-801',
+    meetup_id: 'MT-501',
+    post_id: 'POST-002',
+    rater_id: 'USR-103',
+    target_user_id: 'USR-102',
+    stars: 5,
+    tags: ['Very Honest', 'On Time at Safe Spot', 'Friendly & Cooperative'],
+    comment: 'Exemplary citizen! Met right in front of the KCC Customer Service counter and returned my keys intact. Highly reliable!',
+    created_at: '2026-09-23T15:00:00Z'
   }
 ];
 
@@ -395,6 +411,12 @@ class MarbsLFDatabase {
         if (!Array.isArray(parsed.matches)) {
           parsed.matches = [...DEFAULT_MATCHES];
         }
+        if (!Array.isArray(parsed.ratings)) {
+          parsed.ratings = [...DEFAULT_RATINGS];
+        }
+        if (!Array.isArray(parsed.meetups)) {
+          parsed.meetups = [...DEFAULT_MEETUPS];
+        }
         return parsed;
       }
     } catch (e) {
@@ -408,6 +430,7 @@ class MarbsLFDatabase {
       matches: DEFAULT_MATCHES,
       meetups: DEFAULT_MEETUPS,
       messages: DEFAULT_MESSAGES,
+      ratings: DEFAULT_RATINGS,
       points_transactions: DEFAULT_MARBS_POINTS_TRANSACTIONS,
       vouchers: DEFAULT_VOUCHERS,
       redemptions: [],
