@@ -225,26 +225,7 @@ h1, h2, h3, .hero-tagline, .section-title {
   background: #ef4444;
 }
 
-.sidebar-footer {
-  margin-top: auto;
-  padding: 24px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
-}
 
-.sidebar-tagline {
-  font-size: 12px;
-  color: #94a3b8;
-  line-height: 1.6;
-}
-
-.tagline-sub {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  color: #64748b;
-  margin-top: 8px;
-}
 
 /* Main Content Area & Top Header Bar */
 .main-content-area {
