@@ -2698,7 +2698,7 @@
               <span style="position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #ef4444; border: 2px solid #fff; border-radius: 50%;"></span>
             ` : ''}
           </div>
-          <span class="user-name-sm" style="display: flex; align-items: center; gap: 6px;">
+          <span class="user-name-sm">
             ${user.role === 'ADMIN' ? 'Admin Portal' : user.first_name}
             ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
               <span style="background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">${pendingReviewPostsCount}</span>
