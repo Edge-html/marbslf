@@ -3351,15 +3351,49 @@ h1, h2, h3, .hero-tagline, .section-title {
   box-sizing: border-box;
 }
 
-/* Page 1: Hero Section */
+/* Page 1: Hero Section (Atmospheric Dark Gradient Inspired by Reference) */
 .lp-hero-section {
   width: 100%;
-  padding: 70px 24px 90px;
-  background: radial-gradient(circle at 80% 20%, rgba(242, 179, 27, 0.12) 0%, transparent 50%),
-              radial-gradient(circle at 10% 80%, rgba(37, 99, 235, 0.15) 0%, transparent 45%),
-              #0f172a;
+  position: relative;
+  min-height: 82vh;
+  display: flex;
+  align-items: center;
+  padding: 80px 32px 100px;
+  background-color: #0c1220;
+  background-image: 
+    radial-gradient(ellipse 70% 60% at 75% 45%, rgba(242, 179, 27, 0.16) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 70% at 20% 80%, rgba(30, 58, 138, 0.25) 0%, transparent 70%),
+    radial-gradient(circle at 50% 0%, rgba(51, 65, 85, 0.3) 0%, transparent 60%),
+    linear-gradient(180deg, #0b101d 0%, #0f172a 50%, #090d16 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Subtle Full Backdrop Blend */
+.lp-hero-bg-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.lp-hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center right;
+  opacity: 0.15;
+  filter: blur(24px) saturate(1.2);
+  transform: scale(1.1);
+}
+
+.lp-hero-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #0c1220 30%, rgba(12, 18, 32, 0.85) 60%, rgba(12, 18, 32, 0.4) 100%),
+              linear-gradient(180deg, rgba(12, 18, 32, 0.6) 0%, transparent 50%, #0c1220 100%);
 }
 
 .lp-hero-container {
@@ -3368,8 +3402,10 @@ h1, h2, h3, .hero-tagline, .section-title {
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.15fr 0.95fr;
-  gap: 50px;
+  gap: 56px;
   align-items: center;
+  position: relative;
+  z-index: 2;
   box-sizing: border-box;
 }
 
@@ -3377,15 +3413,17 @@ h1, h2, h3, .hero-tagline, .section-title {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(8px);
   color: #e2e8f0;
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .lp-pill-badge.yellow {
@@ -3399,39 +3437,44 @@ h1, h2, h3, .hero-tagline, .section-title {
   height: 8px;
   background: #22c55e;
   border-radius: 50%;
-  box-shadow: 0 0 10px #22c55e;
+  box-shadow: 0 0 10px #22c55e, 0 0 4px #22c55e;
 }
 
 .lp-hero-title {
   font-family: var(--font-sans);
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.12;
   color: #ffffff;
-  margin-bottom: 20px;
-  letter-spacing: -0.8px;
+  margin-bottom: 22px;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 .lp-highlight {
   color: #f2b31b;
   position: relative;
-  text-shadow: 0 2px 20px rgba(242, 179, 27, 0.3);
+  display: inline-block;
+  background: linear-gradient(135deg, #ffd768 0%, #f2b31b 60%, #eab308 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 24px rgba(242, 179, 27, 0.45));
 }
 
 .lp-hero-subtitle {
   font-size: 16px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: #94a3b8;
   max-width: 580px;
-  margin-bottom: 32px;
+  margin-bottom: 34px;
 }
 
 .lp-hero-cta-group {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 40px;
+  margin-bottom: 44px;
 }
 
 .lp-btn {
@@ -3449,26 +3492,27 @@ h1, h2, h3, .hero-tagline, .section-title {
 }
 
 .lp-btn-primary {
-  background: #f2b31b;
+  background: linear-gradient(135deg, #ffd566 0%, #f2b31b 100%);
   color: #0f172a;
-  box-shadow: 0 6px 20px rgba(242, 179, 27, 0.35);
+  box-shadow: 0 8px 24px -4px rgba(242, 179, 27, 0.45), 0 0 0 1px rgba(242, 179, 27, 0.2);
 }
 
 .lp-btn-primary:hover {
-  background: #eab308;
+  background: linear-gradient(135deg, #ffe082 0%, #eab308 100%);
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(242, 179, 27, 0.45);
+  box-shadow: 0 14px 32px -4px rgba(242, 179, 27, 0.6);
 }
 
 .lp-btn-ghost {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
 }
 
 .lp-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
 }
 
@@ -3476,17 +3520,19 @@ h1, h2, h3, .hero-tagline, .section-title {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  padding-top: 10px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .lp-stat-pill {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   padding: 10px 18px;
   border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .lp-stat-num {
@@ -3510,33 +3556,43 @@ h1, h2, h3, .hero-tagline, .section-title {
   position: relative;
 }
 
+.lp-visual-glow {
+  position: absolute;
+  inset: -15px;
+  background: radial-gradient(circle, rgba(242, 179, 27, 0.22) 0%, rgba(37, 99, 235, 0.15) 50%, transparent 75%);
+  filter: blur(28px);
+  z-index: 1;
+  pointer-events: none;
+}
+
 .lp-visual-frame {
   position: relative;
-  border-radius: 18px;
+  z-index: 2;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
-              0 0 0 1px rgba(255, 255, 255, 0.15),
-              0 0 40px rgba(242, 179, 27, 0.15);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75),
+              0 0 0 1px rgba(255, 255, 255, 0.16),
+              0 0 45px rgba(242, 179, 27, 0.16);
   background: #000;
 }
 
 .lp-hero-img {
   width: 100%;
-  height: 440px;
+  height: 460px;
   object-fit: cover;
   display: block;
   transform: scale(1.02);
-  transition: transform 0.5s ease;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lp-visual-frame:hover .lp-hero-img {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
 .lp-visual-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(15, 23, 42, 0.85) 100%);
+  background: linear-gradient(180deg, rgba(12, 18, 32, 0.05) 0%, rgba(12, 18, 32, 0.4) 60%, rgba(12, 18, 32, 0.9) 100%);
   pointer-events: none;
 }
 
@@ -3545,14 +3601,15 @@ h1, h2, h3, .hero-tagline, .section-title {
   bottom: 20px;
   left: 20px;
   right: 20px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(12, 18, 32, 0.82);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
   padding: 12px 18px;
   display: flex;
   align-items: center;
   gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .lp-caption-icon {
