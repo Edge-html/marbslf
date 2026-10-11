@@ -2212,3 +2212,166 @@ h1, h2, h3, .hero-tagline, .section-title {
     font-size: 13px;
   }
 }
+
+/* ==========================================================================
+   PROFILE AVATAR & EDIT PROFILE STYLES
+   ========================================================================== */
+
+/* Dashboard Avatar Wrapper with hover edit overlay */
+.dash-avatar-wrapper {
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  margin: 0 auto;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.dash-avatar-wrapper:hover {
+  transform: scale(1.05);
+}
+
+.dash-avatar-wrapper:hover .dash-avatar-edit-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.dash-avatar-edit-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0;
+  width: 32px;
+  height: 32px;
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+
+/* Dashboard avatar image styling */
+.dash-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Edit Profile Modal - Avatar Section */
+.edit-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  background: var(--surface-alt, #f5f4f0);
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border, #e6e4df);
+}
+
+.edit-avatar-preview-box {
+  width: 88px;
+  height: 88px;
+  min-width: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  border: 3px solid var(--primary-yellow, #F2B31B);
+  transition: box-shadow 0.3s ease;
+}
+
+.edit-avatar-preview-box:hover {
+  box-shadow: 0 6px 20px rgba(242, 179, 27, 0.3);
+}
+
+.edit-avatar-preview-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.edit-avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.edit-avatar-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* ==========================================================================
+   VERIFICATION ANSWERS TOGGLE STYLES
+   ========================================================================== */
+
+.verif-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: var(--font-sans);
+}
+
+.verif-toggle-btn:hover {
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.18);
+}
+
+.verif-toggle-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.verif-toggle-btn.active svg {
+  transform: rotate(180deg);
+}
+
+.verif-answers-hidden-body {
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+}
+
+.verif-answers-hidden-body.visible {
+  max-height: 800px;
+  opacity: 1;
+}
+
+/* Navbar avatar image */
+.user-avatar-sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}

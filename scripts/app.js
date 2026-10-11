@@ -2047,7 +2047,12 @@
     }
 
     const currentStatus = (user.verification_status || 'UNVERIFIED').toUpperCase();
-    $('#dashAvatarText').textContent = (user.first_name[0] || 'U').toUpperCase();
+    const dashAvatar = $('#dashAvatarText');
+    if (user.avatar_url) {
+      dashAvatar.innerHTML = `<img src="${user.avatar_url}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+      dashAvatar.textContent = (user.first_name[0] || 'U').toUpperCase();
+    }
     $('#dashUserLegalName').textContent = `${user.first_name || ''} ${user.last_name || ''}`;
     $('#dashUserAlias').textContent = user.public_alias || 'Citizen';
     $('#dashUserStatus').textContent = currentStatus;
@@ -2585,7 +2590,7 @@
         pill.style.display = 'flex';
         pill.innerHTML = `
           <div class="user-avatar-sm" style="position: relative;">
-            ${(user.first_name[0] || 'U').toUpperCase()}
+            ${user.avatar_url ? `<img src="${user.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (user.first_name[0] || 'U').toUpperCase()}
             ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
               <span style="position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #ef4444; border: 2px solid #fff; border-radius: 50%;"></span>
             ` : ''}
@@ -2905,53 +2910,62 @@
             </div>
           </div>
 
-          <!-- Private Q&A Answers Grid -->
-          <div style="background: #fafafa; border: 1px solid #f1f5f9; border-radius: 8px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="font-weight: 800; color: #1e3a8a; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Submitted Verification Answers:
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-              <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">1. Location:</div>
-                <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.location_lost || 'Not provided')}</div>
+          <!-- Verification Answer Toggle Button -->
+          <button type="button" class="verif-toggle-btn" id="toggleVerifBtn_${m.match_id}" onclick="window.toggleVerificationAnswers('${m.match_id}')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>View Verification Answers</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: auto;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+
+          <!-- Private Q&A Answers Grid (Hidden by Default) -->
+          <div class="verif-answers-hidden-body" id="verifAnswersBody_${m.match_id}">
+            <div style="background: #fafafa; border: 1px solid #f1f5f9; border-radius: 8px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div style="font-weight: 800; color: #1e3a8a; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Submitted Verification Answers:
               </div>
-
-              <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">2. Approximate Time:</div>
-                <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.approx_time || 'Not provided')}</div>
-              </div>
-
-              <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">3. Color & Markings:</div>
-                <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.color || 'Not provided')}</div>
-              </div>
-
-              ${qna.identifying_marks ? `
+              
+              <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
                 <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">4. Distinct Identifying Marks:</div>
-                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.identifying_marks)}</div>
+                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">1. Location:</div>
+                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.location_lost || 'Not provided')}</div>
                 </div>
-              ` : ''}
 
-              ${qna.accessories ? `
                 <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">5. Attached Accessories / Charms:</div>
-                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.accessories)}</div>
+                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">2. Approximate Time:</div>
+                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.approx_time || 'Not provided')}</div>
                 </div>
-              ` : ''}
 
-              ${qna.inside_contents ? `
                 <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">6. Inside Contents (if bag/wallet):</div>
-                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.inside_contents)}</div>
+                  <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">3. Color & Markings:</div>
+                  <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.color || 'Not provided')}</div>
                 </div>
-              ` : ''}
 
-              <div style="background: #fefce8; padding: 8px 10px; border-radius: 6px; border: 1px solid #fef08a;">
-                <div style="color: #854d0e; font-size: 11px; font-weight: 700;">★ Secret Proof / Unique Characteristic:</div>
-                <div style="color: #713f12; font-weight: 700; margin-top: 2px;">${escapeHtml(qna.private_proof || 'Not provided')}</div>
+                ${qna.identifying_marks ? `
+                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">4. Distinct Identifying Marks:</div>
+                    <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.identifying_marks)}</div>
+                  </div>
+                ` : ''}
+
+                ${qna.accessories ? `
+                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">5. Attached Accessories / Charms:</div>
+                    <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.accessories)}</div>
+                  </div>
+                ` : ''}
+
+                ${qna.inside_contents ? `
+                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">6. Inside Contents (if bag/wallet):</div>
+                    <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.inside_contents)}</div>
+                  </div>
+                ` : ''}
+
+                <div style="background: #fefce8; padding: 8px 10px; border-radius: 6px; border: 1px solid #fef08a;">
+                  <div style="color: #854d0e; font-size: 11px; font-weight: 700;">★ Secret Proof / Unique Characteristic:</div>
+                  <div style="color: #713f12; font-weight: 700; margin-top: 2px;">${escapeHtml(qna.private_proof || 'Not provided')}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -3017,6 +3031,189 @@
       const el = $('#myMeetupsContainer');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // =========================================================================
+  // VERIFICATION ANSWERS TOGGLE
+  // =========================================================================
+  window.toggleVerificationAnswers = function(matchId) {
+    const body = document.getElementById('verifAnswersBody_' + matchId);
+    const btn = document.getElementById('toggleVerifBtn_' + matchId);
+    if (!body || !btn) return;
+
+    const isVisible = body.classList.contains('visible');
+    if (isVisible) {
+      body.classList.remove('visible');
+      btn.classList.remove('active');
+      btn.querySelector('span').textContent = 'View Verification Answers';
+    } else {
+      body.classList.add('visible');
+      btn.classList.add('active');
+      btn.querySelector('span').textContent = 'Hide Verification Answers';
+    }
+  };
+
+  // =========================================================================
+  // EDIT PROFILE & PHOTO
+  // =========================================================================
+  let _pendingAvatarDataUrl = null;
+
+  window.openEditProfileModal = function() {
+    const user = marbsDB.getCurrentUser();
+    if (!user) {
+      openLoginModal();
+      showToast('Please log in to edit your profile.');
+      return;
+    }
+
+    // Fill form fields
+    const modal = $('#editProfileModal');
+    if (!modal) return;
+
+    $('#editFirstName').value = user.first_name || '';
+    $('#editMiddleName').value = user.middle_name || '';
+    $('#editLastName').value = user.last_name || '';
+    $('#editPhone').value = user.phone || '';
+    const brgySelect = $('#editBarangay');
+    if (brgySelect && user.barangay) {
+      brgySelect.value = user.barangay;
+    }
+
+    // Preview avatar
+    _pendingAvatarDataUrl = user.avatar_url || null;
+    _renderEditAvatarPreview(user);
+
+    modal.classList.add('active');
+  };
+
+  function _renderEditAvatarPreview(user) {
+    const preview = $('#editProfileAvatarPreview');
+    if (!preview) return;
+    if (_pendingAvatarDataUrl) {
+      preview.innerHTML = `<img src="${_pendingAvatarDataUrl}" alt="Profile">`;
+    } else {
+      preview.innerHTML = `<span id="editProfileAvatarInitial">${(user.first_name ? user.first_name[0] : 'U').toUpperCase()}</span>`;
+    }
+  }
+
+  // File input handler
+  const editFileInput = document.getElementById('editProfileFileInput');
+  if (editFileInput) {
+    editFileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      _compressAndSetAvatar(file);
+    });
+  }
+
+  // Compress/resize to max 320x320 JPEG to prevent localStorage bloat
+  function _compressAndSetAvatar(file) {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = new Image();
+      img.onload = function() {
+        const maxSize = 320;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+        else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        _pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+        const user = marbsDB.getCurrentUser();
+        _renderEditAvatarPreview(user || { first_name: 'U' });
+        showToast('📷 Photo ready! Click Save to apply.');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.takeProfilePhoto = function() {
+    // Open camera modal using existing marbsCamera system
+    if (window.marbsCamera) {
+      window.marbsCamera.open(function(payload) {
+        if (payload && payload.dataUrl) {
+          // Compress the camera capture
+          const img = new Image();
+          img.onload = function() {
+            const maxSize = 320;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+            else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            _pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const user = marbsDB.getCurrentUser();
+            _renderEditAvatarPreview(user || { first_name: 'U' });
+            showToast('📸 Photo captured! Click Save to apply.');
+          };
+          img.src = payload.dataUrl;
+        }
+      });
+    } else {
+      // Fallback: trigger file input
+      document.getElementById('editProfileFileInput').click();
+    }
+  };
+
+  window.removeProfilePhoto = function() {
+    _pendingAvatarDataUrl = null;
+    const user = marbsDB.getCurrentUser();
+    _renderEditAvatarPreview(user || { first_name: 'U' });
+    showToast('Photo removed. Click Save to apply.');
+  };
+
+  window.saveEditProfile = function() {
+    const user = marbsDB.getCurrentUser();
+    if (!user) return;
+
+    const firstName = ($('#editFirstName').value || '').trim();
+    const middleName = ($('#editMiddleName').value || '').trim();
+    const lastName = ($('#editLastName').value || '').trim();
+    const phone = ($('#editPhone').value || '').trim();
+    const barangay = $('#editBarangay').value;
+
+    if (!firstName || !lastName) {
+      showToast('⚠️ First name and last name are required.');
+      return;
+    }
+
+    // Update user in marbsDB
+    user.first_name = firstName;
+    user.middle_name = middleName;
+    user.last_name = lastName;
+    user.phone = phone;
+    user.barangay = barangay;
+    user.avatar_url = _pendingAvatarDataUrl || null;
+
+    marbsDB.save();
+
+    // Sync to Supabase if available
+    if (window.supabaseClient && user.user_id && !user.user_id.startsWith('USR-')) {
+      try {
+        window.supabaseClient.from('users').update({
+          first_name: firstName,
+          middle_name: middleName,
+          last_name: lastName,
+          phone: phone,
+          barangay: barangay,
+          avatar_url: _pendingAvatarDataUrl || null
+        }).eq('user_id', user.user_id).then(() => {});
+      } catch(e) { /* silent */ }
+    }
+
+    // Refresh UI
+    renderUserDashboard();
+    renderUserPill();
+    $('#editProfileModal').classList.remove('active');
+    showToast('✅ Profile updated successfully!');
   };
 
   // Universal event delegation for all modal close buttons and backdrop clicks

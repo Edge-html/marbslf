@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=6">
+  <link rel="stylesheet" href="styles/main.css?v=7">
 </head>
 <body>
 
@@ -414,10 +414,19 @@
         <!-- Sidebar Navigation -->
         <aside class="dashboard-nav">
           <div class="dash-user-card">
-            <div class="dash-user-avatar" id="dashAvatarText">U</div>
+            <div class="dash-avatar-wrapper" onclick="window.openEditProfileModal()" title="Click to update profile photo">
+              <div class="dash-user-avatar" id="dashAvatarText">U</div>
+              <span class="dash-avatar-edit-icon" title="Change Photo">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </span>
+            </div>
             <div class="dash-user-name" id="dashUserLegalName">Citizen</div>
             <div style="font-size: 11px; color: var(--text-muted);" id="dashUserAlias">Active Member</div>
             <span class="dash-user-badge" id="dashUserStatus">UNVERIFIED</span>
+            <button type="button" class="btn btn-outline" onclick="window.openEditProfileModal()" style="width: 100%; margin-top: 10px; font-size: 11px; padding: 5px 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Edit profile information and photo">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit Profile
+            </button>
           </div>
 
           <ul class="dash-menu">
@@ -425,6 +434,12 @@
               <button class="active" onclick="showDashboardTab('overview')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
                 Overview & Posts
+              </button>
+            </li>
+            <li class="dash-menu-item">
+              <button onclick="window.openEditProfileModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Edit Profile & Photo
               </button>
             </li>
             <li class="dash-menu-item">
@@ -1618,6 +1633,90 @@
   </div>
 
   <!-- 15. Admin ID Verification Details Modal (Inspection & Decision) -->
+  <!-- EDIT PROFILE & PHOTO MODAL -->
+  <div class="modal-overlay" id="editProfileModal" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Edit Profile & Photo
+        </h3>
+        <button class="modal-close-btn">×</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;">
+        <!-- Avatar Preview & Upload -->
+        <div class="edit-avatar-section">
+          <div class="edit-avatar-preview-box" id="editProfileAvatarPreview">
+            <span id="editProfileAvatarInitial">U</span>
+          </div>
+          <div class="edit-avatar-actions">
+            <input type="file" id="editProfileFileInput" accept="image/*" style="display: none;">
+            <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="document.getElementById('editProfileFileInput').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload Photo
+            </button>
+            <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;" onclick="window.takeProfilePhoto()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Take Photo
+            </button>
+            <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px; color: #ef4444; border-color: #fca5a5;" onclick="window.removeProfilePhoto()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <!-- Profile Form Fields -->
+        <div class="form-grid" style="margin-top: 18px;">
+          <div class="form-group">
+            <label class="form-label" for="editFirstName">First Name *</label>
+            <input type="text" id="editFirstName" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editMiddleName">Middle Name</label>
+            <input type="text" id="editMiddleName" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editLastName">Last Name *</label>
+            <input type="text" id="editLastName" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editPhone">Mobile Number</label>
+            <input type="tel" id="editPhone" class="form-input" placeholder="09XX-XXX-XXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editBarangay">Barangay (Koronadal)</label>
+            <select id="editBarangay" class="form-select">
+              <option value="Zone I">Zone I (Poblacion)</option>
+              <option value="Zone II">Zone II</option>
+              <option value="Zone III">Zone III</option>
+              <option value="Zone IV">Zone IV</option>
+              <option value="Morales">Morales</option>
+              <option value="General Paulino Santos">General Paulino Santos</option>
+              <option value="San Isidro">San Isidro</option>
+              <option value="Santa Cruz">Santa Cruz</option>
+              <option value="Carpenter Hill">Carpenter Hill</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="privacy-alert" style="margin-top: 14px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div style="font-size: 11px;">
+            <strong>Privacy Notice:</strong> Your real name is never displayed publicly. Only your alias is visible to others.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline modal-close-btn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="editProfileSaveBtn" onclick="window.saveEditProfile()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="adminIdDetailsModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -1703,6 +1802,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=20"></script>
   <script src="scripts/camera.js?v=16"></script>
-  <script src="scripts/app.js?v=29"></script>
+  <script src="scripts/app.js?v=30"></script>
 </body>
 </html>
