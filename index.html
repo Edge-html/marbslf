@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=17">
+  <link rel="stylesheet" href="styles/main.css?v=18">
 </head>
 <body>
 
@@ -74,7 +74,7 @@
                 <span id="navVerificationsBadge" class="sidebar-badge" style="display: none;">0</span>
               </button>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" id="navAdminPortalLi" style="display: none;">
               <button type="button" class="nav-link-btn" data-view="admin" id="navAdminPortalBtn">
                 <span>Admin Portal</span>
                 <span id="navAdminQueueBadge" class="sidebar-badge danger" style="display: none;">0</span>
@@ -158,7 +158,7 @@
               <span>Verification</span>
             </button>
           </li>
-          <li>
+          <li id="mobileAdminPortalLi" style="display: none;">
             <button type="button" class="nav-link-btn" data-view="admin">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <span>Admin Portal</span>

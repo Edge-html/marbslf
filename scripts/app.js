@@ -83,9 +83,14 @@
     try {
       const savedView = localStorage.getItem('marbslf_active_view');
       const currentUser = marbsDB.getCurrentUser();
-      if (savedView === 'admin' && currentUser && currentUser.role === 'ADMIN') {
-        navigateToView('admin');
-      } else if (savedView && savedView !== 'home') {
+      const isAdmin = currentUser && currentUser.role === 'ADMIN';
+      if (isAdmin) {
+        if (!savedView || savedView === 'home' || savedView === 'admin') {
+          navigateToView('admin');
+        } else {
+          navigateToView(savedView);
+        }
+      } else if (savedView && savedView !== 'home' && savedView !== 'admin') {
         navigateToView(savedView);
       }
     } catch (e) {}
@@ -112,13 +117,17 @@
       userSelect.value = marbsDB.data.current_user_id;
       userSelect.addEventListener('change', (e) => {
         marbsDB.setCurrentUser(e.target.value);
+        const currentUser = marbsDB.getCurrentUser();
+        const isAdmin = currentUser && currentUser.role === 'ADMIN';
         renderUserPill();
         renderFeed();
         renderUserDashboard();
-        if ($('#adminView').style.display !== 'none') {
-          renderAdminPortal();
+        if (isAdmin) {
+          navigateToView('admin');
+        } else {
+          navigateToView('home');
         }
-        showToast(`Switched active session to: ${marbsDB.getCurrentUser().first_name} (${marbsDB.getCurrentUser().role})`);
+        showToast(`Switched active session to: ${currentUser.first_name} (${currentUser.role})`);
       });
     }
 
@@ -164,6 +173,15 @@
         if (navMenu) navMenu.classList.remove('active');
 
         const view = btn.dataset.view;
+        const currentUser = marbsDB.getCurrentUser();
+        const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+        // For admin, their "Home" is the Admin Portal
+        if (isAdmin && view === 'home') {
+          navigateToView('admin');
+          return;
+        }
+
         if (view) navigateToView(view);
       });
     });
@@ -171,10 +189,13 @@
     const brandLogo = $('#brandLogo');
     if (brandLogo) {
       brandLogo.addEventListener('click', () => {
-        navigateToView('home');
-        $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
-        const homeBtn = document.querySelector('[data-view="home"]');
-        if (homeBtn) homeBtn.classList.add('active');
+        const currentUser = marbsDB.getCurrentUser();
+        const isAdmin = currentUser && currentUser.role === 'ADMIN';
+        if (isAdmin) {
+          navigateToView('admin');
+        } else {
+          navigateToView('home');
+        }
         if (mobileToggle) mobileToggle.classList.remove('active');
         if (sidebarNav) sidebarNav.classList.remove('active');
         if (navMenu) navMenu.classList.remove('active');
@@ -1994,8 +2015,13 @@
 
           $('#loginModal').classList.remove('active');
           renderUserPill();
-          renderFeed();
-          showToast(`✓ Welcome back, ${marbsDB.getCurrentUser().first_name}!`);
+          const currentUser = marbsDB.getCurrentUser();
+          if (currentUser && currentUser.role === 'ADMIN') {
+            navigateToView('admin');
+          } else {
+            renderFeed();
+          }
+          showToast(`✓ Welcome back, ${currentUser.first_name}!`);
         } catch (err) {
           alert('Login Failed: ' + (err.message || 'Please check your email and password.'));
         } finally {
@@ -2637,10 +2663,23 @@
   // Helper UI Utilities
   function renderUserPill() {
     const user = marbsDB.getCurrentUser();
+    const isAdmin = user && user.role === 'ADMIN';
     const pill = $('#navUserBtn');
     const signOutBtn = $('#navSignOutBtn');
     const loginBtn = $('#openLoginModalBtn');
     const registerBtn = $('#openRegisterModalBtn');
+
+    // 1. Show Admin Portal only on the admin side (hidden for normal users)
+    $$('[data-view="admin"]').forEach(el => {
+      const parentLi = el.closest('li') || el;
+      parentLi.style.display = isAdmin ? '' : 'none';
+    });
+
+    // 2. In admin side, remove Verification (visible for normal users)
+    $$('[data-view="verifications"]').forEach(el => {
+      const parentLi = el.closest('li') || el;
+      parentLi.style.display = isAdmin ? 'none' : '';
+    });
 
     // Calculate pending moderation queue count
     const pendingReviewPostsCount = (marbsDB.data.posts || []).filter(p => p.status === 'PENDING_REVIEW').length;

@@ -324,7 +324,12 @@ async function syncFirebaseUserProfile(user) {
   if (typeof window.renderUserPill === 'function') {
     window.renderUserPill();
   }
-  if (typeof window.renderFeed === 'function') {
+  if (userObj.role === 'ADMIN' && typeof window.navigateToView === 'function') {
+    const savedView = localStorage.getItem('marbslf_active_view');
+    if (!savedView || savedView === 'home' || savedView === 'admin') {
+      window.navigateToView('admin');
+    }
+  } else if (typeof window.renderFeed === 'function') {
     window.renderFeed();
   }
 
