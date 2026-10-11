@@ -707,34 +707,7 @@ h1, h2, h3, .hero-tagline, .section-title {
   color: var(--text-main);
 }
 
-.feed-filters {
-  display: flex;
-  gap: 6px;
-}
 
-.feed-filter-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 5px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.feed-filter-btn:hover {
-  background: var(--surface-alt);
-  color: var(--text-main);
-}
-
-.feed-filter-btn.active {
-  background: var(--primary-yellow);
-  color: var(--primary-yellow-ink);
-  border-color: var(--primary-yellow-hover);
-  font-weight: 600;
-}
 
 .see-more-link {
   font-size: 14px;
@@ -2196,28 +2169,7 @@ h1, h2, h3, .hero-tagline, .section-title {
     width: 100%;
   }
 
-  .feed-filters {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    gap: 6px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
 
-  .feed-filters::-webkit-scrollbar {
-    display: none;
-  }
-
-  .feed-filter-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
 
   /* Posts Grid on mobile */
   .posts-grid {

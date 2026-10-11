@@ -295,14 +295,6 @@
 
 
 
-    $$('.feed-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        $$('.feed-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        renderFeed();
-      });
-    });
   }
 
   // 4. Real-time Search
