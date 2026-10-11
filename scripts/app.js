@@ -3273,25 +3273,29 @@
   window.takeProfilePhoto = function() {
     // Open camera modal using existing marbsCamera system
     if (window.marbsCamera) {
-      window.marbsCamera.open(function(payload) {
-        if (payload && payload.dataUrl) {
-          // Compress the camera capture
-          const img = new Image();
-          img.onload = function() {
-            const maxSize = 320;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
-            else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            _pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            const user = marbsDB.getCurrentUser();
-            _renderEditAvatarPreview(user || { first_name: 'U' });
-            showToast('📸 Photo captured! Click Save to apply.');
-          };
-          img.src = payload.dataUrl;
+      window.marbsCamera.open({
+        category: 'profile_photo',
+        onCapture: function(payload) {
+          const imgData = payload && (payload.image_data || payload.dataUrl);
+          if (imgData) {
+            // Compress the camera capture
+            const img = new Image();
+            img.onload = function() {
+              const maxSize = 320;
+              let w = img.width, h = img.height;
+              if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+              else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              _pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+              const user = marbsDB.getCurrentUser();
+              _renderEditAvatarPreview(user || { first_name: 'U' });
+              showToast('📸 Photo captured! Click Save to apply.');
+            };
+            img.src = imgData;
+          }
         }
       });
     } else {

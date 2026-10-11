@@ -2231,10 +2231,13 @@ h1, h2, h3, .hero-tagline, .section-title {
   /* Modals sizing and scroll on mobile */
   .modal-overlay {
     padding: 8px;
-    display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
+  }
+
+  .modal-overlay.active {
+    display: flex;
   }
 
   .modal-card {
