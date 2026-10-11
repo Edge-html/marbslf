@@ -2525,3 +2525,368 @@ h1, h2, h3, .hero-tagline, .section-title {
   object-fit: cover;
   border-radius: 50%;
 }
+
+/* ==========================================================================
+   HOW IT WORKS (CIVIC RETURN WORKFLOW) REDESIGN
+   ========================================================================== */
+
+.hiw-wrapper {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 8px 0 40px 0;
+}
+
+/* Hero Section */
+.hiw-hero {
+  text-align: center;
+  margin-bottom: 36px;
+  position: relative;
+}
+
+.hiw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--primary-yellow-soft);
+  color: var(--primary-yellow-text);
+  border: 1px solid rgba(242, 179, 27, 0.4);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.hiw-title {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.hiw-title span {
+  color: var(--primary-yellow-text);
+  position: relative;
+}
+
+.hiw-subtitle {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 680px;
+  margin: 0 auto 24px auto;
+}
+
+/* Quick Guarantees Pill Bar */
+.hiw-guarantees-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hiw-guarantee-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.hiw-guarantee-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(242, 179, 27, 0.5);
+}
+
+.hiw-guarantee-pill svg {
+  color: var(--primary-yellow-text);
+}
+
+/* Phases Section Container */
+.hiw-phase-group {
+  margin-bottom: 32px;
+}
+
+.hiw-phase-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hiw-phase-indicator {
+  padding: 4px 10px;
+  background: var(--navy-dark);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+}
+
+.hiw-phase-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.hiw-phase-desc {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin-left: auto;
+}
+
+/* Cards Grid */
+.hiw-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* Individual Step Card */
+.hiw-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hiw-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  border-color: rgba(242, 179, 27, 0.5);
+}
+
+/* Top Accent Line */
+.hiw-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.25s ease;
+}
+
+.hiw-card[data-step="1"]::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.hiw-card[data-step="2"]::before { background: linear-gradient(90deg, #059669, #34d399); }
+.hiw-card[data-step="3"]::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.hiw-card[data-step="4"]::before { background: linear-gradient(90deg, #4f46e5, #818cf8); }
+.hiw-card[data-step="5"]::before { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+.hiw-card[data-step="6"]::before { background: linear-gradient(90deg, #ea580c, #fb923c); }
+
+.hiw-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.hiw-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform 0.2s ease;
+}
+
+.hiw-card:hover .hiw-card-icon {
+  transform: scale(1.08);
+}
+
+.hiw-icon-blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+.hiw-icon-green { background: rgba(5, 150, 105, 0.1); color: #059669; }
+.hiw-icon-amber { background: rgba(217, 119, 6, 0.1); color: #d97706; }
+.hiw-icon-indigo { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
+.hiw-icon-cyan { background: rgba(2, 132, 199, 0.1); color: #0284c7; }
+.hiw-icon-orange { background: rgba(234, 88, 12, 0.1); color: #ea580c; }
+
+.hiw-step-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text-subtle);
+  background: var(--surface-alt);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.hiw-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.hiw-card-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  flex-grow: 1;
+}
+
+.hiw-card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+/* Bottom CTA / Civic Help Strip */
+.hiw-cta-box {
+  margin-top: 36px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: var(--radius-xl);
+  padding: 32px 36px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.hiw-cta-info h3 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.hiw-cta-info p {
+  font-size: 13px;
+  color: #94a3b8;
+  max-width: 540px;
+  line-height: 1.5;
+}
+
+.hiw-cta-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.hiw-cta-btn-primary {
+  background: var(--primary-yellow);
+  color: var(--primary-yellow-ink);
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+}
+
+.hiw-cta-btn-primary:hover {
+  background: var(--primary-yellow-hover);
+  transform: translateY(-1px);
+}
+
+.hiw-cta-btn-outline {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-sans);
+}
+
+.hiw-cta-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .hiw-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .hiw-cta-box {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+  }
+  .hiw-cta-info p {
+    margin: 0 auto;
+  }
+  .hiw-cta-actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .hiw-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .hiw-title {
+    font-size: 26px;
+  }
+  .hiw-phase-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .hiw-phase-desc {
+    margin-left: 0;
+  }
+  .hiw-cta-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hiw-cta-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}

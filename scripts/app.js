@@ -281,6 +281,7 @@
       renderAdminPortal();
     }
   }
+  window.navigateToView = navigateToView;
 
   // 3. Category & Area Filters (Mockup feature)
   function setupCategoryAndAreaFilters() {
