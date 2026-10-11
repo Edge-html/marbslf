@@ -1583,6 +1583,19 @@ h1, h2, h3, .hero-tagline, .section-title {
   margin-bottom: 8px;
 }
 
+.claim-photo-proof-box {
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.claim-photo-proof-box:hover {
+  border-color: var(--primary);
+  background: #f1f5f9;
+}
+
 /* User & Admin Dashboards */
 .dashboard-layout {
   display: grid;

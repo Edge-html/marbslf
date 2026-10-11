@@ -15,8 +15,9 @@
   let currentSearchQuery = '';
   let activePostForModal = null;
   let activeChatPost = null;
-  let activeCameraContext = null; // 'lost', 'found', or 'id'
+  let activeCameraContext = null; // 'lost', 'found', 'id', or 'claim_proof'
   let capturedPhotoPayload = null;
+  let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
 
   // DOM Elements cache helper
@@ -910,9 +911,54 @@
       $('#idCameraPrompt').style.display = 'none';
       $('#idPhotoHashTag').textContent = `✓ Secure Document Capture Hash: ${payload.image_hash}`;
       $('#idPhotoHashTag').style.display = 'block';
+    } else if (activeCameraContext === 'claim_proof') {
+      handleClaimPhotoCaptured(payload);
+      return;
     }
 
     showToast('✓ Photo captured and watermarked with MarbsLF timestamp!');
+  }
+
+  function handleClaimPhotoCaptured(payload) {
+    claimPhotoPayload = payload;
+    const previewContainer = $('#claimPhotoPreviewContainer');
+    const emptyState = $('#claimPhotoEmptyState');
+    const previewImg = $('#claimPhotoPreviewImg');
+    const badge = $('#claimPhotoBadge');
+    const timestamp = $('#claimPhotoTimestamp');
+
+    if (previewImg) previewImg.src = payload.image_data;
+    if (badge) {
+      if (payload.camera_verification_status === 'GALLERY_UPLOAD') {
+        badge.textContent = '📁 PHOTO ATTACHED';
+        badge.style.background = '#e0f2fe';
+        badge.style.color = '#0369a1';
+      } else {
+        badge.textContent = '✓ LIVE CAMERA PROOF';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#15803d';
+      }
+    }
+    if (timestamp) {
+      const timeStr = new Date(payload.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      timestamp.textContent = `Captured: ${timeStr} • Hash: ${payload.image_hash || 'SECURE'}`;
+    }
+    if (previewContainer) previewContainer.style.display = 'flex';
+    if (emptyState) emptyState.style.display = 'none';
+
+    showToast('✓ Proof photo captured successfully!');
+  }
+
+  function resetClaimPhotoUI() {
+    claimPhotoPayload = null;
+    const previewContainer = $('#claimPhotoPreviewContainer');
+    const emptyState = $('#claimPhotoEmptyState');
+    const previewImg = $('#claimPhotoPreviewImg');
+    const fileInput = $('#claimPhotoFileInput');
+    if (previewImg) previewImg.src = '';
+    if (fileInput) fileInput.value = '';
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'block';
   }
 
   // Helper: check if user is verified
@@ -1288,6 +1334,60 @@
       $('#ownershipClaimModal').classList.remove('active');
     });
 
+    // Camera & Upload Triggers for Verification Claim
+    const claimCamBtn = $('#claimCameraOpenBtn');
+    if (claimCamBtn) {
+      claimCamBtn.addEventListener('click', () => {
+        activeCameraContext = 'claim_proof';
+        if (window.marbsCamera) {
+          window.marbsCamera.open({
+            category: 'verification_proof',
+            onCapture: handleClaimPhotoCaptured
+          });
+        }
+      });
+    }
+
+    const claimUploadBtn = $('#claimUploadFileBtn');
+    const claimFileInput = $('#claimPhotoFileInput');
+    if (claimUploadBtn && claimFileInput) {
+      claimUploadBtn.addEventListener('click', () => claimFileInput.click());
+      claimFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          handleClaimPhotoCaptured({
+            image_data: evt.target.result,
+            image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            camera_verification_status: 'GALLERY_UPLOAD',
+            timestamp: new Date().toISOString()
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const claimRetakeBtn = $('#claimPhotoRetakeBtn');
+    if (claimRetakeBtn) {
+      claimRetakeBtn.addEventListener('click', () => {
+        activeCameraContext = 'claim_proof';
+        if (window.marbsCamera) {
+          window.marbsCamera.open({
+            category: 'verification_proof',
+            onCapture: handleClaimPhotoCaptured
+          });
+        }
+      });
+    }
+
+    const claimRemoveBtn = $('#claimPhotoRemoveBtn');
+    if (claimRemoveBtn) {
+      claimRemoveBtn.addEventListener('click', () => {
+        resetClaimPhotoUI();
+      });
+    }
+
     const claimForm = $('#ownershipClaimForm');
     if (claimForm) {
       claimForm.addEventListener('submit', (e) => {
@@ -1307,7 +1407,11 @@
           identifying_marks: getVal('claimAnswerMarks'),
           accessories: getVal('claimAnswerAccessories'),
           inside_contents: getVal('claimAnswerContents'),
-          private_proof: getVal('claimAnswerProof')
+          private_proof: getVal('claimAnswerProof'),
+          proof_photo_url: claimPhotoPayload ? claimPhotoPayload.image_data : null,
+          proof_photo_hash: claimPhotoPayload ? claimPhotoPayload.image_hash : null,
+          camera_verification_status: claimPhotoPayload ? claimPhotoPayload.camera_verification_status : null,
+          proof_timestamp: claimPhotoPayload ? claimPhotoPayload.timestamp : null
         };
 
         const isFoundPost = activePostForModal.post_type === 'FOUND';
@@ -1318,8 +1422,11 @@
           found_post_id: isFoundPost ? activePostForModal.post_id : 'FOUND_MATCH-' + Date.now(),
           claimant_id: user.user_id,
           status: 'VERIFICATION_IN_PROGRESS',
-          match_score: 90,
+          match_score: claimPhotoPayload ? 95 : 90,
           qna_responses: answers,
+          proof_photo_url: claimPhotoPayload ? claimPhotoPayload.image_data : null,
+          proof_photo_hash: claimPhotoPayload ? claimPhotoPayload.image_hash : null,
+          camera_verification_status: claimPhotoPayload ? claimPhotoPayload.camera_verification_status : null,
           created_at: new Date().toISOString()
         };
 
@@ -1332,8 +1439,8 @@
           receiver_id: activePostForModal.user_id || 'USR-ADMIN',
           post_id: activePostForModal.post_id,
           message: isFoundPost 
-            ? `[System Notice] User ${user.public_alias || user.first_name} submitted an ownership claim with private identifying answers for your found item.`
-            : `[System Notice] User ${user.public_alias || user.first_name} reported that they found your lost item with identifying details.`,
+            ? `[System Notice] User ${user.public_alias || user.first_name} submitted an ownership claim with private identifying answers ${claimPhotoPayload ? 'and verified camera photo proof ' : ''}for your found item.`
+            : `[System Notice] User ${user.public_alias || user.first_name} reported that they found your lost item with identifying details ${claimPhotoPayload ? 'and live camera photo proof' : ''}.`,
           timestamp: new Date().toISOString(),
           status: 'UNREAD'
         });
@@ -1344,7 +1451,7 @@
             activePostForModal.user_id,
             isFoundPost ? 'New Ownership Claim Received' : 'Found Match Lead Received',
             isFoundPost 
-              ? `A user submitted ownership proof answers for your found post "${activePostForModal.item_name}".`
+              ? `A user submitted ownership proof answers ${claimPhotoPayload ? 'with photo proof ' : ''}for your found post "${activePostForModal.item_name}".`
               : `A user reported finding an item matching your lost post "${activePostForModal.item_name}".`,
             'CLAIM'
           );
@@ -1353,10 +1460,11 @@
         marbsDB.save();
         $('#ownershipClaimModal').classList.remove('active');
         claimForm.reset();
+        resetClaimPhotoUI();
 
         showToast(isFoundPost 
-          ? '✓ Claim submitted! The finder has been notified to review your proof answers.'
-          : '✓ Details submitted! The owner has been notified of your report.');
+          ? '✓ Claim submitted! The finder has been notified to review your proof answers and photo.'
+          : '✓ Details submitted! The owner has been notified of your report and photo proof.');
       });
     }
   }
@@ -1388,6 +1496,7 @@
     const isLost = post.post_type === 'LOST';
 
     $('#claimModalItemName').textContent = post.item_name;
+    resetClaimPhotoUI();
 
     // Dynamically align questions with whether this is a Found post or Lost post
     const q1Label = $('#claimLabelLocation');
@@ -1396,6 +1505,9 @@
     const q2Input = $('#claimAnswerTime');
     const q6Label = $('#claimLabelProof');
     const q6Input = $('#claimAnswerProof');
+    const q7Label = $('#claimLabelPhoto');
+    const q7Help = $('#claimPhotoHelpText');
+    const camBtn = $('#claimCameraOpenBtn');
 
     if (isLost) {
       // User is responding to a LOST post ("Found This?")
@@ -1405,6 +1517,9 @@
       if (q2Input) q2Input.placeholder = 'e.g. Yesterday afternoon around 3:30 PM';
       if (q6Label) q6Label.textContent = '6. Details confirming this matches the owner\'s lost item: *';
       if (q6Input) q6Input.placeholder = 'e.g. Current condition, exact custody location or turned over place';
+      if (q7Label) q7Label.innerHTML = '<span>7. Live Photo Proof of Found Item (Recommended)</span><span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">Live Camera or Upload</span>';
+      if (q7Help) q7Help.textContent = 'Capture the item you found right now using your website camera to prove physical possession, or upload a clear photo.';
+      if (camBtn) camBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Capture Found Item with Camera';
     } else {
       // User is claiming a FOUND post ("I Think This Is Mine")
       if (q1Label) q1Label.textContent = '1. Where did you lose your item in Koronadal? *';
@@ -1413,6 +1528,9 @@
       if (q2Input) q2Input.placeholder = 'e.g. Wednesday morning around 10:30 AM';
       if (q6Label) q6Label.textContent = '6. What specific secret proof proves it belongs to you? *';
       if (q6Input) q6Input.placeholder = 'e.g. Lock screen wallpaper photo, unique scratch, serial number ending in 4920';
+      if (q7Label) q7Label.innerHTML = '<span>7. Live Photo Proof / Camera Verification (Recommended)</span><span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">Live Camera or Upload</span>';
+      if (q7Help) q7Help.textContent = 'Capture matching ownership proof (e.g. receipt, spare accessory, old photo with item, or matching set) using your camera, or upload a photo.';
+      if (camBtn) camBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Capture with Website Camera';
     }
 
     $('#ownershipClaimModal').classList.add('active');
@@ -2966,6 +3084,32 @@
                   <div style="color: #854d0e; font-size: 11px; font-weight: 700;">★ Secret Proof / Unique Characteristic:</div>
                   <div style="color: #713f12; font-weight: 700; margin-top: 2px;">${escapeHtml(qna.private_proof || 'Not provided')}</div>
                 </div>
+
+                ${(qna.proof_photo_url || m.proof_photo_url) ? `
+                  <div style="background: #f0fdf4; padding: 10px 12px; border-radius: 6px; border: 1px solid #bbf7d0; margin-top: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <span style="color: #166534; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        📸 Captured Photo Proof:
+                      </span>
+                      <span style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">
+                        ${qna.camera_verification_status === 'GALLERY_UPLOAD' ? 'UPLOADED PHOTO' : 'LIVE CAMERA VERIFIED'}
+                      </span>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                      <img src="${qna.proof_photo_url || m.proof_photo_url}" alt="Verification Proof" style="width: 90px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #86efac; cursor: pointer; transition: transform 0.15s ease;" onclick="window.openImageZoomModal('${qna.proof_photo_url || m.proof_photo_url}')" title="Click to inspect full photo" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                      <div style="font-size: 11px; color: #166534; line-height: 1.5;">
+                        <div style="font-weight: 600;">Authentic photo proof submitted by claimant</div>
+                        ${qna.proof_photo_hash ? `<div style="font-family: monospace; font-size: 10px; color: #15803d; margin-top: 3px; word-break: break-all;">Hash: ${escapeHtml(qna.proof_photo_hash)}</div>` : ''}
+                        <div style="margin-top: 6px;">
+                          <button type="button" class="btn btn-outline" style="font-size: 10px; padding: 3px 8px; color: #15803d; border-color: #86efac; background: #fff;" onclick="window.openImageZoomModal('${qna.proof_photo_url || m.proof_photo_url}')">
+                            🔍 Inspect Full Photo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </div>
@@ -2986,6 +3130,14 @@
       `;
     }).join('');
   }
+
+  window.openImageZoomModal = function (src) {
+    const modal = document.getElementById('imageZoomModal');
+    const img = document.getElementById('imageZoomModalImg');
+    if (!modal || !img || !src) return;
+    img.src = src;
+    modal.classList.add('active');
+  };
 
   window.openVerificationsModal = openVerificationsModal;
   window.openPostVerificationAnswers = function (postId) {
