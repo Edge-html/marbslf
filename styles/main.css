@@ -108,8 +108,10 @@ h1, h2, h3, .hero-tagline, .section-title {
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  bottom: 0;
   height: 100vh;
   overflow-y: auto;
   border-right: 1px solid #1e293b;
@@ -239,6 +241,7 @@ h1, h2, h3, .hero-tagline, .section-title {
 .main-content-area {
   flex-grow: 1;
   min-width: 0;
+  margin-left: 250px;
   background-color: var(--background);
   display: flex;
   flex-direction: column;
@@ -1902,6 +1905,7 @@ h1, h2, h3, .hero-tagline, .section-title {
   }
 
   .main-content-area {
+    margin-left: 0;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
