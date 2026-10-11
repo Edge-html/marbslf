@@ -3328,38 +3328,49 @@ h1, h2, h3, .hero-tagline, .section-title {
 
 #landingPageView {
   width: 100%;
+  min-height: calc(100vh - 66px);
   background: #0f172a;
   color: #f8fafc;
   font-family: var(--font-sans);
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .lp-section {
+  width: 100%;
   padding: 80px 24px;
   position: relative;
+  box-sizing: border-box;
 }
 
 .lp-container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* Page 1: Hero Section */
 .lp-hero-section {
+  width: 100%;
   padding: 70px 24px 90px;
   background: radial-gradient(circle at 80% 20%, rgba(242, 179, 27, 0.12) 0%, transparent 50%),
               radial-gradient(circle at 10% 80%, rgba(37, 99, 235, 0.15) 0%, transparent 45%),
               #0f172a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
 }
 
 .lp-hero-container {
-  max-width: 1240px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1.15fr 0.95fr;
   gap: 50px;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .lp-pill-badge {
@@ -3653,12 +3664,14 @@ h1, h2, h3, .hero-tagline, .section-title {
 }
 
 .lp-auth-wrapper {
+  width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 60px;
   align-items: center;
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .lp-auth-title {
@@ -3784,15 +3797,19 @@ h1, h2, h3, .hero-tagline, .section-title {
 
 /* Footer Styling */
 .lp-footer {
+  width: 100%;
   background: #090d16;
   color: #cbd5e1;
   padding: 70px 24px 36px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
 }
 
 .lp-footer-container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .lp-footer-top {
