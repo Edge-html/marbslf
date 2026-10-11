@@ -186,7 +186,375 @@
       <!-- Main Content Layout -->
       <main class="app-container">
 
-    <!-- VIEW 1: HOME VIEW -->
+    <!-- =========================================================================
+         LANDING PAGE (PAGES 1, 2, 3) FOR UNAUTHENTICATED CITIZENS
+         ========================================================================= -->
+    <section id="landingPageView" style="display: none;">
+      
+      <!-- PAGE 1: HERO / INTRODUCTION "Lost Something?" -->
+      <section class="lp-section lp-hero-section" id="lpPage1">
+        <div class="lp-hero-container">
+          <div class="lp-hero-content">
+            <div class="lp-pill-badge">
+              <span class="lp-pill-dot"></span>
+              Official Civic Lost &amp; Found Platform &bull; Koronadal City
+            </div>
+            <h1 class="lp-hero-title">
+              Lost Something in <span class="lp-highlight">Koronadal City?</span>
+            </h1>
+            <p class="lp-hero-subtitle">
+              The centralized, secure community network to report, locate, and reunite lost items and pets with real verified citizens. Safe meetups at official public pick-up points across Marbel.
+            </p>
+            <div class="lp-hero-cta-group">
+              <button type="button" class="lp-btn lp-btn-primary" onclick="window.scrollToLandingPage(3, 'login')">
+                <span>Login / Sign Up</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+              <button type="button" class="lp-btn lp-btn-ghost" onclick="window.scrollToLandingPage(2)">
+                <span>What is MarbsLF?</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+              </button>
+            </div>
+            
+            <div class="lp-hero-stats">
+              <div class="lp-stat-pill">
+                <span class="lp-stat-num">27</span>
+                <span class="lp-stat-lbl">Barangays Covered</span>
+              </div>
+              <div class="lp-stat-pill">
+                <span class="lp-stat-num">100%</span>
+                <span class="lp-stat-lbl">Verified ID Protocol</span>
+              </div>
+              <div class="lp-stat-pill">
+                <span class="lp-stat-num">7+</span>
+                <span class="lp-stat-lbl">Official Safe Spots</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lp-hero-visual">
+            <div class="lp-visual-frame">
+              <img src="assets/koronadal.jpg" alt="Koronadal City Roundabout Landmark" class="lp-hero-img" onerror="this.src='assets/images.jpg'">
+              <div class="lp-visual-overlay"></div>
+              <div class="lp-visual-caption">
+                <div class="lp-caption-icon">📍</div>
+                <div>
+                  <strong>City of Koronadal (Marbel)</strong>
+                  <span>South Cotabato &bull; Official Community Hub</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 2: WHAT IS MARBSLF? & WHAT DOES THIS WEBSITE DO? -->
+      <section class="lp-section lp-about-section" id="lpPage2">
+        <div class="lp-container">
+          <div class="lp-section-header">
+            <div class="lp-pill-badge yellow">Civic Solution &bull; Safe &bull; Free</div>
+            <h2 class="lp-section-title">Having <span class="lp-highlight">Trouble</span> Finding What You Lost?</h2>
+            <p class="lp-section-subtitle">
+              <strong>MarbsLF</strong> (Marbel Lost &amp; Found) is Koronadal City's official digital registry connecting owners and finders through encrypted ownership verification, real-time messaging, and safe public handover points.
+            </p>
+          </div>
+
+          <div class="lp-features-grid">
+            <!-- Feature 1 -->
+            <div class="lp-feature-card">
+              <div class="lp-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <h3 class="lp-feature-title">Report Lost &amp; Found Fast</h3>
+              <p class="lp-feature-desc">
+                Instantly publish lost or found items and pets with live camera captures, privacy watermarks, and categorized tags across all Koronadal zones.
+              </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="lp-feature-card">
+              <div class="lp-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h3 class="lp-feature-title">Verified Citizen Identity</h3>
+              <p class="lp-feature-desc">
+                PhilSys National ID &amp; Government ID verification prevents fake claims and trolls. Real legal identities are validated while keeping public aliases shielded.
+              </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="lp-feature-card">
+              <div class="lp-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <h3 class="lp-feature-title">Anti-Scam Questionnaires</h3>
+              <p class="lp-feature-desc">
+                Claimants must answer unique identifying questions (hidden serial numbers, lock screens, pet markings) before any return schedule is approved.
+              </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="lp-feature-card">
+              <div class="lp-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <h3 class="lp-feature-title">Real-Time Messenger</h3>
+              <p class="lp-feature-desc">
+                Chat securely with finders and owners with a marketplace item header so both parties know exactly what item is being coordinated without exchanging phone numbers.
+              </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="lp-feature-card">
+              <div class="lp-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <h3 class="lp-feature-title">Official Safe Meetup Spots</h3>
+              <p class="lp-feature-desc">
+                Handovers happen strictly at Koronadal City Hall, Police Desks, KCC Mall, and Barangay Halls with complete CCTV coverage for total personal safety.
+              </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="lp-feature-card">
+              <div class="lp-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <h3 class="lp-feature-title">Reliability Rating &amp; Points</h3>
+              <p class="lp-feature-desc">
+                Rate finders with 5-star citizen reviews upon retrieved items and earn Marbs Points redeemable for partner business vouchers in South Cotabato.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 3: LOGIN & SIGNUP -->
+      <section class="lp-section lp-auth-section" id="lpPage3">
+        <div class="lp-container">
+          <div class="lp-auth-wrapper">
+            <div class="lp-auth-info-col">
+              <div class="lp-pill-badge yellow">Join MarbsLF Today</div>
+              <h2 class="lp-auth-title">Secure Portal &bull; Sign In or Create an Account</h2>
+              <p class="lp-auth-desc">
+                Log in to post reports, track verification matches, coordinate handovers in real time, and protect your belongings with the City of Koronadal.
+              </p>
+              
+              <div class="lp-auth-perks">
+                <div class="lp-perk-item">
+                  <div class="lp-perk-check">✓</div>
+                  <div>
+                    <strong>Zero Platform Fees:</strong> Free civic service powered for South Cotabato citizens.
+                  </div>
+                </div>
+                <div class="lp-perk-item">
+                  <div class="lp-perk-check">✓</div>
+                  <div>
+                    <strong>Anti-Extortion Guard:</strong> Phone numbers and home coordinates stay 100% private.
+                  </div>
+                </div>
+                <div class="lp-perk-item">
+                  <div class="lp-perk-check">✓</div>
+                  <div>
+                    <strong>Central Admin Moderation:</strong> Every post vetted for community safety.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auth Form Card with Login / Signup Toggle -->
+            <div class="lp-auth-card">
+              <div class="lp-auth-tabs">
+                <button type="button" class="lp-tab-btn active" id="lpTabLoginBtn" onclick="window.switchLandingAuthTab('login')">
+                  Sign In
+                </button>
+                <button type="button" class="lp-tab-btn" id="lpTabRegisterBtn" onclick="window.switchLandingAuthTab('register')">
+                  Create Account
+                </button>
+              </div>
+
+              <!-- LOGIN PANEL -->
+              <div class="lp-auth-panel" id="lpLoginPanel">
+                <form id="lpLoginForm">
+                  <div class="form-group" style="margin-bottom: 14px;">
+                    <label class="form-label" for="lpLoginIdentifier" style="color: #0f172a; font-weight: 700; font-size: 13px;">Email or Username</label>
+                    <input type="text" id="lpLoginIdentifier" class="form-input" placeholder="Enter your email or username" required autocomplete="username">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 14px;">
+                    <label class="form-label" for="lpLoginPassword" style="color: #0f172a; font-weight: 700; font-size: 13px;">Password</label>
+                    <div class="password-input-wrapper">
+                      <input type="password" id="lpLoginPassword" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+                      <button type="button" class="password-toggle-btn" data-target="lpLoginPassword" title="Show or hide password">
+                        <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg class="eye-closed" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 12px;">
+                    <a href="javascript:void(0)" onclick="alert('Password reset link has been dispatched to your verified email.')" style="color: #b45309; font-weight: 600;">Forgot Password?</a>
+                    <span style="color: #64748b;">Koronadal Citizen Portal</span>
+                  </div>
+                  <button type="submit" class="lp-submit-btn">
+                    <span>Sign In to MarbsLF</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </button>
+                </form>
+              </div>
+
+              <!-- SIGNUP PANEL -->
+              <div class="lp-auth-panel" id="lpRegisterPanel" style="display: none;">
+                <form id="lpRegisterForm">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegFirstName" style="font-size: 12px; color: #0f172a; font-weight: 700;">First Name *</label>
+                      <input type="text" id="lpRegFirstName" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegLastName" style="font-size: 12px; color: #0f172a; font-weight: 700;">Last Name *</label>
+                      <input type="text" id="lpRegLastName" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegDob" style="font-size: 12px; color: #0f172a; font-weight: 700;">Date of Birth *</label>
+                      <input type="date" id="lpRegDob" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegPhone" style="font-size: 12px; color: #0f172a; font-weight: 700;">Mobile *</label>
+                      <input type="tel" id="lpRegPhone" class="form-input" placeholder="09XX-XXX-XXXX" required style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 10px;">
+                    <label class="form-label" for="lpRegEmail" style="font-size: 12px; color: #0f172a; font-weight: 700;">Email Address *</label>
+                    <input type="email" id="lpRegEmail" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegUsername" style="font-size: 12px; color: #0f172a; font-weight: 700;">Username *</label>
+                      <input type="text" id="lpRegUsername" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegBarangay" style="font-size: 12px; color: #0f172a; font-weight: 700;">Barangay *</label>
+                      <select id="lpRegBarangay" class="form-select" required style="font-size: 13px; padding: 8px 10px;">
+                        <option value="Zone I">Zone I (Poblacion)</option>
+                        <option value="Zone II" selected>Zone II</option>
+                        <option value="Zone III">Zone III</option>
+                        <option value="Zone IV">Zone IV</option>
+                        <option value="Morales">Morales</option>
+                        <option value="General Paulino Santos">GPS</option>
+                        <option value="San Isidro">San Isidro</option>
+                        <option value="Santa Cruz">Santa Cruz</option>
+                        <option value="Carpenter Hill">Carpenter Hill</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegPassword" style="font-size: 12px; color: #0f172a; font-weight: 700;">Password *</label>
+                      <input type="password" id="lpRegPassword" class="form-input" placeholder="Min 6 chars" required minlength="6" style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label class="form-label" for="lpRegConfirmPassword" style="font-size: 12px; color: #0f172a; font-weight: 700;">Confirm *</label>
+                      <input type="password" id="lpRegConfirmPassword" class="form-input" placeholder="Re-type" required minlength="6" style="font-size: 13px; padding: 8px 10px;">
+                    </div>
+                  </div>
+
+                  <button type="submit" class="lp-submit-btn">
+                    <span>Create Citizen Account</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOOTER: SOCIAL MEDIA, QUICK LINKS, CIVIC ACCREDITATION -->
+      <footer class="lp-footer" id="lpFooter">
+        <div class="lp-footer-container">
+          <div class="lp-footer-top">
+            
+            <!-- Brand Column -->
+            <div class="lp-footer-brand">
+              <div class="lp-footer-logo-row">
+                <img src="assets/logo.png" alt="MarbsLF Logo" class="lp-footer-logo">
+                <span class="lp-footer-brand-name">Marbs<span style="color: #f2b31b;">LF</span></span>
+              </div>
+              <p class="lp-footer-about">
+                Centralized Lost and Found Civic Network of Koronadal City, South Cotabato. Built to safeguard community belongings, protect citizen privacy, and promote honesty across Marbel.
+              </p>
+              <div class="lp-social-links">
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="lp-social-btn" title="Facebook" aria-label="Facebook">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="lp-social-btn" title="X / Twitter" aria-label="Twitter">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="lp-social-btn" title="Instagram" aria-label="Instagram">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                </a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="lp-social-btn" title="YouTube" aria-label="YouTube">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Quick Navigation Column -->
+            <div class="lp-footer-col">
+              <h4 class="lp-footer-heading">Landing Pages</h4>
+              <ul class="lp-footer-links">
+                <li><a href="javascript:void(0)" onclick="window.scrollToLandingPage(1)">1st Page &bull; Introduction</a></li>
+                <li><a href="javascript:void(0)" onclick="window.scrollToLandingPage(2)">2nd Page &bull; What is MarbsLF?</a></li>
+                <li><a href="javascript:void(0)" onclick="window.scrollToLandingPage(3, 'login')">3rd Page &bull; Sign In Portal</a></li>
+                <li><a href="javascript:void(0)" onclick="window.scrollToLandingPage(3, 'register')">3rd Page &bull; Citizen Registration</a></li>
+              </ul>
+            </div>
+
+            <!-- Civic Resources Column -->
+            <div class="lp-footer-col">
+              <h4 class="lp-footer-heading">Official Safe Spots</h4>
+              <ul class="lp-footer-links">
+                <li>Koronadal City Hall (PNP Desk)</li>
+                <li>KCC Mall of Marbel (Customer Desk)</li>
+                <li>Gaisano Grand Mall (Guard Post)</li>
+                <li>Barangay Zone II Council Office</li>
+              </ul>
+            </div>
+
+            <!-- Contact & Hotlines Column -->
+            <div class="lp-footer-col">
+              <h4 class="lp-footer-heading">Emergency Hotlines</h4>
+              <ul class="lp-footer-links">
+                <li><strong>Koronadal PNP:</strong> (083) 228-2432</li>
+                <li><strong>City CDRRMO:</strong> (083) 228-8011</li>
+                <li><strong>City Hall Operator:</strong> (083) 228-3729</li>
+                <li><strong>Email:</strong> support@marbslf.gov.ph</li>
+              </ul>
+            </div>
+
+          </div>
+
+          <div class="lp-footer-bottom">
+            <div>
+              &copy; 2026 <strong>MarbsLF</strong> &bull; City Government of Koronadal, South Cotabato. All rights reserved.
+            </div>
+            <div class="lp-footer-legal">
+              <span>Data Privacy Act of 2012 (RA 10173) Compliant</span>
+              &bull;
+              <span>Official Safe Pickup Ordinance</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </section>
+
+    <!-- VIEW 1: HOME VIEW (ACTIVE WHEN LOGGED IN) -->
     <section id="homeView">
       
       <!-- Hero Wrapper -->
@@ -735,7 +1103,7 @@
               </p>
             </div>
             <div style="display: flex; gap: 10px;">
-              <button type="button" class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.3); font-size: 12px;" onclick="window.openVerificationsModal()">
+              <button type="button" class="btn btn-outline" style="background: rgba(255,255,255,0.12) !important; color: #fff !important; border-color: rgba(255,255,255,0.35); font-size: 12px;" onclick="window.openVerificationsModal()">
                 💬 Open Messages
               </button>
             </div>

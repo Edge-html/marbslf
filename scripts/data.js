@@ -144,79 +144,11 @@ const DEFAULT_USERS = [
 const DEFAULT_POSTS = [];
 
 
-const DEFAULT_MATCHES = [
-  {
-    match_id: 'MAT-1001',
-    lost_post_id: 'POST-003',
-    found_post_id: 'POST-002', // Example linked match
-    claimant_id: 'USR-103',
-    status: 'POTENTIAL_MATCH', // MATCH_REQUESTED, VERIFICATION_IN_PROGRESS, POTENTIAL_MATCH, MATCH_CONFIRMED, MATCH_REJECTED, RETURN_SCHEDULED, RETURN_COMPLETED, RESOLVED
-    match_score: 85,
-    qna_responses: {
-      location_lost: 'Gaisano Grand Parking Area',
-      approx_time: 'Sept 18, around 11am',
-      color: 'Black fob and silver key',
-      identifying_marks: 'Crack on unlock button and red gym pass ribbon',
-      accessories: 'Silver clasp ring with tiny gym tag',
-      private_proof: 'Remote has chip ID stamped on inside casing'
-    },
-    created_at: '2026-09-19T10:00:00Z'
-  }
-];
-
-const DEFAULT_MEETUPS = [
-  {
-    meetup_id: 'MT-501',
-    match_id: 'MAT-1001',
-    post_id: 'POST-002',
-    owner_id: 'USR-103',
-    finder_id: 'USR-102',
-    place_id: 'SP-004',
-    place_name: 'KCC Mall of Marbel - Customer Service Counter',
-    date: '2026-09-23',
-    time: '2:30 PM',
-    status: 'CONFIRMED', // PENDING, CONFIRMED, RESCHEDULE_REQUESTED, CANCELLED, COMPLETED, DISPUTED
-    owner_confirmed_return: false,
-    finder_confirmed_return: false,
-    safety_acknowledged: true,
-    created_at: '2026-09-20T11:00:00Z'
-  }
-];
-
-const DEFAULT_MESSAGES = [
-  {
-    message_id: 'MSG-001',
-    sender_id: 'USR-103',
-    receiver_id: 'USR-102',
-    post_id: 'POST-002',
-    message: 'Hello! I saw your found post. I submitted the ownership verification answers. Is it still safe with you?',
-    timestamp: '2026-09-19T14:15:00Z',
-    status: 'READ'
-  },
-  {
-    message_id: 'MSG-002',
-    sender_id: 'USR-102',
-    receiver_id: 'USR-103',
-    post_id: 'POST-002',
-    message: 'Hi! Yes, I reviewed your identifying marks and it matches the item exactly. Let us schedule a return at KCC Mall Customer Service.',
-    timestamp: '2026-09-19T14:22:00Z',
-    status: 'READ'
-  }
-];
-
-const DEFAULT_RATINGS = [
-  {
-    rating_id: 'RAT-801',
-    meetup_id: 'MT-501',
-    post_id: 'POST-002',
-    rater_id: 'USR-103',
-    target_user_id: 'USR-102',
-    stars: 5,
-    tags: ['Very Honest', 'On Time at Safe Spot', 'Friendly & Cooperative'],
-    comment: 'Exemplary citizen! Met right in front of the KCC Customer Service counter and returned my keys intact. Highly reliable!',
-    created_at: '2026-09-23T15:00:00Z'
-  }
-];
+// Matches, Meetups, Messages, Ratings - Start empty for clean database
+const DEFAULT_MATCHES = [];
+const DEFAULT_MEETUPS = [];
+const DEFAULT_MESSAGES = [];
+const DEFAULT_RATINGS = [];
 
 const DEFAULT_MARBS_POINTS_TRANSACTIONS = [
   {
@@ -409,13 +341,22 @@ class MarbsLFDatabase {
           parsed.posts = [...DEFAULT_POSTS];
         }
         if (!Array.isArray(parsed.matches)) {
-          parsed.matches = [...DEFAULT_MATCHES];
+          parsed.matches = [];
+        } else {
+          parsed.matches = parsed.matches.filter(m => m.match_id !== 'MAT-1001');
         }
         if (!Array.isArray(parsed.ratings)) {
-          parsed.ratings = [...DEFAULT_RATINGS];
+          parsed.ratings = [];
+        } else {
+          parsed.ratings = parsed.ratings.filter(r => r.rating_id !== 'RAT-801');
         }
         if (!Array.isArray(parsed.meetups)) {
-          parsed.meetups = [...DEFAULT_MEETUPS];
+          parsed.meetups = [];
+        } else {
+          parsed.meetups = parsed.meetups.filter(m => m.meetup_id !== 'MT-501');
+        }
+        if (Array.isArray(parsed.messages)) {
+          parsed.messages = parsed.messages.filter(m => m.message_id !== 'MSG-001' && m.message_id !== 'MSG-002');
         }
         return parsed;
       }

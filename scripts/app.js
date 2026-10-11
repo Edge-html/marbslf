@@ -62,6 +62,7 @@
     setupScamReporting();
     setupAdminPortal();
     setupInteractiveMap();
+    setupLandingPageForms();
 
     // Show initial skeleton loading state
     renderFeed();
@@ -90,8 +91,17 @@
         } else {
           navigateToView(savedView);
         }
+      } else if (!currentUser) {
+        // Unauthenticated guest default: Landing Page
+        if (savedView && ['lost-items', 'found-items', 'lost-pets', 'found-pets', 'how-it-works'].includes(savedView)) {
+          navigateToView(savedView);
+        } else {
+          navigateToView('home');
+        }
       } else if (savedView && savedView !== 'home' && savedView !== 'admin') {
         navigateToView(savedView);
+      } else {
+        navigateToView('home');
       }
     } catch (e) {}
 
@@ -222,6 +232,8 @@
 
   function navigateToView(viewName) {
     // Hide all primary views
+    const landingPageView = $('#landingPageView');
+    if (landingPageView) landingPageView.style.display = 'none';
     $('#homeView').style.display = 'none';
     $('#dashboardView').style.display = 'none';
     $('#adminView').style.display = 'none';
@@ -244,11 +256,19 @@
       localStorage.setItem('marbslf_active_view', viewName);
     } catch (e) {}
 
+    const currentUser = marbsDB.getCurrentUser();
+
     if (viewName === 'home') {
       currentFilter = 'ALL';
       currentCategory = 'ALL';
-      $('#homeView').style.display = 'block';
-      renderFeed();
+      if (!currentUser) {
+        if (landingPageView) landingPageView.style.display = 'block';
+      } else {
+        $('#homeView').style.display = 'block';
+        renderFeed();
+      }
+    } else if (viewName === 'landing') {
+      if (landingPageView) landingPageView.style.display = 'block';
     } else if (viewName === 'lost-items') {
       currentFilter = 'LOST_ITEMS';
       currentCategory = 'ALL';
@@ -1809,10 +1829,6 @@
       }
     });
 
-    if (threads.length === 0 && (marbsDB.data.posts || []).length > 0) {
-      threads.push({ post: marbsDB.data.posts[0], match: null, claimantId: 'USR-102' });
-    }
-
     const badge = $('#verifMessagesTabCount');
     if (badge) badge.textContent = threads.length;
 
@@ -2476,6 +2492,209 @@
 
   function openRegisterModal() {
     $('#registerModal').classList.add('active');
+  }
+
+  // 19b. Landing Page Navigation & Auth Controls
+  function scrollToLandingPage(pageNum, authTab = null) {
+    const user = marbsDB.getCurrentUser();
+    if (user) {
+      if (pageNum === 1) navigateToView('home');
+      return;
+    }
+
+    const landingView = $('#landingPageView');
+    if (landingView && landingView.style.display === 'none') {
+      navigateToView('home');
+    }
+
+    let targetEl = null;
+    if (pageNum === 1) targetEl = $('#lpPage1');
+    else if (pageNum === 2) targetEl = $('#lpPage2');
+    else if (pageNum === 3) targetEl = $('#lpPage3');
+
+    if (authTab) {
+      switchLandingAuthTab(authTab);
+    }
+
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+  window.scrollToLandingPage = scrollToLandingPage;
+
+  function switchLandingAuthTab(tab) {
+    const loginTabBtn = $('#lpTabLoginBtn');
+    const regTabBtn = $('#lpTabRegisterBtn');
+    const loginPanel = $('#lpLoginPanel');
+    const regPanel = $('#lpRegisterPanel');
+
+    if (tab === 'register') {
+      if (loginTabBtn) loginTabBtn.classList.remove('active');
+      if (regTabBtn) regTabBtn.classList.add('active');
+      if (loginPanel) loginPanel.style.display = 'none';
+      if (regPanel) regPanel.style.display = 'block';
+    } else {
+      if (regTabBtn) regTabBtn.classList.remove('active');
+      if (loginTabBtn) loginTabBtn.classList.add('active');
+      if (regPanel) regPanel.style.display = 'none';
+      if (loginPanel) loginPanel.style.display = 'block';
+    }
+  }
+  window.switchLandingAuthTab = switchLandingAuthTab;
+
+  // Wire Landing Page Login & Signup Form Submissions
+  function setupLandingPageForms() {
+    const lpLoginForm = $('#lpLoginForm');
+    if (lpLoginForm) {
+      lpLoginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const loginVal = $('#lpLoginIdentifier').value.trim();
+        const passVal = $('#lpLoginPassword').value.trim();
+        const submitBtn = lpLoginForm.querySelector('button[type="submit"]');
+        const origText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span>Signing in...</span>';
+        submitBtn.disabled = true;
+
+        try {
+          if (window.signInWithEmailOrUsername) {
+            const res = await window.signInWithEmailOrUsername(loginVal, passVal);
+            if (res && res.user) {
+              const u = res.profile || {
+                user_id: res.user.id,
+                first_name: (res.user.user_metadata?.first_name || loginVal.split('@')[0]),
+                middle_name: '',
+                last_name: (res.user.user_metadata?.last_name || ''),
+                public_alias: 'Verified Citizen #' + res.user.id.slice(0, 6),
+                email: res.user.email,
+                username: loginVal,
+                account_status: 'ACTIVE',
+                verification_status: 'VERIFIED',
+                points_balance: 100,
+                role: 'USER'
+              };
+              const existingIdx = marbsDB.data.users.findIndex(usr => usr.user_id === u.user_id || usr.email === u.email);
+              if (existingIdx >= 0) {
+                marbsDB.data.users[existingIdx] = u;
+              } else {
+                marbsDB.data.users.push(u);
+              }
+              marbsDB.setCurrentUser(u.user_id);
+              marbsDB.save();
+            }
+          } else {
+            const user = marbsDB.data.users.find(u => u.username.toLowerCase() === loginVal.toLowerCase() || u.email.toLowerCase() === loginVal.toLowerCase()) || marbsDB.data.users[0];
+            marbsDB.setCurrentUser(user.user_id);
+          }
+
+          renderUserPill();
+          const currentUser = marbsDB.getCurrentUser();
+          if (currentUser && currentUser.role === 'ADMIN') {
+            navigateToView('admin');
+          } else {
+            navigateToView('home');
+          }
+          showToast(`✓ Welcome to MarbsLF, ${currentUser.first_name}!`);
+        } catch (err) {
+          alert('Login Failed: ' + (err.message || 'Please check your email and password.'));
+        } finally {
+          submitBtn.innerHTML = origText;
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    const lpRegForm = $('#lpRegisterForm');
+    if (lpRegForm) {
+      lpRegForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const firstName = $('#lpRegFirstName').value.trim();
+        const lastName = $('#lpRegLastName').value.trim();
+        const dob = $('#lpRegDob').value;
+        const phone = $('#lpRegPhone').value.trim();
+        const email = $('#lpRegEmail').value.trim();
+        const username = $('#lpRegUsername').value.trim();
+        const barangay = $('#lpRegBarangay').value;
+        const password = $('#lpRegPassword').value;
+        const confirmPassword = $('#lpRegConfirmPassword').value;
+
+        if (password !== confirmPassword) {
+          alert('Passwords do not match. Please verify your password confirmation.');
+          return;
+        }
+
+        const submitBtn = lpRegForm.querySelector('button[type="submit"]');
+        const origText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span>Creating account...</span>';
+        submitBtn.disabled = true;
+
+        try {
+          if (window.signUpWithEmailPassword) {
+            const res = await window.signUpWithEmailPassword({
+              email, password, firstName, middleName: '', lastName, dob, phone, username, barangay
+            });
+            if (res && res.user) {
+              const u = res.profile || {
+                user_id: res.user.id,
+                first_name: firstName,
+                middle_name: '',
+                last_name: lastName,
+                public_alias: 'Verified Citizen #' + res.user.id.slice(0, 6),
+                email: email,
+                username: username,
+                account_status: 'ACTIVE',
+                verification_status: 'UNVERIFIED',
+                points_balance: 50,
+                role: 'USER'
+              };
+              marbsDB.data.users.push(u);
+              marbsDB.setCurrentUser(u.user_id);
+              marbsDB.save();
+            }
+          } else {
+            const newUserId = 'USR-' + (100 + marbsDB.data.users.length + 1);
+            const newUser = {
+              user_id: newUserId,
+              first_name: firstName,
+              middle_name: '',
+              last_name: lastName,
+              public_alias: `Verified Citizen #${newUserId.split('-')[1]}`,
+              date_of_birth: dob,
+              email: email,
+              phone: phone,
+              username: username,
+              password: password,
+              role: 'USER',
+              province: 'South Cotabato',
+              city: 'Koronadal City',
+              barangay: barangay,
+              account_status: 'ACTIVE',
+              verification_status: 'UNVERIFIED',
+              points_balance: 50,
+              created_at: new Date().toISOString()
+            };
+            marbsDB.data.users.push(newUser);
+            marbsDB.setCurrentUser(newUserId);
+            marbsDB.save();
+          }
+
+          lpRegForm.reset();
+          renderUserPill();
+          navigateToView('home');
+
+          showNotificationModal({
+            title: '🎉 Account Created Successfully!',
+            message: `Welcome to MarbsLF, ${firstName}! Your account has been registered. Please complete your ID verification to earn your verified badge.`,
+            btnText: 'Verify Identity Now',
+            onAction: () => $('#idVerificationModal').classList.add('active')
+          });
+        } catch (err) {
+          alert('Registration Error: ' + (err.message || 'Please check your inputs and try again.'));
+        } finally {
+          submitBtn.innerHTML = origText;
+          submitBtn.disabled = false;
+        }
+      });
+    }
   }
 
   // 20. User Dashboard & Menu Tabs (Section 6)
@@ -3789,10 +4008,6 @@
     let userMeetups = allMeetups.filter(m =>
       user.role === 'ADMIN' || m.owner_id === user.user_id || m.finder_id === user.user_id
     );
-
-    if (userMeetups.length === 0 && allMeetups.length > 0) {
-      userMeetups = allMeetups;
-    }
 
     const activeMeetups = userMeetups.filter(m => m.status !== 'COMPLETED' && m.status !== 'CANCELLED');
     const completedMeetups = userMeetups.filter(m => m.status === 'COMPLETED');
