@@ -151,6 +151,36 @@ const DEFAULT_MESSAGES = [];
 const DEFAULT_RATINGS = [];
 
 /* ==========================================================================
+   PUBLIC ALIAS (Section 3 - Real Name Privacy Rule)
+   The alias is the only identity shown publicly. It must NOT claim a citizen
+   is "Verified" unless their ID verification is actually approved, otherwise
+   an unverified account displays a contradictory "Verified Citizen" label.
+   ========================================================================== */
+
+/** Build the privacy-safe alias for a user, reflecting true verification state. */
+function buildPublicAlias(user, verificationStatus) {
+  const status = String(
+    verificationStatus !== undefined
+      ? verificationStatus
+      : (user && user.verification_status) || 'UNVERIFIED'
+  ).toUpperCase();
+
+  const verified = status === 'VERIFIED';
+  const seed = String((user && user.user_id) || (user && user.email) || '000000')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .slice(0, 6)
+    .padEnd(6, '0');
+
+  return (verified ? 'Verified Citizen #' : 'Citizen #') + seed;
+}
+
+/** Always-alias accessor: returns the correct alias for the current status. */
+function getPublicAlias(user) {
+  if (!user) return 'Citizen';
+  return buildPublicAlias(user, user.verification_status);
+}
+
+/* ==========================================================================
    DEMO POST SEEDER
    Gives every non-admin citizen a realistic set of lost/found reports so the
    community feed, dashboards and admin moderation queue are not empty.
@@ -455,6 +485,9 @@ const DEFAULT_AUDIT_LOGS = [
 class MarbsLFDatabase {
   constructor() {
     this.data = this.load();
+    // Repair aliases that were saved with a hardcoded "Verified Citizen"
+    // prefix regardless of the citizen's real verification status.
+    this.syncPublicAliases();
     // Give every non-admin citizen demo reports in the database on first run.
     ensureSeedPosts(this);
   }
@@ -540,6 +573,25 @@ class MarbsLFDatabase {
    */
   seedDemoPosts() {
     return ensureSeedPosts(this);
+  }
+
+  /**
+   * Repair stored aliases so they match each citizen's real verification
+   * status. Older accounts were saved with a hardcoded "Verified Citizen #"
+   * prefix regardless of status; this rewrites them to the correct label.
+   */
+  syncPublicAliases() {
+    let changed = 0;
+    (this.data.users || []).forEach((user) => {
+      if (!user || user.role === 'ADMIN') return;
+      const correct = buildPublicAlias(user, user.verification_status);
+      if (user.public_alias !== correct) {
+        user.public_alias = correct;
+        changed++;
+      }
+    });
+    if (changed > 0) this.save();
+    return changed;
   }
 
   /** Remove all demo posts (real citizen reports are never touched). */
@@ -737,6 +789,8 @@ class MarbsLFDatabase {
 
 // Global DB instance
 window.marbsDB = new MarbsLFDatabase();
+window.getPublicAlias = getPublicAlias;
+window.buildPublicAlias = buildPublicAlias;
 
 // Attempt background sync if Supabase is active
 if (window.supabaseClient) {

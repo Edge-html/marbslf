@@ -1160,6 +1160,7 @@
 
       if (approvedVer) {
         user.verification_status = 'VERIFIED';
+        user.public_alias = buildPublicAlias(user, 'VERIFIED');
         window.marbsDB.save();
         return true;
       }
@@ -1614,8 +1615,8 @@
           receiver_id: activePostForModal.user_id || 'USR-ADMIN',
           post_id: activePostForModal.post_id,
           message: isFoundPost 
-            ? `[System Notice] User ${user.public_alias || user.first_name} submitted an ownership claim with private identifying answers ${claimPhotoPayload ? 'and verified camera photo proof ' : ''}for your found item.`
-            : `[System Notice] User ${user.public_alias || user.first_name} reported that they found your lost item with identifying details ${claimPhotoPayload ? 'and live camera photo proof' : ''}.`,
+            ? `[System Notice] User ${getPublicAlias(user)} submitted an ownership claim with private identifying answers ${claimPhotoPayload ? 'and verified camera photo proof ' : ''}for your found item.`
+            : `[System Notice] User ${getPublicAlias(user)} reported that they found your lost item with identifying details ${claimPhotoPayload ? 'and live camera photo proof' : ''}.`,
           timestamp: new Date().toISOString(),
           status: 'UNREAD'
         });
@@ -2012,7 +2013,8 @@
       const isSelected = activeChatPost && activeChatPost.post_id === p.post_id;
       const claimant = (marbsDB.data.users || []).find(u => u.user_id === t.claimantId) || {
         first_name: 'Verified Citizen',
-        public_alias: 'Citizen #vOIUJk'
+        public_alias: 'Citizen #vOIUJk',
+        verification_status: 'UNVERIFIED'
       };
 
       const lastMsg = [...(marbsDB.data.messages || [])].reverse().find(m => m.post_id === p.post_id);
@@ -2025,7 +2027,7 @@
             <span class="messenger-online-dot" title="Active Now"></span>
           </div>
           <div class="messenger-thread-content">
-            <div class="messenger-thread-name">${escapeHtml(claimant.public_alias || claimant.first_name)}</div>
+            <div class="messenger-thread-name">${escapeHtml(getPublicAlias(claimant))}</div>
             <div class="messenger-thread-item-title">${escapeHtml(p.item_name)}</div>
             <div class="messenger-thread-snippet">${escapeHtml(snippet)}</div>
           </div>
@@ -2072,7 +2074,7 @@
       const ratingBadge = reliability.hasRatings
         ? `<span style="color: #f59e0b; font-size: 11px; margin-left: 4px; font-weight: 800;" title="${reliability.countLabel}">★ ${reliability.avg}</span>`
         : `<span style="color: var(--text-muted); font-size: 11px; margin-left: 4px; font-weight: 700;" title="${reliability.countLabel}">New citizen</span>`;
-      bannerCounterparty.innerHTML = `With: <strong>${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong>${ratingBadge}`;
+      bannerCounterparty.innerHTML = `With: <strong>${escapeHtml(getPublicAlias(counterparty))}</strong>${ratingBadge}`;
     }
 
     renderLiveMessengerMessages(true);
@@ -2510,7 +2512,7 @@
                 first_name: (res.user.user_metadata?.first_name || loginVal.split('@')[0]),
                 middle_name: '',
                 last_name: (res.user.user_metadata?.last_name || ''),
-                public_alias: 'Verified Citizen #' + res.user.id.slice(0, 6),
+                public_alias: buildPublicAlias({ user_id: res.user.id }, 'VERIFIED'),
                 email: res.user.email,
                 username: loginVal,
                 account_status: 'ACTIVE',
@@ -2589,7 +2591,7 @@
                 first_name: firstName,
                 middle_name: middleName,
                 last_name: lastName,
-                public_alias: 'Verified Citizen #' + res.user.id.slice(0, 6),
+                public_alias: buildPublicAlias({ user_id: res.user.id }, 'VERIFIED'),
                 email: email,
                 username: username,
                 account_status: 'ACTIVE',
@@ -2609,7 +2611,7 @@
               first_name: firstName,
               middle_name: middleName,
               last_name: lastName,
-              public_alias: `Verified Citizen #${newUserId.split('-')[1]}`,
+              public_alias: buildPublicAlias({ user_id: newUserId }, 'UNVERIFIED'),
               date_of_birth: dob,
               email: email,
               phone: phone,
@@ -2771,7 +2773,7 @@
                 first_name: (res.user.user_metadata?.first_name || loginVal.split('@')[0]),
                 middle_name: '',
                 last_name: (res.user.user_metadata?.last_name || ''),
-                public_alias: 'Verified Citizen #' + res.user.id.slice(0, 6),
+                public_alias: buildPublicAlias({ user_id: res.user.id }, 'VERIFIED'),
                 email: res.user.email,
                 username: loginVal,
                 account_status: 'ACTIVE',
@@ -2845,7 +2847,7 @@
                 first_name: firstName,
                 middle_name: '',
                 last_name: lastName,
-                public_alias: 'Verified Citizen #' + res.user.id.slice(0, 6),
+                public_alias: buildPublicAlias({ user_id: res.user.id }, 'VERIFIED'),
                 email: email,
                 username: username,
                 account_status: 'ACTIVE',
@@ -2864,7 +2866,7 @@
               first_name: firstName,
               middle_name: '',
               last_name: lastName,
-              public_alias: `Verified Citizen #${newUserId.split('-')[1]}`,
+              public_alias: buildPublicAlias({ user_id: newUserId }, 'UNVERIFIED'),
               date_of_birth: dob,
               email: email,
               phone: phone,
@@ -2925,6 +2927,7 @@
 
     if (approvedVer && user.verification_status !== 'VERIFIED') {
       user.verification_status = 'VERIFIED';
+      user.public_alias = buildPublicAlias(user, 'VERIFIED');
       marbsDB.save();
     }
 
@@ -2936,7 +2939,7 @@
       dashAvatar.textContent = (user.first_name[0] || 'U').toUpperCase();
     }
     $('#dashUserLegalName').textContent = `${user.first_name || ''} ${user.last_name || ''}`;
-    $('#dashUserAlias').textContent = user.public_alias || 'Citizen';
+    $('#dashUserAlias').textContent = getPublicAlias(user);
     $('#dashUserStatus').textContent = currentStatus;
     $('#dashUserStatus').className = `dash-user-badge status-${currentStatus.toLowerCase()}`;
 
@@ -3342,6 +3345,8 @@
 
     if (targetUser) {
       targetUser.verification_status = newStatus;
+      // Alias must follow the new status so the public label stays truthful.
+      targetUser.public_alias = buildPublicAlias(targetUser, newStatus);
       if (newStatus === 'VERIFIED') {
         targetUser.points_balance = (targetUser.points_balance || 0) + 50; // Verification bonus
       }
@@ -3353,6 +3358,7 @@
       if (curUser.user_id === ver.user_id || 
           (ver.full_legal_name && `${curUser.first_name || ''} ${curUser.last_name || ''}`.trim().toLowerCase() === ver.full_legal_name.trim().toLowerCase())) {
         curUser.verification_status = newStatus;
+        curUser.public_alias = buildPublicAlias(curUser, newStatus);
         if (newStatus === 'VERIFIED' && !targetUser) {
           curUser.points_balance = (curUser.points_balance || 0) + 50;
         }
@@ -3364,8 +3370,13 @@
       try {
         const targetUid = targetUser ? targetUser.user_id : ver.user_id;
         if (targetUid) {
+          const aliasForFirestore = buildPublicAlias(
+            { user_id: targetUid },
+            newStatus
+          );
           window.firestoreDb.collection('users').doc(targetUid).set({
-            verification_status: newStatus
+            verification_status: newStatus,
+            public_alias: aliasForFirestore
           }, { merge: true }).catch(err => console.warn('Firestore user update err:', err));
         }
         window.firestoreDb.collection('id_verifications').doc(verId).set(ver, { merge: true })
@@ -3854,7 +3865,7 @@
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
             <div>
               <span style="color: var(--text-muted);">Submitted by:</span>
-              <strong style="color: var(--text-main); margin-left: 4px;">${escapeHtml(claimant.public_alias || claimant.first_name)}</strong>
+              <strong style="color: var(--text-main); margin-left: 4px;">${escapeHtml(getPublicAlias(claimant))}</strong>
               ${claimant.verification_status === 'VERIFIED' ? `
                 <span style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 4px;">ID VERIFIED</span>
               ` : ''}
@@ -4334,7 +4345,7 @@
                   
                   <div style="margin-top: 8px; font-size: 12px;">
                     <div style="color: var(--text-muted); font-size: 11px;">Exchanging with:</div>
-                    <strong style="color: var(--text-main); font-size: 13px;">${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong>
+                    <strong style="color: var(--text-main); font-size: 13px;">${escapeHtml(getPublicAlias(counterparty))}</strong>
                     <div style="color: ${reliability.hasRatings ? '#f59e0b' : 'var(--text-muted)'}; font-weight: 800; font-size: 11px; margin-top: 1px;">
                       ${reliability.hasRatings
                         ? `★ ${reliability.avg} (${reliability.count} review${reliability.count === 1 ? '' : 's'})`
@@ -4407,7 +4418,7 @@
                       Location: <strong>${escapeHtml(m.place_name)}</strong> • Handover Date: ${m.date}
                     </div>
                     <div style="font-size: 12px; color: #15803d; font-weight: 700; margin-top: 3px;">
-                      Citizen: ${escapeHtml(counterparty.public_alias || counterparty.first_name)}
+                      Citizen: ${escapeHtml(getPublicAlias(counterparty))}
                     </div>
                   </div>
                 </div>
@@ -4481,7 +4492,7 @@
     const post = (marbsDB.data.posts || []).find(p => p.post_id === postId);
 
     const nameEl = $('#ratingTargetName');
-    if (nameEl) nameEl.textContent = targetUser.public_alias || targetUser.first_name;
+    if (nameEl) nameEl.textContent = getPublicAlias(targetUser);
 
     const avatarEl = $('#ratingTargetAvatar');
     if (avatarEl) avatarEl.textContent = (targetUser.first_name[0] || 'C').toUpperCase();

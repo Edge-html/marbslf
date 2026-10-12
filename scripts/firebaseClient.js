@@ -85,7 +85,7 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
     const fullName = `${firstName} ${lastName}`.trim();
     await user.updateProfile({ displayName: fullName });
 
-    const alias = 'Verified Citizen #' + user.uid.slice(0, 6);
+    const alias = 'Citizen #' + String(user.uid).replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).padEnd(6, '0');
 
     const profile = {
       user_id: user.uid,
@@ -200,7 +200,7 @@ async function signInWithEmailOrUsername(identifier, password) {
         first_name: nameParts[0] || user.email.split('@')[0],
         middle_name: '',
         last_name: nameParts.slice(1).join(' ') || '',
-        public_alias: 'Verified Citizen #' + user.uid.slice(0, 6),
+        public_alias: 'Citizen #' + String(user.uid).replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).padEnd(6, '0'),
         email: user.email,
         username: user.email.split('@')[0],
         role: 'USER',
@@ -278,6 +278,17 @@ async function syncFirebaseUserProfile(user) {
     if (hasApproved) finalVerStatus = 'VERIFIED';
   }
 
+  // The alias is always derived from the resolved verification status so the
+  // public label can never contradict the badge shown next to it.
+  const aliasSource = {
+    user_id: user.uid,
+    verification_status: finalVerStatus
+  };
+  const correctAlias = (typeof window.buildPublicAlias === 'function')
+    ? window.buildPublicAlias(aliasSource, finalVerStatus)
+    : (finalVerStatus === 'VERIFIED' ? 'Verified Citizen #' : 'Citizen #') +
+      String(user.uid).replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).padEnd(6, '0');
+
   const userObj = {
     ...(existingLocalUser || {}),
     ...(profile || {}),
@@ -285,7 +296,7 @@ async function syncFirebaseUserProfile(user) {
     first_name: (profile && profile.first_name) || (existingLocalUser && existingLocalUser.first_name) || firstName,
     middle_name: (profile && profile.middle_name) || (existingLocalUser && existingLocalUser.middle_name) || '',
     last_name: (profile && profile.last_name) || (existingLocalUser && existingLocalUser.last_name) || lastName,
-    public_alias: (profile && profile.public_alias) || (existingLocalUser && existingLocalUser.public_alias) || ('Verified Citizen #' + user.uid.slice(0, 6)),
+    public_alias: correctAlias,
     email: user.email,
     phone: (profile && profile.phone) || (existingLocalUser && existingLocalUser.phone) || user.phoneNumber || '',
     username: (profile && profile.username) || (existingLocalUser && existingLocalUser.username) || user.email.split('@')[0],
