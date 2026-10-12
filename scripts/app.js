@@ -1847,26 +1847,53 @@
   let activeChatCounterpartyId = null;
   let messengerPollingTimer = null;
 
+  /**
+   * Citizen reliability rating, derived ONLY from ratings actually submitted
+   * after a confirmed safe transaction. A brand-new account has zero ratings
+   * and must show "no ratings yet" — never a flattering default of 5 stars.
+   */
   function getUserReliability(userId) {
     const user = (marbsDB.data.users || []).find(u => u.user_id === userId);
     const ratings = (marbsDB.data.ratings || []).filter(r => r.target_user_id === userId);
-    if (ratings.length > 0) {
-      const sum = ratings.reduce((acc, r) => acc + Number(r.stars || 5), 0);
-      const avg = (sum / ratings.length).toFixed(1);
+
+    // Fall back to the denormalised counters only when they are genuinely set.
+    let count = ratings.length;
+    let avg = null;
+    if (count === 0 && user && Number(user.rating_count) > 0) {
+      count = Number(user.rating_count);
+      avg = user.rating_avg != null ? Number(user.rating_avg).toFixed(1) : null;
+    } else if (count > 0) {
+      const sum = ratings.reduce((acc, r) => acc + Number(r.stars || 0), 0);
+      avg = (sum / ratings.length).toFixed(1);
+    }
+
+    // No ratings at all -> zero state.
+    if (avg === null || count === 0) {
       return {
-        avg: avg,
-        count: ratings.length,
-        starsHtml: '★'.repeat(Math.min(5, Math.max(1, Math.round(avg)))),
-        tier: avg >= 4.5 ? 'Highly Reliable Citizen' : avg >= 3.5 ? 'Reliable Citizen' : 'Community Member'
+        avg: '0.0',
+        count: 0,
+        hasRatings: false,
+        filledStars: 0,
+        starsHtml: '☆☆☆☆☆',
+        tier: 'New Citizen',
+        avgLabel: '—',
+        countLabel: 'No ratings yet',
+        shortLabel: 'New Citizen'
       };
     }
-    const defaultAvg = user && user.rating_avg ? Number(user.rating_avg).toFixed(1) : '5.0';
-    const defaultCount = user && user.rating_count ? user.rating_count : 1;
+
+    const numericAvg = Number(avg);
+    const filled = Math.min(5, Math.max(0, Math.round(numericAvg)));
     return {
-      avg: defaultAvg,
-      count: defaultCount,
-      starsHtml: '★★★★★',
-      tier: 'Highly Reliable Citizen'
+      avg: avg,
+      count: count,
+      hasRatings: true,
+      filledStars: filled,
+      starsHtml: '★'.repeat(filled),
+      tier: numericAvg >= 4.5 ? 'Highly Reliable Citizen' : numericAvg >= 3.5 ? 'Reliable Citizen' : 'Community Member',
+      avgLabel: avg,
+      countLabel: `Based on ${count} confirmed safe transaction${count === 1 ? '' : 's'}`,
+      shortLabel: `${avg} ★ (${count})`
     };
   }
   window.getUserReliability = getUserReliability;
@@ -2032,7 +2059,10 @@
     const reliability = getUserReliability(activeChatCounterpartyId);
 
     if (bannerCounterparty) {
-      bannerCounterparty.innerHTML = `With: <strong>${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong> <span style="color: #f59e0b; font-size: 11px; margin-left: 4px; font-weight: 800;">★ ${reliability.avg}</span>`;
+      const ratingBadge = reliability.hasRatings
+        ? `<span style="color: #f59e0b; font-size: 11px; margin-left: 4px; font-weight: 800;" title="${reliability.countLabel}">★ ${reliability.avg}</span>`
+        : `<span style="color: var(--text-muted); font-size: 11px; margin-left: 4px; font-weight: 700;" title="${reliability.countLabel}">New citizen</span>`;
+      bannerCounterparty.innerHTML = `With: <strong>${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong>${ratingBadge}`;
     }
 
     renderLiveMessengerMessages(true);
@@ -2902,10 +2932,22 @@
     const dashAvg = $('#dashProfileAvg');
     const dashTier = $('#dashProfileTier');
     const dashCount = $('#dashProfileCount');
-    if (dashStars) dashStars.textContent = reliability.starsHtml;
-    if (dashAvg) dashAvg.textContent = `${reliability.avg} / 5.0`;
-    if (dashTier) dashTier.textContent = reliability.tier;
-    if (dashCount) dashCount.textContent = `Based on ${reliability.count} confirmed safe transaction${reliability.count === 1 ? '' : 's'}`;
+    const dashBox = $('#dashProfileReliability');
+    if (dashStars) {
+      dashStars.textContent = reliability.starsHtml;
+      dashStars.style.color = reliability.hasRatings ? '#f59e0b' : '#cbd5e1';
+    }
+    if (dashAvg) dashAvg.textContent = reliability.hasRatings ? `${reliability.avg} / 5.0` : 'Not yet rated';
+    if (dashTier) {
+      dashTier.textContent = reliability.tier;
+      dashTier.style.color = reliability.hasRatings ? '#16a34a' : 'var(--text-muted)';
+    }
+    if (dashCount) dashCount.textContent = reliability.countLabel;
+    // Neutral styling for accounts with no ratings yet
+    if (dashBox) {
+      dashBox.style.background = reliability.hasRatings ? '#fffbeb' : '#f8fafc';
+      dashBox.style.borderColor = reliability.hasRatings ? '#fef08a' : '#e2e8f0';
+    }
 
     // Stats
     const userPosts = marbsDB.data.posts.filter(p => p.user_id === user.user_id);
@@ -3479,7 +3521,9 @@
           </div>
           <span class="user-name-sm">
             ${user.role === 'ADMIN' ? 'Admin Portal' : user.first_name}
-            ${user.role !== 'ADMIN' ? `<span style="color: #f59e0b; font-size: 11px; font-weight: 800; margin-left: 4px;">★ ${userRel.avg}</span>` : ''}
+            ${user.role !== 'ADMIN' ? (userRel.hasRatings
+              ? `<span style="color: #f59e0b; font-size: 11px; font-weight: 800; margin-left: 4px;" title="${userRel.countLabel}">★ ${userRel.avg}</span>`
+              : `<span style="color: var(--text-muted); font-size: 11px; font-weight: 700; margin-left: 4px;" title="${userRel.countLabel}">New</span>`) : ''}
             ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
               <span style="background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">${pendingReviewPostsCount}</span>
             ` : ''}
@@ -4277,8 +4321,10 @@
                   <div style="margin-top: 8px; font-size: 12px;">
                     <div style="color: var(--text-muted); font-size: 11px;">Exchanging with:</div>
                     <strong style="color: var(--text-main); font-size: 13px;">${escapeHtml(counterparty.public_alias || counterparty.first_name)}</strong>
-                    <div style="color: #f59e0b; font-weight: 800; font-size: 11px; margin-top: 1px;">
-                      ★ ${reliability.avg} (${reliability.count} review${reliability.count === 1 ? '' : 's'})
+                    <div style="color: ${reliability.hasRatings ? '#f59e0b' : 'var(--text-muted)'}; font-weight: 800; font-size: 11px; margin-top: 1px;">
+                      ${reliability.hasRatings
+                        ? `★ ${reliability.avg} (${reliability.count} review${reliability.count === 1 ? '' : 's'})`
+                        : 'No ratings yet'}
                     </div>
                   </div>
                 </div>
