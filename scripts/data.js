@@ -674,15 +674,15 @@ class MarbsLFDatabase {
   // Marbs Point Level helper per Section 20
   static getMarbsPointLevel(points) {
     if (points >= 500) {
-      return { level: 'Community Champion', badge: '🏆', color: '#10b981', min: 500, max: null };
+      return { level: 'Community Champion', badge: '', color: '#10b981', min: 500, max: null };
     }
     if (points >= 250) {
-      return { level: 'Trusted Helper', badge: '⭐', color: '#3b82f6', min: 250, max: 499 };
+      return { level: 'Trusted Helper', badge: '', color: '#3b82f6', min: 250, max: 499 };
     }
     if (points >= 100) {
-      return { level: 'Community Helper', badge: '🤝', color: '#f59e0b', min: 100, max: 249 };
+      return { level: 'Community Helper', badge: '', color: '#f59e0b', min: 100, max: 249 };
     }
-    return { level: 'Community Member', badge: '🌱', color: '#64748b', min: 0, max: 99 };
+    return { level: 'Community Member', badge: '', color: '#64748b', min: 0, max: 99 };
   }
 
   // Audit Log helper per Section 34 & 36

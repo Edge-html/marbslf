@@ -44,17 +44,17 @@
   --found-dot: #16A34A;
   --found-bg: #F0FDF4;
 
-  /* Soft Organic Radii (Less Boxy) */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  /* Restrained radii - institutional, not pill-shaped */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
-  /* Organic Soft Shadows & Subtle Elevation */
-  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.06);
-  --shadow-hover: 0 8px 24px rgba(15, 23, 42, 0.08);
+  /* Flat, single-layer shadows. No glows, no coloured halos. */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.09);
 
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -235,7 +235,7 @@ h1, h2, h3, .hero-tagline, .section-title {
   background: var(--primary-yellow);
   color: var(--primary-yellow-ink);
   font-weight: 700;
-  box-shadow: 0 2px 10px rgba(242, 179, 27, 0.32);
+  box-shadow: none;
 }
 
 /* Badge styles */
@@ -2513,7 +2513,7 @@ h1, h2, h3, .hero-tagline, .section-title {
 }
 
 .edit-avatar-preview-box:hover {
-  box-shadow: 0 6px 20px rgba(242, 179, 27, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .edit-avatar-preview-box img {
@@ -2560,9 +2560,9 @@ h1, h2, h3, .hero-tagline, .section-title {
 }
 
 .verif-toggle-btn:hover {
-  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.18);
+  background: #eef2f7;
+  transform: none;
+  box-shadow: none;
 }
 
 .verif-toggle-btn svg {
@@ -2761,12 +2761,13 @@ h1, h2, h3, .hero-tagline, .section-title {
   transition: background 0.25s ease;
 }
 
-.hiw-card[data-step="1"]::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
-.hiw-card[data-step="2"]::before { background: linear-gradient(90deg, #059669, #34d399); }
-.hiw-card[data-step="3"]::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
-.hiw-card[data-step="4"]::before { background: linear-gradient(90deg, #4f46e5, #818cf8); }
-.hiw-card[data-step="5"]::before { background: linear-gradient(90deg, #0284c7, #38bdf8); }
-.hiw-card[data-step="6"]::before { background: linear-gradient(90deg, #ea580c, #fb923c); }
+/* Single civic accent for all steps - no rainbow gradients. */
+.hiw-card[data-step="1"]::before,
+.hiw-card[data-step="2"]::before,
+.hiw-card[data-step="3"]::before,
+.hiw-card[data-step="4"]::before,
+.hiw-card[data-step="5"]::before,
+.hiw-card[data-step="6"]::before { background: #f2b31b; }
 
 .hiw-card-top {
   display: flex;
@@ -2790,12 +2791,16 @@ h1, h2, h3, .hero-tagline, .section-title {
   transform: scale(1.08);
 }
 
-.hiw-icon-blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
-.hiw-icon-green { background: rgba(5, 150, 105, 0.1); color: #059669; }
-.hiw-icon-amber { background: rgba(217, 119, 6, 0.1); color: #d97706; }
-.hiw-icon-indigo { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
-.hiw-icon-cyan { background: rgba(2, 132, 199, 0.1); color: #0284c7; }
-.hiw-icon-orange { background: rgba(234, 88, 12, 0.1); color: #ea580c; }
+/* Neutral icon tiles - one consistent treatment instead of six colours. */
+.hiw-icon-blue,
+.hiw-icon-green,
+.hiw-icon-amber,
+.hiw-icon-indigo,
+.hiw-icon-cyan,
+.hiw-icon-orange {
+  background: #f5f4f0;
+  color: #0f172a;
+}
 
 .hiw-step-badge {
   font-size: 11px;
@@ -3421,6 +3426,7 @@ body[data-surface="landing"] #navNotifBtn {
 }
 
 .lp-hero-radial-glow {
+  display: none;
   position: absolute;
   top: 15%;
   right: 25%;
@@ -3493,10 +3499,6 @@ body[data-surface="landing"] #navNotifBtn {
   color: #f2b31b;
   position: relative;
   display: inline-block;
-  background: linear-gradient(135deg, #ffe082 0%, #f2b31b 60%, #eab308 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 4px 28px rgba(242, 179, 27, 0.55));
 }
 
 .lp-hero-subtitle {
@@ -3531,15 +3533,15 @@ body[data-surface="landing"] #navNotifBtn {
 }
 
 .lp-btn-primary {
-  background: linear-gradient(135deg, #ffd566 0%, #f2b31b 100%);
+  background: #f2b31b;
   color: #0f172a;
-  box-shadow: 0 8px 24px -4px rgba(242, 179, 27, 0.5), 0 0 0 1px rgba(242, 179, 27, 0.25);
+  box-shadow: none;
 }
 
 .lp-btn-primary:hover {
-  background: linear-gradient(135deg, #ffe082 0%, #eab308 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 32px -4px rgba(242, 179, 27, 0.65);
+  background: #dda10f;
+  transform: translateY(-1px);
+  box-shadow: none;
 }
 
 .lp-btn-ghost {
@@ -3699,29 +3701,28 @@ body[data-surface="landing"] #navNotifBtn {
 }
 
 .lp-feature-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-2px);
   border-color: rgba(242, 179, 27, 0.4);
   background: #162038;
-  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.5),
-              0 0 24px rgba(242, 179, 27, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .lp-icon-circle {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  border-radius: 4px;
   background: #f2b31b;
   color: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  box-shadow: 0 6px 18px rgba(242, 179, 27, 0.35);
-  transition: transform 0.3s ease;
+  box-shadow: none;
+  transition: none;
 }
 
 .lp-feature-card:hover .lp-icon-circle {
-  transform: scale(1.1);
+  transform: none;
 }
 
 .lp-feature-title {
@@ -3787,9 +3788,9 @@ body[data-surface="landing"] #navNotifBtn {
 }
 
 .lp-perk-check {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
   background: #f2b31b;
   color: #0f172a;
   display: flex;
@@ -3798,16 +3799,15 @@ body[data-surface="landing"] #navNotifBtn {
   font-weight: 800;
   font-size: 11px;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 /* Auth Card Inspired by Reference */
 .lp-auth-card {
   background: #f2b31b;
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 32px 30px;
-  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.6),
-              0 0 45px rgba(242, 179, 27, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   color: #0f172a;
 }
 

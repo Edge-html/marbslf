@@ -48,7 +48,7 @@ async function signInWithGoogle() {
     await syncFirebaseUserProfile(user);
 
     if (typeof window.showToast === 'function') {
-      window.showToast(`✓ Signed in with Google as ${user.displayName || user.email}`);
+      window.showToast(`Signed in with Google as ${user.displayName || user.email}`);
     }
 
     // Close any open auth modals

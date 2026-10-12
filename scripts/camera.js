@@ -111,7 +111,7 @@ class MarbsCamera {
     } catch (err) {
       console.warn('Physical camera sensor notice:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert('📷 Camera Permission Needed:\nPlease allow camera access in your browser so MarbsLF can capture the found item proof.');
+        alert('Camera Permission Needed:\nPlease allow camera access in your browser so MarbsLF can capture the found item proof.');
       }
       this.fallbackSimulatedStream(videoEl);
     }
@@ -236,7 +236,7 @@ class MarbsCamera {
     liveControls.style.display = 'none';
     reviewControls.style.display = 'flex';
 
-    banner.textContent = '✓ PHOTO CAPTURED — PLEASE REVIEW PROOF BEFORE ACCEPTING';
+    banner.textContent = 'PHOTO CAPTURED — PLEASE REVIEW PROOF BEFORE ACCEPTING';
     banner.className = 'camera-banner review';
   }
 

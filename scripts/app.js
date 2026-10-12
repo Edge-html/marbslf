@@ -899,7 +899,7 @@
         updateMapLocation('ALL');
         currentArea = 'ALL';
         renderFeed();
-        showToast('📍 Map reset to Koronadal City');
+        showToast('Map reset to Koronadal City');
       });
     }
 
@@ -1086,7 +1086,7 @@
       }
       if (hashtag) {
         hashtag.style.display = 'block';
-        hashtag.textContent = `✓ ${lostUploadedPhotos.length} secure photo${lostUploadedPhotos.length > 1 ? 's' : ''} ready for review`;
+        hashtag.textContent = `${lostUploadedPhotos.length} secure photo${lostUploadedPhotos.length > 1 ? 's' : ''} ready for review`;
       }
 
       grid.innerHTML = lostUploadedPhotos.map((item, idx) => `
@@ -1122,7 +1122,7 @@
             loadedCount++;
             if (loadedCount === files.length) {
               renderLostPhotosPreview();
-              showToast(`✓ ${files.length} photo${files.length > 1 ? 's' : ''} added!`);
+              showToast(`${files.length} photo${files.length > 1 ? 's' : ''} added!`);
               lostFileInput.value = ''; // reset so same files can be re-selected if needed
             }
           };
@@ -1183,7 +1183,7 @@
             image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
             timestamp: new Date().toISOString()
           });
-          showToast('✓ ID image uploaded successfully!');
+          showToast('ID image uploaded successfully!');
         };
         reader.readAsDataURL(file);
       });
@@ -1210,7 +1210,7 @@
         }
         if (hashtag) {
           hashtag.style.display = 'block';
-          hashtag.textContent = `✓ ${lostUploadedPhotos.length} secure photo${lostUploadedPhotos.length > 1 ? 's' : ''} ready for review`;
+          hashtag.textContent = `${lostUploadedPhotos.length} secure photo${lostUploadedPhotos.length > 1 ? 's' : ''} ready for review`;
         }
         grid.innerHTML = lostUploadedPhotos.map((item, idx) => `
           <div style="position: relative; border-radius: var(--radius-sm); overflow: hidden; background: #000; height: 80px; border: 1px solid var(--border);">
@@ -1224,20 +1224,20 @@
       $('#foundPhotoPreview').src = payload.image_data;
       $('#foundPhotoPreview').style.display = 'block';
       $('#foundCameraPrompt').style.display = 'none';
-      $('#foundPhotoHashTag').textContent = `✓ Proof Hash: ${payload.image_hash} (Camera Verified)`;
+      $('#foundPhotoHashTag').textContent = `Proof Hash: ${payload.image_hash} (Camera Verified)`;
       $('#foundPhotoHashTag').style.display = 'block';
     } else if (activeCameraContext === 'id') {
       $('#idPhotoPreview').src = payload.image_data;
       $('#idPhotoPreview').style.display = 'block';
       $('#idCameraPrompt').style.display = 'none';
-      $('#idPhotoHashTag').textContent = `✓ Secure Document Capture Hash: ${payload.image_hash}`;
+      $('#idPhotoHashTag').textContent = `Secure Document Capture Hash: ${payload.image_hash}`;
       $('#idPhotoHashTag').style.display = 'block';
     } else if (activeCameraContext === 'claim_proof') {
       handleClaimPhotoCaptured(payload);
       return;
     }
 
-    showToast('✓ Photo captured and watermarked with MarbsLF timestamp!');
+    showToast('Photo captured and watermarked with MarbsLF timestamp!');
   }
 
   function handleClaimPhotoCaptured(payload) {
@@ -1251,11 +1251,11 @@
     if (previewImg) previewImg.src = payload.image_data;
     if (badge) {
       if (payload.camera_verification_status === 'GALLERY_UPLOAD') {
-        badge.textContent = '📁 PHOTO ATTACHED';
+        badge.textContent = 'PHOTO ATTACHED';
         badge.style.background = '#e0f2fe';
         badge.style.color = '#0369a1';
       } else {
-        badge.textContent = '✓ LIVE CAMERA PROOF';
+        badge.textContent = 'LIVE CAMERA PROOF';
         badge.style.background = '#dcfce7';
         badge.style.color = '#15803d';
       }
@@ -1267,7 +1267,7 @@
     if (previewContainer) previewContainer.style.display = 'flex';
     if (emptyState) emptyState.style.display = 'none';
 
-    showToast('✓ Proof photo captured successfully!');
+    showToast('Proof photo captured successfully!');
   }
 
   function resetClaimPhotoUI() {
@@ -1313,7 +1313,7 @@
     }
 
     // If still not verified, show friendly guidance modal
-    showToast('⚠️ Verify first before you can post or claim');
+    showToast('Verify first before you can post or claim');
     showNotificationModal({
       title: 'Identity Verification Required',
       message: `Verify first before you can ${actionDesc}. Under Section 4 security rules, users must complete identity verification (PhilSys, School ID, Driver's License, or Passport) to prevent fraud and protect citizens.`,
@@ -1394,7 +1394,7 @@
         renderAdminPortal();
       }
 
-      showToast(`🗑️ "${targetPost.item_name}" was successfully deleted.`);
+      showToast(`"${targetPost.item_name}" was successfully deleted.`);
     },
 
     handlePostAction: function (postId) {
@@ -1547,7 +1547,7 @@
 
       // Strict enforcement: Found items MUST use the device camera
       if (!capturedPhotoPayload || activeCameraContext !== 'found' || !capturedPhotoPayload.image_data) {
-        alert('🔒 Device Camera Required:\n\nTo prevent fake claims and verify authenticity in Koronadal City, Found Items MUST be photographed right now using your device camera.\n\nPlease click "Open Device Camera & Snap Found Item".');
+        alert('Device Camera Required:\n\nTo prevent fake claims and verify authenticity in Koronadal City, Found Items MUST be photographed right now using your device camera.\n\nPlease click "Open Device Camera & Snap Found Item".');
         marbsCamera.open({
           category: 'found_item',
           onCapture: handlePhotoCaptured
@@ -1785,8 +1785,8 @@
         resetClaimPhotoUI();
 
         showToast(isFoundPost 
-          ? '✓ Claim submitted! The finder has been notified to review your proof answers and photo.'
-          : '✓ Details submitted! The owner has been notified of your report and photo proof.');
+          ? 'Claim submitted! The finder has been notified to review your proof answers and photo.'
+          : 'Details submitted! The owner has been notified of your report and photo proof.');
       });
     }
   }
@@ -1909,7 +1909,7 @@
         marbsDB.save();
 
         $('#meetupModal').classList.remove('active');
-        showToast('✓ Public Meetup Confirmed! Please review safety instructions.');
+        showToast('Public Meetup Confirmed! Please review safety instructions.');
         renderUserDashboard();
         renderMeetupsView();
         updateNotificationBadges();
@@ -1924,10 +1924,10 @@
 
     if (actionRole === 'OWNER') {
       meetup.owner_confirmed_return = true;
-      showToast('✓ Owner confirmed: "ITEM RECEIVED"');
+      showToast('Owner confirmed: "ITEM RECEIVED"');
     } else if (actionRole === 'FINDER') {
       meetup.finder_confirmed_return = true;
-      showToast('✓ Finder confirmed: "ITEM RETURNED"');
+      showToast('Finder confirmed: "ITEM RETURNED"');
     }
 
     // Both parties confirmed! Trigger Return Completed & Points & Rewards
@@ -1976,7 +1976,7 @@
 
   function showThankFinderPrompt(finderId) {
     showNotificationModal({
-      title: '🎉 Item Return Complete!',
+      title: 'Item Return Complete!',
       message: 'Both parties confirmed the return! The finder was awarded legitimate Marbs Points. Would you like to award an extra +10 MP "Thank the Finder" bonus?',
       btnText: 'Send +10 MP Thank You Bonus',
       onAction: () => {
@@ -1994,7 +1994,7 @@
             status: 'APPROVED'
           });
           marbsDB.save();
-          showToast('✓ Sent +10 MP Thank-You bonus to the finder!');
+          showToast('Sent +10 MP Thank-You bonus to the finder!');
         }
       }
     });
@@ -2206,7 +2206,7 @@
     }
     if (bannerTitle) bannerTitle.textContent = post.item_name || 'Item';
     if (bannerStatus) {
-      bannerStatus.textContent = post.status === 'RESOLVED' ? '✓ RETRIEVED / RESOLVED' : (post.status || 'MATCH CONFIRMED');
+      bannerStatus.textContent = post.status === 'RESOLVED' ? 'RETRIEVED / RESOLVED' : (post.status || 'MATCH CONFIRMED');
     }
     if (bannerLocation) bannerLocation.textContent = post.general_location || 'Koronadal City';
 
@@ -2238,7 +2238,6 @@
     if (postMessages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-          <div style="font-size: 32px; margin-bottom: 8px;">💬</div>
           <strong style="color: var(--text-main); font-size: 14px;">Direct Real-Time Chat Started</strong>
           <p style="font-size: 12px; margin-top: 4px;">Send a message below or use quick replies to coordinate return at Koronadal City Hall or approved Safe Pickup Place.</p>
         </div>
@@ -2254,7 +2253,7 @@
       return `
         <div class="messenger-bubble ${isMine ? 'mine' : 'other'}">
           <div>${escapeHtml(msg.message)}</div>
-          <div class="messenger-bubble-time">${timeStr} ${isMine ? '✓ Delivered' : ''}</div>
+          <div class="messenger-bubble-time">${timeStr} ${isMine ? 'Delivered' : ''}</div>
         </div>
       `;
     }).join('');
@@ -2286,7 +2285,7 @@
       'deposit first'
     ];
     if (scamPhrases.some(p => text.toLowerCase().includes(p))) {
-      alert('⚠️ SECURITY WARNING (MARBSLF SCAM PREVENTOR):\nYour message was blocked because it requests money before return verification.\n"Do not send payment before a legitimate match and verified return process."');
+      alert('SECURITY WARNING (MARBSLF SCAM PREVENTOR):\nYour message was blocked because it requests money before return verification.\n"Do not send payment before a legitimate match and verified return process."');
       marbsDB.logAudit('SECURITY_ALERT', `Suspicious money demand flagged from user ${user.user_id}: "${text}"`);
       return;
     }
@@ -2441,7 +2440,7 @@
 
     $('#walletPointsAvailable').textContent = user.points_balance || 0;
     const levelInfo = MarbsLFDatabase.getMarbsPointLevel(user.points_balance);
-    $('#walletUserLevel').textContent = `${levelInfo.badge} ${levelInfo.level}`;
+    $('#walletUserLevel').textContent = levelInfo.level;
 
     // Render Vouchers Catalog (Section 22)
     const vouchersGrid = $('#vouchersGrid');
@@ -2492,7 +2491,7 @@
     const user = marbsDB.getCurrentUser();
     const voucher = marbsDB.data.vouchers.find(v => v.voucher_id === voucherId);
     if (!voucher || user.points_balance < voucher.points_required) {
-      showToast('❌ Insufficient Marbs Points balance');
+      showToast('Insufficient Marbs Points balance');
       return;
     }
 
@@ -2514,7 +2513,7 @@
     openWalletModal();
     renderUserPill();
 
-    alert(`🎉 Voucher Redeemed Successfully!\n\nPartner Voucher: ${voucher.title}\nVoucher Code: ${redemptionCode}\n\nPresent this code at participating stores in Koronadal City.`);
+    alert(`Voucher Redeemed Successfully!\n\nPartner Voucher: ${voucher.title}\nVoucher Code: ${redemptionCode}\n\nPresent this code at participating stores in Koronadal City.`);
   };
 
   // 17. Scam & Abuse Reporting Modal (Section 31)
@@ -2549,7 +2548,7 @@
 
         $('#scamReportModal').classList.remove('active');
         form.reset();
-        showToast('✓ Report submitted! Koronadal City moderators will investigate promptly.');
+        showToast('Report submitted! Koronadal City moderators will investigate promptly.');
       });
     }
   }
@@ -2596,7 +2595,7 @@
         renderUserDashboard();
         renderUserPill();
 
-        showToast('✓ ID verification submitted! Administrator review is pending.');
+        showToast('ID verification submitted! Administrator review is pending.');
       });
     }
   }
@@ -2690,7 +2689,7 @@
           } else {
             navigateToView('home');
           }
-          showToast(`✓ Welcome back, ${currentUser.first_name}!`);
+          showToast(`Welcome back, ${currentUser.first_name}!`);
         } catch (err) {
           alert('Login Failed: ' + (err.message || 'Please check your email and password.'));
         } finally {
@@ -2787,7 +2786,7 @@
           renderFeed();
 
           showNotificationModal({
-            title: '🎉 Account Created Successfully!',
+            title: 'Account Created Successfully!',
             message: `Welcome to MarbsLF, ${firstName}! Your account has been registered with Supabase. Please complete your ID verification to earn your verified badge.`,
             btnText: 'Verify Identity Now',
             onAction: () => $('#idVerificationModal').classList.add('active')
@@ -2951,7 +2950,7 @@
           } else {
             navigateToView('home');
           }
-          showToast(`✓ Welcome to MarbsLF, ${currentUser.first_name}!`);
+          showToast(`Welcome to MarbsLF, ${currentUser.first_name}!`);
         } catch (err) {
           alert('Login Failed: ' + (err.message || 'Please check your email and password.'));
         } finally {
@@ -3045,7 +3044,7 @@
           navigateToView('home');
 
           showNotificationModal({
-            title: '🎉 Account Created Successfully!',
+            title: 'Account Created Successfully!',
             message: `Welcome to MarbsLF, ${firstName}! Your account has been registered. Please complete your ID verification to earn your verified badge.`,
             btnText: 'Verify Identity Now',
             onAction: () => $('#idVerificationModal').classList.add('active')
@@ -3191,13 +3190,13 @@
               <div class="handshake-box">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Lost Item Owner Step:</div>
                 <button class="btn btn-primary" style="width: 100%; font-size: 12px;" ${m.owner_confirmed_return ? 'disabled style="background: #10b981; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
-                  ${m.owner_confirmed_return ? '✓ ITEM RECEIVED (CONFIRMED)' : 'ITEM RECEIVED'}
+                  ${m.owner_confirmed_return ? 'ITEM RECEIVED (CONFIRMED)' : 'ITEM RECEIVED'}
                 </button>
               </div>
               <div class="handshake-box">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Finder Step:</div>
                 <button class="btn btn-dark" style="width: 100%; font-size: 12px;" ${m.finder_confirmed_return ? 'disabled style="background: #10b981; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
-                  ${m.finder_confirmed_return ? '✓ ITEM RETURNED (CONFIRMED)' : 'ITEM RETURNED'}
+                  ${m.finder_confirmed_return ? 'ITEM RETURNED (CONFIRMED)' : 'ITEM RETURNED'}
                 </button>
               </div>
             </div>
@@ -3252,7 +3251,7 @@
 
         safePlaceForm.reset();
         renderAdminSafePlaces();
-        showToast('✓ New Safe Pickup Place added to official Koronadal network.');
+        showToast('New Safe Pickup Place added to official Koronadal network.');
       });
     }
   }
@@ -3351,7 +3350,7 @@
     renderUserDashboard();
     renderUserPill();
     updateNotificationBadges();
-    showToast(`✓ Post ${postId} approved and published publicly!`);
+    showToast(`Post ${postId} approved and published publicly!`);
   };
 
   window.adminRejectPost = function (postId) {
@@ -3432,7 +3431,7 @@
 
     const hashBadge = $('#adminDetailHashBadge');
     if (hashBadge) {
-      hashBadge.textContent = ver.camera_verified ? `✓ Camera Verification Verified (${ver.verification_id})` : `Uploaded Verification Doc (${ver.verification_id})`;
+      hashBadge.textContent = ver.camera_verified ? `Camera Verification Verified (${ver.verification_id})` : `Uploaded Verification Doc (${ver.verification_id})`;
     }
 
     const badgeColors = {
@@ -3544,7 +3543,7 @@
     marbsDB.save();
     renderAdminPortal();
     renderUserDashboard();
-    showToast(`✓ Updated verification status to ${newStatus} for ${ver.full_legal_name}`);
+    showToast(`Updated verification status to ${newStatus} for ${ver.full_legal_name}`);
   };
 
   window.adminApproveId = function (verId) { window.adminSetVerificationStatus(verId, 'VERIFIED'); };
@@ -3591,7 +3590,7 @@
     marbsDB.logAudit('REPORT_RESOLVED', `Resolved report ${reportId}`);
     marbsDB.save();
     renderAdminPortal();
-    showToast(`✓ Report ${reportId} marked as resolved.`);
+    showToast(`Report ${reportId} marked as resolved.`);
   };
 
   function renderAdminAuditLogs() {
@@ -3983,7 +3982,6 @@
     if (relevantMatches.length === 0) {
       list.innerHTML = `
         <div style="text-align: center; padding: 36px 20px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-md);">
-          <div style="font-size: 28px; margin-bottom: 8px;">📬</div>
           <strong style="color: var(--text-main); font-size: 14px;">No Private Verification Answers Yet</strong>
           <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; max-width: 400px; margin-left: auto; margin-right: auto;">
             When another citizen submits answers to verify ownership or reports finding your item, their private answers will appear securely here for your review.
@@ -4110,7 +4108,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                       <span style="color: #166534; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        📸 Captured Photo Proof:
+                        Captured Photo Proof:
                       </span>
                       <span style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">
                         ${qna.camera_verification_status === 'GALLERY_UPLOAD' ? 'UPLOADED PHOTO' : 'LIVE CAMERA VERIFIED'}
@@ -4123,7 +4121,7 @@
                         ${qna.proof_photo_hash ? `<div style="font-family: monospace; font-size: 10px; color: #15803d; margin-top: 3px; word-break: break-all;">Hash: ${escapeHtml(qna.proof_photo_hash)}</div>` : ''}
                         <div style="margin-top: 6px;">
                           <button type="button" class="btn btn-outline" style="font-size: 10px; padding: 3px 8px; color: #15803d; border-color: #86efac; background: #fff;" onclick="window.openImageZoomModal('${qna.proof_photo_url || m.proof_photo_url}')">
-                            🔍 Inspect Full Photo
+                            Inspect Full Photo
                           </button>
                         </div>
                       </div>
@@ -4143,7 +4141,7 @@
               Reject Claim
             </button>
             <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 6px 14px;" onclick="window.acceptVerificationMatch('${m.match_id}', '${post.post_id}')">
-              ✓ Accept & Schedule Return
+              Accept & Schedule Return
             </button>
           </div>
         </div>
@@ -4180,7 +4178,7 @@
     
     // Open Safe Return scheduler modal
     $('#meetupModal').classList.add('active');
-    showToast('✓ Match accepted! Select an official Safe Pickup Place to schedule the return.');
+    showToast('Match accepted! Select an official Safe Pickup Place to schedule the return.');
     renderUserDashboard();
     updateNotificationBadges();
   };
@@ -4302,7 +4300,7 @@
 
         const user = marbsDB.getCurrentUser();
         _renderEditAvatarPreview(user || { first_name: 'U' });
-        showToast('📷 Photo ready! Click Save to apply.');
+        showToast('Photo ready! Click Save to apply.');
       };
       img.src = ev.target.result;
     };
@@ -4331,7 +4329,7 @@
               _pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.8);
               const user = marbsDB.getCurrentUser();
               _renderEditAvatarPreview(user || { first_name: 'U' });
-              showToast('📸 Photo captured! Click Save to apply.');
+              showToast('Photo captured! Click Save to apply.');
             };
             img.src = imgData;
           }
@@ -4361,7 +4359,7 @@
     const barangay = $('#editBarangay').value;
 
     if (!firstName || !lastName) {
-      showToast('⚠️ First name and last name are required.');
+      showToast('First name and last name are required.');
       return;
     }
 
@@ -4393,7 +4391,7 @@
     renderUserDashboard();
     renderUserPill();
     $('#editProfileModal').classList.remove('active');
-    showToast('✅ Profile updated successfully!');
+    showToast('Profile updated successfully!');
   };
 
   // =========================================================================
@@ -4451,7 +4449,6 @@
       if (activeMeetups.length === 0) {
         activeList.innerHTML = `
           <div style="text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--border); border-radius: var(--radius-md);">
-            <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
             <strong style="font-size: 15px; color: var(--text-main);">No Upcoming Safe Meetups Scheduled</strong>
             <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 440px; margin-left: auto; margin-right: auto;">
               When you confirm an ownership verification match and arrange a return at an official Safe Pickup Place, your confirmed schedule will appear securely here.
@@ -4530,15 +4527,15 @@
 
               <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; flex-wrap: wrap;">
                 <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.openMessengerForPost('${post.post_id}', '${counterpartyId}')">
-                  💬 Open Messages
+                  Open Messages
                 </button>
                 ${isOwner ? `
                   <button type="button" class="btn btn-primary" style="font-size: 12px; padding: 6px 16px; background: #16a34a; border-color: #15803d; color: #fff; font-weight: 800;" onclick="window.markMeetupComplete('${m.meetup_id}')">
-                    ✓ Mark as Retrieved / Complete
+                    Mark as Retrieved / Complete
                   </button>
                 ` : `
                   <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #16a34a; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
-                    ✓ Confirm Handover Done
+                    Confirm Handover Done
                   </button>
                 `}
               </div>
@@ -4553,7 +4550,6 @@
       if (completedMeetups.length === 0) {
         historyList.innerHTML = `
           <div style="text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--border); border-radius: var(--radius-md);">
-            <div style="font-size: 32px; margin-bottom: 10px;">📜</div>
             <strong style="font-size: 15px; color: var(--text-main);">No Completed Transactions Yet</strong>
             <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 440px; margin-left: auto; margin-right: auto;">
               Completed returns and verified safe meetup transactions will be archived permanently here with ratings and proofs.
@@ -4584,7 +4580,7 @@
                   <img src="${post.image || 'assets/images.jpg'}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <span class="activity-badge" style="background: #dcfce7; color: #166534; font-weight: 800; font-size: 10px;">✓ COMPLETED & RETRIEVED</span>
+                      <span class="activity-badge" style="background: #dcfce7; color: #166534; font-weight: 800; font-size: 10px;">COMPLETED & RETRIEVED</span>
                       <strong style="font-size: 15px; color: var(--text-main);">${escapeHtml(post.item_name)}</strong>
                     </div>
                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
@@ -4633,7 +4629,7 @@
     marbsDB.logAudit('TRANSACTION_COMPLETED', `Meetup ${meetupId} marked as Retrieved/Completed by ${user ? user.user_id : 'OWNER'}`);
     marbsDB.save();
 
-    showToast('✓ Item marked as Retrieved / Complete! Schedule archived to History.');
+    showToast('Item marked as Retrieved / Complete! Schedule archived to History.');
 
     renderMeetupsView();
     renderUserDashboard();
@@ -4684,11 +4680,11 @@
   window.setRatingStars = function(stars) {
     selectedRatingStars = stars;
     const labels = {
-      1: '★☆☆☆☆ 1 Star — Poor Experience / Disappointing',
-      2: '★★☆☆☆ 2 Stars — Below Expectations',
-      3: '★★★☆☆ 3 Stars — Good & Honest Citizen',
-      4: '★★★★☆ 4 Stars — Very Reliable & Punctual',
-      5: '⭐⭐⭐⭐⭐ 5 Stars — Exceptional & Highly Reliable Citizen'
+      1: '1 Star — Poor Experience / Disappointing',
+      2: '2 Stars — Below Expectations',
+      3: '3 Stars — Good & Honest Citizen',
+      4: '4 Stars — Very Reliable & Punctual',
+      5: '5 Stars — Exceptional & Highly Reliable Citizen'
     };
 
     const labelEl = $('#starPickerLabel');
@@ -4714,7 +4710,7 @@
     if (!user) return;
 
     const comment = ($('#ratingCommentText')?.value || '').trim() || 'Very honest citizen! Safely returned the item.';
-    const selectedTags = Array.from($$('.feedback-chip.active')).map(c => c.textContent.replace('✓', '').trim());
+    const selectedTags = Array.from($$('.feedback-chip.active')).map(c => c.textContent.trim());
 
     const ratingRecord = {
       rating_id: 'RAT-' + Date.now().toString().slice(-4),
@@ -4745,7 +4741,7 @@
     marbsDB.save();
 
     $('#ratingModal').classList.remove('active');
-    showToast(`⭐ Thank you! Rated ${selectedRatingStars} stars. Reliability score updated on their profile!`);
+    showToast(`Thank you! Rated ${selectedRatingStars} stars. Reliability score updated on their profile!`);
 
     renderMeetupsView();
     renderUserDashboard();

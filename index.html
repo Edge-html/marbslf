@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=21">
+  <link rel="stylesheet" href="styles/main.css?v=22">
 </head>
 <body>
 
@@ -385,19 +385,25 @@
               
               <div class="lp-auth-perks">
                 <div class="lp-perk-item">
-                  <div class="lp-perk-check">✓</div>
+                  <div class="lp-perk-check">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
                   <div>
                     <strong>Zero Platform Fees:</strong> Free civic service powered for South Cotabato citizens.
                   </div>
                 </div>
                 <div class="lp-perk-item">
-                  <div class="lp-perk-check">✓</div>
+                  <div class="lp-perk-check">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
                   <div>
                     <strong>Anti-Extortion Guard:</strong> Phone numbers and home coordinates stay 100% private.
                   </div>
                 </div>
                 <div class="lp-perk-item">
-                  <div class="lp-perk-check">✓</div>
+                  <div class="lp-perk-check">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
                   <div>
                     <strong>Central Admin Moderation:</strong> Every post vetted for community safety.
                   </div>
@@ -1003,7 +1009,7 @@
             <div class="dash-reliability-box" id="dashProfileReliability" style="margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; width: 100%; text-align: center;">
               <div style="font-size: 10px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 0.5px;">Reliability Rating</div>
               <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 2px;">
-                <span style="color: #cbd5e1; font-size: 14px;" id="dashProfileStars">☆☆☆☆☆</span>
+                <span style="color: #cbd5e1; font-size: 14px; letter-spacing: 1px;" id="dashProfileStars">&#9734;&#9734;&#9734;&#9734;&#9734;</span>
                 <span style="font-weight: 800; font-size: 13px; color: #713f12;" id="dashProfileAvg">Not yet rated</span>
               </div>
               <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 2px;" id="dashProfileTier">New Citizen</div>
@@ -1093,7 +1099,7 @@
           <div style="margin-bottom: 32px;">
             <div class="section-header">
               <h3 style="font-size: 17px; font-weight: 800;">My Reported Items & Pets</h3>
-              <button class="btn btn-primary" style="font-size: 12px; padding: 4px 12px;" onclick="window.marbsApp.openReportModal('LOST')">+ New Post</button>
+              <button class="btn btn-primary" style="font-size: 12px; padding: 4px 12px;" onclick="window.marbsApp.openReportModal('LOST')">New Post</button>
             </div>
             
             <div class="table-responsive">
@@ -1150,7 +1156,7 @@
             </div>
             <div style="display: flex; gap: 10px;">
               <button type="button" class="btn btn-outline" style="background: rgba(255,255,255,0.12) !important; color: #fff !important; border-color: rgba(255,255,255,0.35); font-size: 12px;" onclick="window.openVerificationsModal()">
-                💬 Open Messages
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 5px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Open Messages
               </button>
             </div>
           </div>
@@ -1433,8 +1439,8 @@
 
         <!-- Review Controls (Retake / Use Photo per Section 9) -->
         <div id="cameraReviewControls" class="camera-controls-bar" style="display: none;">
-          <button id="cameraRetakeBtn" class="btn btn-outline">↺ Retake</button>
-          <button id="cameraUseBtn" class="btn btn-primary">✓ Use Photo</button>
+          <button id="cameraRetakeBtn" class="btn btn-outline">Retake</button>
+          <button id="cameraUseBtn" class="btn btn-primary">Use Photo</button>
         </div>
       </div>
     </div>
@@ -1848,7 +1854,7 @@
                   <input type="file" id="claimPhotoFileInput" accept="image/*" style="display: none;">
                 </div>
                 <div style="font-size: 11px; color: var(--text-subtle);">
-                  🔒 Camera snaps include real-time Koronadal timestamp & anti-tamper watermark.
+                  Camera snaps include real-time Koronadal timestamp &amp; anti-tamper watermark.
                 </div>
               </div>
 
@@ -1860,16 +1866,16 @@
                 <div style="flex-grow: 1; min-width: 0;">
                   <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                     <span id="claimPhotoBadge" style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
-                      ✓ LIVE CAMERA PROOF
+                      LIVE CAMERA PROOF
                     </span>
                   </div>
                   <div id="claimPhotoTimestamp" style="font-size: 11px; color: var(--text-muted); word-break: break-all;"></div>
                   <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn btn-outline" id="claimPhotoRetakeBtn" style="font-size: 11px; padding: 4px 10px;">
-                      ↺ Retake / Change
+                      Retake / Change
                     </button>
                     <button type="button" class="btn btn-outline" id="claimPhotoRemoveBtn" style="font-size: 11px; padding: 4px 10px; color: #ef4444; border-color: #fca5a5;">
-                      ✕ Remove
+                      Remove
                     </button>
                   </div>
                 </div>
@@ -1961,7 +1967,7 @@
               </div>
               <div class="marketplace-item-actions">
                 <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 5px 12px; white-space: nowrap;" onclick="window.triggerScheduleFromChat()">
-                  📅 Safe Meetup
+                  Schedule Safe Meetup
                 </button>
               </div>
             </div>
@@ -2101,7 +2107,7 @@
     <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <span style="color: #f59e0b; font-size: 20px;">⭐</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           Rate Citizen Reliability
         </h3>
         <button class="modal-close-btn" onclick="$('#ratingModal').classList.remove('active')">×</button>
@@ -2117,7 +2123,7 @@
               <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Rating Verified Citizen</div>
               <strong id="ratingTargetName" style="font-size: 15px; color: var(--text-main); display: block; margin-top: 1px;">Verified Citizen</strong>
               <div style="font-size: 11px; color: #15803d; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
-                <span>✓ Safe Item Return Confirmed</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><polyline points="20 6 9 17 4 12"/></svg>Safe Item Return Confirmed
                 <span id="ratingItemNameTag" style="color: var(--text-muted); font-weight: normal;">• Item</span>
               </div>
             </div>
@@ -2129,21 +2135,21 @@
 
           <!-- Interactive 5-Star Rating Picker -->
           <div class="interactive-star-picker" id="starPickerContainer">
-            <button type="button" class="star-btn active" data-star="1" onclick="window.setRatingStars(1)">★</button>
-            <button type="button" class="star-btn active" data-star="2" onclick="window.setRatingStars(2)">★</button>
-            <button type="button" class="star-btn active" data-star="3" onclick="window.setRatingStars(3)">★</button>
-            <button type="button" class="star-btn active" data-star="4" onclick="window.setRatingStars(4)">★</button>
-            <button type="button" class="star-btn active" data-star="5" onclick="window.setRatingStars(5)">★</button>
+            <button type="button" class="star-btn active" data-star="1" onclick="window.setRatingStars(1)" aria-label="1 star"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn active" data-star="2" onclick="window.setRatingStars(2)" aria-label="2 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn active" data-star="3" onclick="window.setRatingStars(3)" aria-label="3 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn active" data-star="4" onclick="window.setRatingStars(4)" aria-label="4 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn active" data-star="5" onclick="window.setRatingStars(5)" aria-label="5 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
           </div>
           <div id="starPickerLabel" style="font-weight: 800; font-size: 13px; color: #b45309; margin-top: 6px; margin-bottom: 18px;">
-            ⭐⭐⭐⭐⭐ 5 Stars — Exceptional & Highly Reliable Citizen
+            5 Stars — Exceptional &amp; Highly Reliable Citizen
           </div>
 
           <!-- Quick Feedback Tags -->
           <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px;">
-            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">✓ Very Honest</button>
-            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">✓ On Time at Safe Spot</button>
-            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">✓ Friendly & Cooperative</button>
+            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">Very Honest</button>
+            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">On Time at Safe Spot</button>
+            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">Friendly &amp; Cooperative</button>
             <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Smooth Handover</button>
             <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Fast Communication</button>
           </div>
@@ -2157,7 +2163,7 @@
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-outline" onclick="$('#ratingModal').classList.remove('active')">Skip</button>
           <button type="submit" class="btn btn-primary" style="background: #f59e0b; border-color: #d97706; color: #000; font-weight: 800; padding: 8px 18px;">
-            Submit Rating ⭐
+            Submit Rating
           </button>
         </div>
       </form>
@@ -2659,11 +2665,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="scripts/firebaseClient.js?v=16"></script>
+  <script src="scripts/firebaseClient.js?v=17"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=22"></script>
-  <script src="scripts/camera.js?v=16"></script>
-  <script src="scripts/app.js?v=39"></script>
+  <script src="scripts/data.js?v=23"></script>
+  <script src="scripts/camera.js?v=17"></script>
+  <script src="scripts/app.js?v=40"></script>
 </body>
 </html>
