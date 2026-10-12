@@ -118,6 +118,37 @@ h1, h2, h3, .hero-tagline, .section-title {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
 }
 
+/*
+  Wind/cloud texture on the navigation bar.
+
+  assets/wind.png is a white image on a transparent canvas, so it is blended
+  with `screen` against the navy bar - that lightens rather than washes out,
+  keeping the bar dark while giving it a soft atmospheric haze.
+
+  It is painted on a ::before layer behind the nav content (z-index 0), and
+  pointer events are disabled so links stay fully clickable.
+*/
+.top-nav-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('../assets/wind.png');
+  background-repeat: no-repeat;
+  background-position: 50% 46%;
+  background-size: cover;
+  opacity: 0.16;
+  mix-blend-mode: screen;
+}
+
+/* Keep the nav content above the texture layer. */
+.top-nav-container,
+.mobile-nav-drawer {
+  position: relative;
+  z-index: 1;
+}
+
 .top-nav-container {
   max-width: 1360px;
   margin: 0 auto;
@@ -3419,6 +3450,45 @@ body[data-surface="app"] #landingPageView {
 body[data-surface="landing"] #navSearchBtn,
 body[data-surface="landing"] #navNotifBtn {
   display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   CIVIC WATERMARK
+   The City of Koronadal seal sits behind every main application page as a
+   large, heavily faded background mark. It is a fixed layer so it reads as a
+   watermark rather than page content, and it is painted *behind* the app
+   content and below modals (z-index 1200).
+
+   assets/kor_logo-watermark.png is a 512px transparent derivative of
+   assets/kor_logo.png (1.6 MB -> 288 KB). At this opacity the resolution is
+   not perceptible, and it is cached after first load.
+   -------------------------------------------------------------------------- */
+
+body[data-surface="app"] .main-content-area::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('../assets/kor_logo-watermark.png');
+  background-repeat: no-repeat;
+  background-position: 50% 42%;
+  background-size: min(86vh, 900px);
+  opacity: 0.05;
+}
+
+/* Lift real content above the watermark layer. */
+body[data-surface="app"] .app-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Drop the watermark on small screens so it never competes with content. */
+@media (max-width: 640px) {
+  body[data-surface="app"] .main-content-area::before {
+    background-size: 520px;
+    opacity: 0.035;
+  }
 }
 
 .lp-section {
