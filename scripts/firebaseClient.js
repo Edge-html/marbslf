@@ -219,6 +219,20 @@ async function signInWithEmailOrUsername(identifier, password) {
 
 // 4. Sign Out
 async function signOutUser() {
+  // Fade the current surface out before the hard reload so the handoff to the
+  // landing page feels deliberate. Falls back to an instant sign-out when the
+  // user prefers reduced motion.
+  const motion = window.marbsMotion;
+  const reduced = motion && motion.prefersReducedMotion && motion.prefersReducedMotion.matches;
+  const wait = reduced ? 0 : 240;
+
+  if (motion && !reduced) {
+    motion.beginTransition(240);
+    document.body.classList.add('is-route-complete');
+  }
+
+  await new Promise(r => setTimeout(r, wait));
+
   if (firebaseAuth) {
     try {
       await firebaseAuth.signOut();

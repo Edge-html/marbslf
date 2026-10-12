@@ -4041,4 +4041,251 @@ body[data-surface="landing"] #navNotifBtn {
   .lp-auth-card {
     padding: 24px 18px;
   }
+}
+
+/* ==========================================================================
+   MOTION SYSTEM
+   Restrained, product-grade transitions for view changes and auth state.
+   Principles: short durations, small offsets, compositor-only properties
+   (opacity/transform), and no overshoot/bounce. Motion should confirm an
+   action happened, never perform for attention.
+
+   All animations use `backwards` fill so they release the element back to
+   its natural styles afterwards - this keeps :hover transforms and layout
+   working once the animation completes.
+   ========================================================================== */
+
+:root {
+  --motion-instant: 120ms;
+  --motion-fast: 180ms;
+  --motion-base: 240ms;
+  --motion-slow: 320ms;
+
+  /* Decelerate - the workhorse curve for entrances (matches --transition) */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Accelerate - for exits, so things leave quickly and calmly */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  /* Symmetric - for colour/opacity changes that aren't directional */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- View (page) transitions --------------------------------------------- */
+
+@keyframes viewEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Applied by navigateToView() to whichever view just became visible. */
+.view-enter {
+  animation: viewEnter var(--motion-base) var(--ease-out) backwards;
+  will-change: opacity, transform;
+}
+
+/* Slightly larger travel for the landing page, which is a full-page surface. */
+#landingPageView.view-enter {
+  animation-duration: var(--motion-slow);
+}
+
+/* --- Staggered list entrances -------------------------------------------- */
+
+/*
+ * Cards inside a freshly rendered view fade up in sequence. The delay is
+ * driven by --stagger-i (set per item in app.js) and capped in JS so long
+ * feeds never feel slow.
+ */
+.stagger-item {
+  animation: itemEnter var(--motion-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--stagger-i, 0) * 40ms);
+  will-change: opacity, transform;
+}
+
+@keyframes itemEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* --- Auth state transitions ---------------------------------------------- */
+
+/*
+ * The user pill and the Login / Sign Up buttons occupy the same slot, so they
+ * cross-fade in place instead of the layout jumping.
+ */
+.auth-swap-enter {
+  animation: authSwapIn var(--motion-base) var(--ease-out) backwards;
+}
+
+.auth-swap-exit {
+  animation: authSwapOut var(--motion-fast) var(--ease-in) backwards;
+}
+
+@keyframes authSwapIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes authSwapOut {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0) scale(0.97);
+  }
+}
+
+/* A single soft pulse on the avatar when a session becomes active. */
+@keyframes avatarConfirm {
+  0% {
+    box-shadow: 0 0 0 0 rgba(242, 179, 27, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(242, 179, 27, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 179, 27, 0);
+  }
+}
+
+.user-pill.auth-confirmed .user-avatar-sm {
+  animation: avatarConfirm 620ms var(--ease-standard);
+}
+
+/* --- Full-surface fade for sign-out -------------------------------------- */
+
+@keyframes surfaceFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.995);
+  }
+}
+
+/*
+ * Applied briefly during sign-out so the handoff to the landing page feels
+ * deliberate rather than a hard browser reload.
+ */
+body.is-transitioning .main-content-area,
+body.is-transitioning .top-nav-bar {
+  animation: surfaceFadeOut var(--motion-base) var(--ease-in) forwards;
+}
+
+/* --- Top route indicator -------------------------------------------------- */
+
+/*
+ * A 2px progress line under the navbar, shown only while a route change or
+ * auth request is in flight. Mirrors the pattern used by mature dashboards.
+ */
+.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  z-index: 3000;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--primary-yellow), #ffd97a);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  opacity: 0;
+  transition:
+    transform var(--motion-slow) var(--ease-out),
+    opacity var(--motion-fast) linear;
+}
+
+body.is-transitioning .route-progress {
+  transform: scaleX(0.75);
+  opacity: 1;
+  transition:
+    transform 900ms var(--ease-out),
+    opacity var(--motion-fast) linear;
+}
+
+body.is-transitioning.is-route-complete .route-progress {
+  transform: scaleX(1);
+  opacity: 0;
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    opacity var(--motion-base) linear;
+}
+
+/* --- Button press feedback ------------------------------------------------ */
+
+/* A restrained press, not a bounce. */
+.btn:active,
+.icon-btn:active,
+.nav-link-btn:active {
+  transform: scale(0.985);
+  transition-duration: 80ms;
+}
+
+/* Spinner for auth submit buttons while a request is in flight. */
+.btn.is-busy {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn.is-busy::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--primary-yellow-ink);
+  animation: spin 640ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Accessibility -------------------------------------------------------- */
+
+/*
+ * Respect the OS "reduce motion" setting. Elements snap to their final state
+ * instead of animating, and the progress bar never appears.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .route-progress {
+    display: none !important;
+  }
 }

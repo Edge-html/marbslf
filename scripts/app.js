@@ -7,6 +7,121 @@
 (function () {
   'use strict';
 
+  /* ==========================================================================
+     MOTION CONTROLLER
+     Small, self-contained helpers for view transitions and auth state changes.
+     Every helper degrades gracefully: if the user prefers reduced motion, or
+     the browser lacks the Web Animations API, the change happens instantly.
+     ========================================================================== */
+  const prefersReducedMotion = (typeof window.matchMedia === 'function')
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : { matches: false, addEventListener() {} };
+
+  const MOTION = {
+    viewMs: 240,
+    itemMs: 240,
+    staggerStep: 40,
+    maxStagger: 8,       // never delay the 9th+ item
+    surfaceMs: 240,
+    busyMs: 900          // minimum time to show the progress line
+  };
+
+  let routeTimer = null;
+
+  /** Show the top progress line while work is in flight. */
+  function beginTransition(minMs) {
+    const body = document.body;
+    if (body) {
+      body.classList.add('is-transitioning');
+      body.classList.remove('is-route-complete');
+    }
+    if (routeTimer) clearTimeout(routeTimer);
+    const wait = prefersReducedMotion.matches ? 0 : (minMs || MOTION.busyMs);
+    routeTimer = setTimeout(endTransition, wait);
+  }
+
+  /** Complete the progress line, then fade the surface out (sign-out only). */
+  function endTransition(fadeOut) {
+    const body = document.body;
+    if (!body) return;
+    if (fadeOut && !prefersReducedMotion.matches) {
+      body.classList.add('is-route-complete');
+      const fadeMs = MOTION.surfaceMs;
+      setTimeout(() => body.classList.remove('is-transitioning'), fadeMs);
+    } else {
+      body.classList.remove('is-transitioning', 'is-route-complete');
+    }
+  }
+
+  /** Cancel any in-flight transition (used when navigation is superseded). */
+  function cancelTransition() {
+    if (routeTimer) {
+      clearTimeout(routeTimer);
+      routeTimer = null;
+    }
+    if (document.body) {
+      document.body.classList.remove('is-transitioning', 'is-route-complete');
+    }
+  }
+
+  /** Fade + rise a view into place after it becomes visible. */
+  function animateViewIn(el) {
+    if (!el || prefersReducedMotion.matches) return;
+    el.classList.remove('view-enter');
+    // Force a reflow so the animation restarts when re-entering the same view.
+    void el.offsetWidth;
+    el.classList.add('view-enter');
+    el.addEventListener('animationend', () => el.classList.remove('view-enter'), { once: true });
+  }
+
+  /** Reveal a fresh list with a short stagger. */
+  function animateStagger(container, selector) {
+    if (!container || prefersReducedMotion.matches) return;
+    const items = Array.from(container.querySelectorAll(selector));
+    if (!items.length) return;
+    items.forEach((el, i) => {
+      const index = Math.min(i, MOTION.maxStagger);
+      el.style.setProperty('--stagger-i', index);
+      el.classList.remove('stagger-item');
+    });
+    void container.offsetWidth;
+    items.forEach((el) => el.classList.add('stagger-item'));
+  }
+
+  /** Cross-fade a single auth control in or out in place. */
+  function animateAuthControl(el, entering) {
+    if (!el || prefersReducedMotion.matches) return;
+    el.classList.remove('auth-swap-enter', 'auth-swap-exit');
+    void el.offsetWidth;
+    el.classList.add(entering ? 'auth-swap-enter' : 'auth-swap-exit');
+    el.addEventListener('animationend', () => {
+      el.classList.remove('auth-swap-enter', 'auth-swap-exit');
+    }, { once: true });
+  }
+
+  /** Brief confirmation pulse on the avatar after a session becomes active. */
+  function pulseAuthConfirmed(el) {
+    if (!el || prefersReducedMotion.matches) return;
+    el.classList.remove('auth-confirmed');
+    void el.offsetWidth;
+    el.classList.add('auth-confirmed');
+    setTimeout(() => el.classList.remove('auth-confirmed'), 700);
+  }
+
+  /** Put an auth submit button into / out of its loading state. */
+  function setBusy(btn, busy) {
+    if (!btn) return;
+    btn.classList.toggle('is-busy', !!busy);
+    btn.disabled = !!busy;
+  }
+
+  window.marbsMotion = {
+    beginTransition, endTransition, cancelTransition,
+    animateViewIn, animateStagger,
+    animateAuthControl, pulseAuthConfirmed, setBusy,
+    prefersReducedMotion
+  };
+
   // State
   let isPostsLoading = true;
   let currentFilter = 'ALL';
@@ -293,6 +408,9 @@
   const AUTH_GATED_VIEWS = ['dashboard', 'verifications', 'meetups', 'admin'];
 
   function navigateToView(viewName, options = {}) {
+    // Start the progress line immediately; it completes when the view is set.
+    beginTransition(options.transitionMs || MOTION.busyMs);
+
     const currentUser = marbsDB.getCurrentUser();
     const isAdmin = !!(currentUser && currentUser.role === 'ADMIN');
 
@@ -342,79 +460,107 @@
 
     currentView = target;
 
+    // The element that ends up visible, used to drive the enter animation.
+    let activeViewEl = null;
+    // Selector for cards to stagger once the view has rendered.
+    let staggerSelector = null;
+
     if (target === 'home') {
       currentFilter = 'ALL';
       currentCategory = 'ALL';
-      $('#homeView').style.display = 'block';
+      activeViewEl = $('#homeView');
       renderFeed();
+      staggerSelector = '#postsGrid .post-card';
     } else if (target === 'landing') {
-      if (landingPageView) landingPageView.style.display = 'block';
+      activeViewEl = landingPageView;
       if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
     } else if (target === 'lost-items') {
       currentFilter = 'LOST_ITEMS';
       currentCategory = 'ALL';
-      $('#homeView').style.display = 'block';
+      activeViewEl = $('#homeView');
       renderFeed();
+      staggerSelector = '#postsGrid .post-card';
     } else if (target === 'found-items') {
       currentFilter = 'FOUND_ITEMS';
       currentCategory = 'ALL';
-      $('#homeView').style.display = 'block';
+      activeViewEl = $('#homeView');
       renderFeed();
+      staggerSelector = '#postsGrid .post-card';
     } else if (target === 'lost-pets') {
       currentFilter = 'LOST_PETS';
       currentCategory = 'Pets';
-      $('#homeView').style.display = 'block';
+      activeViewEl = $('#homeView');
       renderFeed();
+      staggerSelector = '#postsGrid .post-card';
     } else if (target === 'found-pets') {
       currentFilter = 'FOUND_PETS';
       currentCategory = 'Pets';
-      $('#homeView').style.display = 'block';
+      activeViewEl = $('#homeView');
       renderFeed();
+      staggerSelector = '#postsGrid .post-card';
     } else if (target === 'how-it-works') {
-      $('#howItWorksView').style.display = 'block';
+      activeViewEl = $('#howItWorksView');
     } else if (target === 'dashboard') {
       const user = marbsDB.getCurrentUser();
       if (!user) {
+        cancelTransition();
         openLoginModal();
         showToast('Please log in to view your dashboard.');
         $('#homeView').style.display = 'block';
         return;
       }
-      $('#dashboardView').style.display = 'block';
+      activeViewEl = $('#dashboardView');
       renderUserDashboard();
+      staggerSelector = '#dashMyPostsTbody tr';
     } else if (target === 'verifications') {
       const user = marbsDB.getCurrentUser();
       if (!user) {
+        cancelTransition();
         openLoginModal();
         showToast('Please log in to view verification answers.');
         $('#homeView').style.display = 'block';
         return;
       }
-      $('#homeView').style.display = 'block';
+      activeViewEl = $('#homeView');
       renderFeed();
+      staggerSelector = '#postsGrid .post-card';
       window.openVerificationsModal();
     } else if (target === 'meetups') {
       const user = marbsDB.getCurrentUser();
       if (!user) {
+        cancelTransition();
         openLoginModal();
         showToast('Please log in to view your Safe Meetups.');
         $('#homeView').style.display = 'block';
         return;
       }
-      const meetupsView = $('#meetupsView');
-      if (meetupsView) meetupsView.style.display = 'block';
+      activeViewEl = meetupsView;
       renderMeetupsView();
+      staggerSelector = '#meetupsView .meetup-schedule-card';
     } else if (target === 'admin') {
       const user = marbsDB.getCurrentUser();
       if (!user || user.role !== 'ADMIN') {
+        cancelTransition();
         openLoginModal();
         showToast('City Administrator privileges required.');
         $('#homeView').style.display = 'block';
         return;
       }
-      $('#adminView').style.display = 'block';
+      activeViewEl = $('#adminView');
       renderAdminPortal();
+      staggerSelector = '#adminView .dash-stat-card';
     }
+
+    if (activeViewEl) {
+      activeViewEl.style.display = 'block';
+      animateViewIn(activeViewEl);
+    }
+    if (activeViewEl && staggerSelector) {
+      animateStagger(activeViewEl, staggerSelector);
+    }
+
+    // Route has landed - let the progress line finish and fade out.
+    endTransition();
   }
   window.navigateToView = navigateToView;
 
@@ -2550,6 +2696,8 @@
         } finally {
           submitBtn.textContent = origText;
           submitBtn.disabled = false;
+          setBusy(submitBtn, false);
+          endTransition();
         }
       });
     }
@@ -2763,6 +2911,7 @@
         const origText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span>Signing in...</span>';
         submitBtn.disabled = true;
+        beginTransition(MOTION.busyMs);
 
         try {
           if (window.signInWithEmailOrUsername) {
@@ -2808,6 +2957,8 @@
         } finally {
           submitBtn.innerHTML = origText;
           submitBtn.disabled = false;
+          setBusy(submitBtn, false);
+          endTransition();
         }
       });
     }
@@ -2835,6 +2986,7 @@
         const origText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span>Creating account...</span>';
         submitBtn.disabled = true;
+        beginTransition(MOTION.busyMs);
 
         try {
           if (window.signUpWithEmailPassword) {
@@ -2903,6 +3055,8 @@
         } finally {
           submitBtn.innerHTML = origText;
           submitBtn.disabled = false;
+          setBusy(submitBtn, false);
+          endTransition();
         }
       });
     }
@@ -3455,9 +3609,16 @@
   }
 
   // Helper UI Utilities
+  let lastRenderedAuthState = null;
+
   function renderUserPill() {
     const user = marbsDB.getCurrentUser();
     const isAdmin = user && user.role === 'ADMIN';
+    const isSignedIn = !!(user && user.user_id);
+    // True only on the render where the session flips signed-out -> signed-in.
+    const wasSignedOut = isSignedIn && lastRenderedAuthState !== 'in';
+    const wasSignedIn = !isSignedIn && lastRenderedAuthState === 'in';
+    lastRenderedAuthState = isSignedIn ? 'in' : 'out';
     const pill = $('#navUserBtn');
     const signOutBtn = $('#navSignOutBtn');
     const loginBtn = $('#openLoginModalBtn');
@@ -3559,6 +3720,13 @@
       if (loginBtn) loginBtn.style.display = 'none';
       if (registerBtn) registerBtn.style.display = 'none';
 
+      // Animate only on an actual auth change, not on every re-render.
+      if (wasSignedOut) {
+        animateAuthControl(pill, true);
+        animateAuthControl(signOutBtn, true);
+        pulseAuthConfirmed(pill);
+      }
+
       // A signed-in citizen must never remain on the public landing page.
       // Re-routing here is what fixes "signed up on the landing page but the
       // landing hero still shows underneath the app navbar".
@@ -3570,6 +3738,11 @@
       if (signOutBtn) signOutBtn.style.display = 'none';
       if (loginBtn) loginBtn.style.display = 'inline-flex';
       if (registerBtn) registerBtn.style.display = 'inline-flex';
+
+      if (wasSignedIn) {
+        animateAuthControl(loginBtn, true);
+        animateAuthControl(registerBtn, true);
+      }
 
       // A guest must never remain on an authenticated-only surface.
       if (isRouterReady && AUTH_GATED_VIEWS.includes(currentView)) {
