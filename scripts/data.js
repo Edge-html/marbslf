@@ -150,6 +150,138 @@ const DEFAULT_MEETUPS = [];
 const DEFAULT_MESSAGES = [];
 const DEFAULT_RATINGS = [];
 
+/* ==========================================================================
+   DEMO POST SEEDER
+   Gives every non-admin citizen a realistic set of lost/found reports so the
+   community feed, dashboards and admin moderation queue are not empty.
+
+   These are written into the database (localStorage) exactly like real posts
+   - nothing is hardcoded into the UI. Posts are tagged `is_seed: true` so they
+   can be identified, regenerated, or purged later.
+   ========================================================================== */
+const SEED_POST_BANK = [
+  { post_type: 'LOST',  category: 'Electronics',      item_name: 'Blue Nokia Phone',          description: 'Left the phone on a jeepney seat during my morning commute. Screen lock still active, please contact me so I can secure the account.',      color: 'Blue',      brand: 'Nokia',     image: 'assets/phone_redmi.jpg', reward: 300 },
+  { post_type: 'FOUND', category: 'Electronics',      item_name: 'Blue Nokia Phone',          description: 'Picked up a blue Nokia phone near the public market entrance. It is safe with me at my stall pending owner verification.',                                        color: 'Blue',      brand: 'Nokia',     image: 'assets/phone_redmi.jpg', reward: 0 },
+  { post_type: 'LOST',  category: 'Keys',             item_name: 'Toyota Key Fob',            description: 'Lost my car keys somewhere around the city hall area. The fob has a red leather tag. Returned items are welcome, please message me directly.',                     color: 'Black',     brand: 'Toyota',    image: 'assets/car_key.jpg',     reward: 500 },
+  { post_type: 'LOST',  category: 'Personal Items',   item_name: 'Black Leather Wallet',      description: 'Brown leather bifold wallet containing important cards and IDs. Last seen in Zone III. Very anxious about it, please help.',                                color: 'Black',     brand: 'Unbranded', image: 'assets/wallet_black.jpg', reward: 200 },
+  { post_type: 'FOUND', category: 'Personal Items',   item_name: 'Black Leather Wallet',      description: 'Found a black leather wallet near the Koronadal City Hall lobby. Holding it safely and willing to return once ownership is proven.',                             color: 'Black',     brand: 'Unbranded', image: 'assets/wallet_black.jpg', reward: 0 },
+  { post_type: 'LOST',  category: 'School Items',     item_name: 'Blue School Backpack',      description: 'Left my backpack in the school cafeteria during lunch break. It has my initials stitched on the front pocket and a lunchbox inside.',                       color: 'Blue',      brand: 'JanSport',  image: 'assets/backpack.jpg',     reward: 150 },
+  { post_type: 'LOST',  category: 'IDs & Documents',  item_name: 'PhilSys ID Card',           description: 'I lost my government ID near the Koronadal Public Market. I already filed a report, please message me if you find it so I can properly claim my replacement.',        color: 'White',     brand: 'PhilSys',   image: 'assets/images.jpg',      reward: 100 },
+  { post_type: 'LOST',  category: 'Clothing',         item_name: 'Grey Uniform Hoodie',       description: 'Left my school uniform hoodie at the basketball court in Zone II. Name is embroidered inside the collar.',                                                    color: 'Grey',      brand: 'Unbranded', image: 'assets/images.jpg',      reward: 80 },
+  { post_type: 'LOST',  category: 'Pets',             item_name: 'White Persian Cat',         description: 'Our indoor cat slipped out near the barangay hall. She is shy, white fur with grey patches on the tail, and wears a blue collar.',                                color: 'White',     brand: '',          image: 'assets/cat_persian.jpg', breed: 'Persian Mix', reward: 400 },
+  { post_type: 'FOUND', category: 'Pets',             item_name: 'White Persian Cat',         description: 'Found a white cat wandering around the park. She is safe and calm with me. Looking for the owner to claim her.',                                                    color: 'White',     brand: '',          image: 'assets/cat_persian.jpg', breed: 'Persian Mix', reward: 0 },
+  { post_type: 'LOST',  category: 'Pets',             item_name: 'Brown Stray Dog',           description: 'Our brown dog ran off during a walk along the river road. Friendly but may chase vehicles. Has a red collar with no tags, please help us bring him home.',                color: 'Brown',     brand: '',          image: 'assets/aspin_dog.jpg',   breed: 'Aspin Mix',   reward: 350 },
+  { post_type: 'FOUND', category: 'Pets',             item_name: 'Brown Stray Dog',           description: 'Picked up a friendly brown dog near the basketball court. He is being fed and kept safe while we look for the owner.',                                            color: 'Brown',     brand: '',          image: 'assets/aspin_dog.jpg',   breed: 'Aspin Mix',   reward: 0 }
+];
+
+const SEED_LOCATIONS = [
+  'Koronadal City Hall, Zone III',
+  'Koronadal Public Market, Gensan Drive',
+  'Alunan Avenue, Zone I',
+  'Brgy. Morales Robinsons Place',
+  'KNCHS Main Gate, Rizal Avenue',
+  'Zone II Basketball Court',
+  'General Santos Drive, Zone IV'
+];
+
+/** Deterministic pseudo-random so a given user always gets the same seed set. */
+function seededRandom(seed) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return function () {
+    h += 0x6D2B79F5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Ensure every non-admin citizen has demo reports in the database.
+ * Idempotent: users who already own seed posts are skipped.
+ */
+function ensureSeedPosts(db) {
+  if (!db || !db.data) return 0;
+  const users = db.data.users || [];
+  const posts = db.data.posts || (db.data.posts = []);
+  let created = 0;
+
+  users.forEach((user) => {
+    if (!user || !user.user_id) return;
+    if (user.role === 'ADMIN') return; // admin never receives demo posts
+
+    const alreadySeeded = posts.some(p => p.is_seed && p.user_id === user.user_id);
+    if (alreadySeeded) return;
+
+    const rand = seededRandom(user.user_id);
+    // Pick 4 distinct templates: 2 lost + 2 found, guaranteeing category variety.
+    const lost = SEED_POST_BANK.filter(p => p.post_type === 'LOST');
+    const found = SEED_POST_BANK.filter(p => p.post_type === 'FOUND');
+
+    const pickDistinct = (pool, count) => {
+      const copy = pool.slice();
+      const out = [];
+      while (out.length < count && copy.length) {
+        out.push(copy.splice(Math.floor(rand() * copy.length), 1)[0]);
+      }
+      return out;
+    };
+
+    const chosen = pickDistinct(lost, 2).concat(pickDistinct(found, 2));
+
+    chosen.forEach((tpl, i) => {
+      const daysAgo = Math.floor(rand() * 12) + i;
+      const postDate = new Date(Date.now() - daysAgo * 86400000);
+      const isLost = tpl.post_type === 'LOST';
+      const location = SEED_LOCATIONS[Math.floor(rand() * SEED_LOCATIONS.length)];
+      const postId = 'POST-S' + String(posts.length + 1).padStart(4, '0') + '-' + user.user_id.slice(-4);
+
+      posts.push({
+        post_id: postId,
+        user_id: user.user_id,
+        poster_id: user.user_id,
+        post_type: tpl.post_type,
+        category: tpl.category,
+        item_name: tpl.item_name,
+        pet_type: tpl.category === 'Pets' ? 'Pet' : '',
+        breed: tpl.breed || '',
+        description: tpl.description,
+        date: postDate.toISOString().split('T')[0],
+        approximate_time: ['7:00 AM - 9:00 AM', '10:30 AM - 12:00 NN', '1:00 PM - 3:00 PM', '4:00 PM - 6:00 PM'][Math.floor(rand() * 4)],
+        color: tpl.color,
+        brand: tpl.brand || '',
+        model: tpl.brand || '',
+        serial_number_private: '',
+        general_location: location,
+        private_coordinates: { lat: 6.5028, lng: 124.8468, address_notes: location },
+        // Most seed posts are already moderated so the public feed is populated;
+        // one stays pending so the admin moderation queue has real work.
+        status: i === 3 ? 'PENDING_REVIEW' : 'APPROVED',
+        reward_status: isLost && tpl.reward > 0 ? 'REWARD_OFFERED' : 'NO_REWARD',
+        reward_offered: isLost && tpl.reward > 0,
+        reward_amount: isLost ? tpl.reward : 0,
+        reward_amount_private: false,
+        image: tpl.image,
+        images: [tpl.image],
+        camera_verified: true,
+        photo_hash: 'SEED-' + postId.slice(-8),
+        likes_count: Math.floor(rand() * 4),
+        liked_by: [],
+        is_seed: true,
+        created_at: postDate.toISOString()
+      });
+      created++;
+    });
+  });
+
+  if (created > 0) db.save();
+  return created;
+}
+
 const DEFAULT_MARBS_POINTS_TRANSACTIONS = [
   {
     transaction_id: 'TX-901',
@@ -323,6 +455,8 @@ const DEFAULT_AUDIT_LOGS = [
 class MarbsLFDatabase {
   constructor() {
     this.data = this.load();
+    // Give every non-admin citizen demo reports in the database on first run.
+    ensureSeedPosts(this);
   }
 
   load() {
@@ -396,7 +530,24 @@ class MarbsLFDatabase {
   resetToDefaults() {
     localStorage.removeItem(STORAGE_KEY);
     this.data = this.load();
+    ensureSeedPosts(this);
     return this.data;
+  }
+
+  /**
+   * Public helper so the app can top up demo reports whenever a new citizen
+   * registers, without duplicating seeding logic in the UI layer.
+   */
+  seedDemoPosts() {
+    return ensureSeedPosts(this);
+  }
+
+  /** Remove all demo posts (real citizen reports are never touched). */
+  purgeDemoPosts() {
+    const before = (this.data.posts || []).length;
+    this.data.posts = (this.data.posts || []).filter(p => !p.is_seed);
+    this.save();
+    return before - this.data.posts.length;
   }
 
   getCurrentUser() {
@@ -537,7 +688,15 @@ class MarbsLFDatabase {
             remotePosts.push(p);
           }
         });
-        this.data.posts = remotePosts;
+
+        // Preserve locally generated demo reports. Demo posts are never pushed
+        // to Firestore, so a remote sync must not wipe them out of the database.
+        const remoteIds = new Set(remotePosts.map(p => p.post_id));
+        const localOnlySeeds = (this.data.posts || []).filter(
+          p => p.is_seed && !remoteIds.has(p.post_id)
+        );
+
+        this.data.posts = remotePosts.concat(localOnlySeeds);
         this.save();
         if (typeof window.setPostsLoading === 'function') {
           window.setPostsLoading(false);
