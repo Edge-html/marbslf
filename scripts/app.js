@@ -19,6 +19,8 @@
   let capturedPhotoPayload = null;
   let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
+  let currentView = 'landing'; // Currently painted view ('landing' | 'home' | 'admin' | ...)
+  let isRouterReady = false; // Guards against redirects before initApp finishes
 
   // DOM Elements cache helper
   const $ = (selector) => document.querySelector(selector);
@@ -49,6 +51,7 @@
   function initApp() {
     setupEvaluatorBar();
     setupNavigation();
+    setupRouter();
     setupCategoryAndAreaFilters();
     setupSearch();
     setupPostModals();
@@ -80,30 +83,14 @@
     // If Firestore sync finishes or after a brief initial loading buffer
     setTimeout(revealPostsWhenReady, 450);
 
-    // Restore last visited view (e.g. admin or dashboard) on page reload
-    try {
-      const savedView = localStorage.getItem('marbslf_active_view');
-      const currentUser = marbsDB.getCurrentUser();
-      const isAdmin = currentUser && currentUser.role === 'ADMIN';
-      if (isAdmin) {
-        if (!savedView || savedView === 'home' || savedView === 'admin') {
-          navigateToView('admin');
-        } else {
-          navigateToView(savedView);
-        }
-      } else if (!currentUser) {
-        // Unauthenticated guest default: Landing Page
-        if (savedView && ['lost-items', 'found-items', 'lost-pets', 'found-pets', 'how-it-works'].includes(savedView)) {
-          navigateToView(savedView);
-        } else {
-          navigateToView('home');
-        }
-      } else if (savedView && savedView !== 'home' && savedView !== 'admin') {
-        navigateToView(savedView);
-      } else {
-        navigateToView('home');
-      }
-    } catch (e) {}
+    // Route resolution. Order matters: honor an explicit URL first, then the
+    // signed-in citizen's saved view, and finally fall back to the public
+    // landing page for guests. Auth-gated views are enforced inside
+    // navigateToView(), so a guest deep-link to /admin safely lands on "/".
+    const routeFromUrl = viewFromHash(window.location.hash);
+    const initialView = routeFromUrl || resolveDefaultView();
+    navigateToView(initialView, { replaceHistory: true });
+    isRouterReady = true;
 
     // Sync posts from Firestore cloud so posts are always up to date for guests and logged-in users
     if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
@@ -227,11 +214,8 @@
     if (brandLogo) {
       brandLogo.addEventListener('click', () => {
         const currentUser = marbsDB.getCurrentUser();
-        const isAdmin = currentUser && currentUser.role === 'ADMIN';
-        if (isAdmin) {
-          navigateToView('admin');
-        } else if (!currentUser) {
-          scrollToLandingPage(1);
+        if (!currentUser) {
+          navigateToView('landing');
           setLandingNavActive(1);
         } else {
           navigateToView('home');
@@ -260,8 +244,68 @@
     }
   }
 
-  function navigateToView(viewName) {
-    // Hide all primary views
+  /**
+   * Apply the shared chrome (navbar links + auth controls) for a given surface.
+   * 'landing' = public marketing site, 'app' = authenticated main application.
+   * This is the ONLY function allowed to toggle nav surfaces, so the navbar can
+   * never disagree with the page body.
+   */
+  function applySurfaceChrome(surface, activeView) {
+    const isLanding = surface === 'landing';
+    const landingNav = $('#landingNavLinks');
+    const appNav = $('#appNavLinks');
+    const mobileLandingNav = $('#mobileLandingNavLinks');
+    const mobileAppNav = $('#mobileAppNavLinks');
+
+    if (landingNav) landingNav.style.display = isLanding ? 'flex' : 'none';
+    if (appNav) appNav.style.display = isLanding ? 'none' : 'flex';
+    if (mobileLandingNav) mobileLandingNav.style.display = isLanding ? '' : 'none';
+    if (mobileAppNav) mobileAppNav.style.display = isLanding ? 'none' : '';
+
+    // Search / notifications are application features, never shown on the landing page.
+    const navSearchBtn = $('#navSearchBtn');
+    const navNotifBtn = $('#navNotifBtn');
+    if (navSearchBtn) navSearchBtn.style.display = isLanding ? 'none' : '';
+    if (navNotifBtn) navNotifBtn.style.display = isLanding ? 'none' : '';
+
+    document.body.setAttribute('data-surface', surface);
+
+    // Sync active state for app links
+    $$('#appNavLinks .nav-link-btn, #mobileAppNavLinks .nav-link-btn').forEach(b => {
+      b.classList.toggle('active', !isLanding && b.dataset.view === activeView);
+    });
+    $$('#landingNavLinks .nav-link-btn, #mobileLandingNavLinks .nav-link-btn').forEach(b => {
+      b.classList.remove('active');
+    });
+  }
+
+  // Auth-gated views: guests are bounced back to the landing page.
+  const AUTH_GATED_VIEWS = ['dashboard', 'verifications', 'meetups', 'admin'];
+
+  function navigateToView(viewName, options = {}) {
+    const currentUser = marbsDB.getCurrentUser();
+    const isAdmin = !!(currentUser && currentUser.role === 'ADMIN');
+
+    // --- Resolve the requested view into an actual surface + view -----------
+    let target = viewName;
+    if (target === 'home' && !currentUser) {
+      target = 'landing';
+    }
+    if (target === 'landing' && currentUser && !options.allowLanding) {
+      // A signed-in citizen never stays on the public landing page.
+      target = isAdmin ? 'admin' : 'home';
+    }
+    if (target === 'home' && isAdmin && !options.allowLanding) {
+      target = 'admin';
+    }
+    if (AUTH_GATED_VIEWS.includes(target) && !currentUser) {
+      target = 'landing';
+    }
+
+    const surface = target === 'landing' ? 'landing' : 'app';
+    applySurfaceChrome(surface, target);
+
+    // --- Hide all primary views --------------------------------------------
     const landingPageView = $('#landingPageView');
     if (landingPageView) landingPageView.style.display = 'none';
     $('#homeView').style.display = 'none';
@@ -273,74 +317,52 @@
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Sync navbar active state for authenticated app links
-    $$('#appNavLinks .nav-link-btn, #mobileAppNavLinks .nav-link-btn').forEach(b => {
-      if (b.dataset.view === viewName) {
-        b.classList.add('active');
-      } else {
-        b.classList.remove('active');
-      }
-    });
-
-    try {
-      localStorage.setItem('marbslf_active_view', viewName);
-    } catch (e) {}
-
-    const currentUser = marbsDB.getCurrentUser();
-    const isShowingLanding = (viewName === 'home' && !currentUser) || viewName === 'landing';
-    const landingNav = $('#landingNavLinks');
-    const appNav = $('#appNavLinks');
-    const mobileLandingNav = $('#mobileLandingNavLinks');
-    const mobileAppNav = $('#mobileAppNavLinks');
-
-    if (isShowingLanding) {
-      if (landingNav) landingNav.style.display = 'flex';
-      if (appNav) appNav.style.display = 'none';
-      if (mobileLandingNav) mobileLandingNav.style.display = '';
-      if (mobileAppNav) mobileAppNav.style.display = 'none';
-    } else {
-      if (landingNav) landingNav.style.display = 'none';
-      if (appNav) appNav.style.display = 'flex';
-      if (mobileLandingNav) mobileLandingNav.style.display = 'none';
-      if (mobileAppNav) mobileAppNav.style.display = '';
+    // Persist + reflect the route in the URL so pages are shareable and
+    // the browser Back/Forward buttons behave correctly.
+    if (!options.skipHistory) {
+      try {
+        if (target === 'landing') {
+          localStorage.removeItem('marbslf_active_view');
+        } else {
+          localStorage.setItem('marbslf_active_view', target);
+        }
+      } catch (e) {}
+      updateUrlForView(target, options);
     }
 
-    if (viewName === 'home') {
+    currentView = target;
+
+    if (target === 'home') {
       currentFilter = 'ALL';
       currentCategory = 'ALL';
-      if (!currentUser) {
-        if (landingPageView) landingPageView.style.display = 'block';
-        if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
-      } else {
-        $('#homeView').style.display = 'block';
-        renderFeed();
-      }
-    } else if (viewName === 'landing') {
+      $('#homeView').style.display = 'block';
+      renderFeed();
+    } else if (target === 'landing') {
       if (landingPageView) landingPageView.style.display = 'block';
       if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
-    } else if (viewName === 'lost-items') {
+    } else if (target === 'lost-items') {
       currentFilter = 'LOST_ITEMS';
       currentCategory = 'ALL';
       $('#homeView').style.display = 'block';
       renderFeed();
-    } else if (viewName === 'found-items') {
+    } else if (target === 'found-items') {
       currentFilter = 'FOUND_ITEMS';
       currentCategory = 'ALL';
       $('#homeView').style.display = 'block';
       renderFeed();
-    } else if (viewName === 'lost-pets') {
+    } else if (target === 'lost-pets') {
       currentFilter = 'LOST_PETS';
       currentCategory = 'Pets';
       $('#homeView').style.display = 'block';
       renderFeed();
-    } else if (viewName === 'found-pets') {
+    } else if (target === 'found-pets') {
       currentFilter = 'FOUND_PETS';
       currentCategory = 'Pets';
       $('#homeView').style.display = 'block';
       renderFeed();
-    } else if (viewName === 'how-it-works') {
+    } else if (target === 'how-it-works') {
       $('#howItWorksView').style.display = 'block';
-    } else if (viewName === 'dashboard') {
+    } else if (target === 'dashboard') {
       const user = marbsDB.getCurrentUser();
       if (!user) {
         openLoginModal();
@@ -350,7 +372,7 @@
       }
       $('#dashboardView').style.display = 'block';
       renderUserDashboard();
-    } else if (viewName === 'verifications') {
+    } else if (target === 'verifications') {
       const user = marbsDB.getCurrentUser();
       if (!user) {
         openLoginModal();
@@ -361,7 +383,7 @@
       $('#homeView').style.display = 'block';
       renderFeed();
       window.openVerificationsModal();
-    } else if (viewName === 'meetups') {
+    } else if (target === 'meetups') {
       const user = marbsDB.getCurrentUser();
       if (!user) {
         openLoginModal();
@@ -372,7 +394,7 @@
       const meetupsView = $('#meetupsView');
       if (meetupsView) meetupsView.style.display = 'block';
       renderMeetupsView();
-    } else if (viewName === 'admin') {
+    } else if (target === 'admin') {
       const user = marbsDB.getCurrentUser();
       if (!user || user.role !== 'ADMIN') {
         openLoginModal();
@@ -385,6 +407,68 @@
     }
   }
   window.navigateToView = navigateToView;
+
+  /**
+   * Landing page = "#/"  •  Main app = "#/home", "#/lost-items", "#/admin", ...
+   * Hash routing is used deliberately: this app is served as static files by
+   * `python -m http.server`, which has no history fallback, so path-based
+   * routing (pushState to /home) would 404 on reload or direct link.
+   */
+  const VALID_VIEWS = ['landing', 'home', 'lost-items', 'found-items', 'lost-pets',
+    'found-pets', 'how-it-works', 'dashboard', 'verifications', 'meetups', 'admin'];
+
+  function hashForView(viewName) {
+    return viewName === 'landing' ? '#/' : '#/' + viewName;
+  }
+
+  function updateUrlForView(viewName, options = {}) {
+    const hash = hashForView(viewName);
+    if (window.location.hash === hash) return;
+    if (options.replaceHistory) {
+      try {
+        window.history.replaceState(null, '', hash);
+      } catch (e) {
+        window.location.hash = hash;
+      }
+    } else {
+      window.location.hash = hash; // triggers hashchange -> routes the view
+      return; // hashchange handler performs the actual navigation
+    }
+  }
+
+  function viewFromHash(hash) {
+    const seg = String(hash || '').replace(/^#\/?/, '').trim();
+    if (!seg) return null; // "#/" or "" -> decide from auth state
+    return VALID_VIEWS.includes(seg) ? seg : null;
+  }
+
+  // Deep links (e.g. #/lost-items) + browser Back/Forward support.
+  function setupRouter() {
+    window.addEventListener('hashchange', () => {
+      if (!isRouterReady) return;
+      const view = viewFromHash(window.location.hash);
+      navigateToView(view || resolveDefaultView(), { skipHistory: true });
+      // Keep the address bar truthful when a guard redirected the view
+      // (e.g. guest opening #/dashboard lands on the landing page).
+      if (window.location.hash !== hashForView(currentView)) {
+        updateUrlForView(currentView, { replaceHistory: true });
+      }
+    });
+  }
+
+  // Where a visitor lands when no explicit route is present in the URL.
+  function resolveDefaultView() {
+    const currentUser = marbsDB.getCurrentUser();
+    if (!currentUser) return 'landing';
+    if (currentUser.role === 'ADMIN') return 'admin';
+    try {
+      const savedView = localStorage.getItem('marbslf_active_view');
+      if (savedView && savedView !== 'landing' && VALID_VIEWS.includes(savedView)) {
+        return savedView;
+      }
+    } catch (e) {}
+    return 'home';
+  }
 
   // 3. Category & Area Filters (Mockup feature)
   function setupCategoryAndAreaFilters() {
@@ -2416,7 +2500,7 @@
           if (currentUser && currentUser.role === 'ADMIN') {
             navigateToView('admin');
           } else {
-            renderFeed();
+            navigateToView('home');
           }
           showToast(`✓ Welcome back, ${currentUser.first_name}!`);
         } catch (err) {
@@ -2547,13 +2631,13 @@
   function scrollToLandingPage(pageNum, authTab = null) {
     const user = marbsDB.getCurrentUser();
     if (user) {
+      // Signed-in citizens are redirected into the app, never the landing page.
       if (pageNum === 1) navigateToView('home');
       return;
     }
 
-    const landingView = $('#landingPageView');
-    if (landingView && landingView.style.display === 'none') {
-      navigateToView('home');
+    if (currentView !== 'landing') {
+      navigateToView('landing');
     }
 
     let targetEl = null;
@@ -3406,33 +3490,21 @@
       if (loginBtn) loginBtn.style.display = 'none';
       if (registerBtn) registerBtn.style.display = 'none';
 
-      // Show application navigation for authenticated users
-      const landingNav = $('#landingNavLinks');
-      const appNav = $('#appNavLinks');
-      const mobileLandingNav = $('#mobileLandingNavLinks');
-      const mobileAppNav = $('#mobileAppNavLinks');
-      if (landingNav) landingNav.style.display = 'none';
-      if (appNav) appNav.style.display = 'flex';
-      if (mobileLandingNav) mobileLandingNav.style.display = 'none';
-      if (mobileAppNav) mobileAppNav.style.display = '';
+      // A signed-in citizen must never remain on the public landing page.
+      // Re-routing here is what fixes "signed up on the landing page but the
+      // landing hero still shows underneath the app navbar".
+      if (isRouterReady && currentView === 'landing') {
+        navigateToView(isAdmin ? 'admin' : 'home');
+      }
     } else {
       if (pill) pill.style.display = 'none';
       if (signOutBtn) signOutBtn.style.display = 'none';
       if (loginBtn) loginBtn.style.display = 'inline-flex';
       if (registerBtn) registerBtn.style.display = 'inline-flex';
 
-      // Show landing page navigation when unauthenticated on landing page
-      const landingPageView = $('#landingPageView');
-      const isLanding = !landingPageView || landingPageView.style.display !== 'none';
-      const landingNav = $('#landingNavLinks');
-      const appNav = $('#appNavLinks');
-      const mobileLandingNav = $('#mobileLandingNavLinks');
-      const mobileAppNav = $('#mobileAppNavLinks');
-      if (isLanding) {
-        if (landingNav) landingNav.style.display = 'flex';
-        if (appNav) appNav.style.display = 'none';
-        if (mobileLandingNav) mobileLandingNav.style.display = '';
-        if (mobileAppNav) mobileAppNav.style.display = 'none';
+      // A guest must never remain on an authenticated-only surface.
+      if (isRouterReady && AUTH_GATED_VIEWS.includes(currentView)) {
+        navigateToView('landing');
       }
     }
   }

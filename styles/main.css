@@ -3337,6 +3337,29 @@ h1, h2, h3, .hero-tagline, .section-title {
   padding: 0;
 }
 
+/* --------------------------------------------------------------------------
+   SURFACE SEPARATION
+   body[data-surface] is set by applySurfaceChrome() in scripts/app.js and is
+   the single source of truth for which chrome is visible. This guarantees the
+   public landing page and the authenticated app can never render together.
+   -------------------------------------------------------------------------- */
+
+/* Landing page: the app's scroll container must not fight the full-bleed hero */
+body[data-surface="landing"] .app-container {
+  display: none !important;
+}
+
+/* Main app: the landing page is never rendered behind the feed */
+body[data-surface="app"] #landingPageView {
+  display: none !important;
+}
+
+/* Guest users must never see app-only nav controls on the landing page */
+body[data-surface="landing"] #navSearchBtn,
+body[data-surface="landing"] #navNotifBtn {
+  display: none !important;
+}
+
 .lp-section {
   width: 100%;
   padding: 80px 24px;

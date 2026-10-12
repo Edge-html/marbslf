@@ -320,13 +320,14 @@ async function syncFirebaseUserProfile(user) {
     window.marbsDB.save();
   }
 
-  // Refresh UI
+  // Refresh UI. renderUserPill() will also route a signed-in citizen off the
+  // public landing page into the main application (see isRouterReady guard).
   if (typeof window.renderUserPill === 'function') {
     window.renderUserPill();
   }
   if (userObj.role === 'ADMIN' && typeof window.navigateToView === 'function') {
     const savedView = localStorage.getItem('marbslf_active_view');
-    if (!savedView || savedView === 'home' || savedView === 'admin') {
+    if (!savedView || savedView === 'home' || savedView === 'admin' || savedView === 'landing') {
       window.navigateToView('admin');
     }
   } else if (typeof window.renderFeed === 'function') {
