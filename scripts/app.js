@@ -167,9 +167,36 @@
       });
     }
 
+    // Helper to sync active state on landing page nav buttons
+    function setLandingNavActive(pageNum, tab) {
+      $$('[data-lp-target]').forEach(b => {
+        const matchesPage = parseInt(b.dataset.lpTarget) === pageNum;
+        if (pageNum === 3) {
+          const matchesTab = !tab || !b.dataset.lpTab || b.dataset.lpTab === tab;
+          b.classList.toggle('active', matchesPage && matchesTab);
+        } else {
+          b.classList.toggle('active', matchesPage);
+        }
+      });
+    }
+    window.setLandingNavActive = setLandingNavActive;
+
     $$('.nav-link-btn, .dropdown-item').forEach(btn => {
       btn.addEventListener('click', () => {
-        $$('.nav-link-btn').forEach(b => b.classList.remove('active'));
+        // Landing page internal section navigation
+        if (btn.dataset.lpTarget) {
+          const pageNum = parseInt(btn.dataset.lpTarget);
+          const tab = btn.dataset.lpTab || null;
+          scrollToLandingPage(pageNum, tab);
+          setLandingNavActive(pageNum, tab);
+
+          if (mobileToggle) mobileToggle.classList.remove('active');
+          if (sidebarNav) sidebarNav.classList.remove('active');
+          if (navMenu) navMenu.classList.remove('active');
+          return;
+        }
+
+        $$('#appNavLinks .nav-link-btn, #mobileAppNavLinks .nav-link-btn').forEach(b => b.classList.remove('active'));
         if (btn.classList.contains('nav-link-btn')) {
           btn.classList.add('active');
         } else {
@@ -203,6 +230,9 @@
         const isAdmin = currentUser && currentUser.role === 'ADMIN';
         if (isAdmin) {
           navigateToView('admin');
+        } else if (!currentUser) {
+          scrollToLandingPage(1);
+          setLandingNavActive(1);
         } else {
           navigateToView('home');
         }
@@ -243,8 +273,8 @@
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Sync navbar active state
-    $$('.nav-link-btn').forEach(b => {
+    // Sync navbar active state for authenticated app links
+    $$('#appNavLinks .nav-link-btn, #mobileAppNavLinks .nav-link-btn').forEach(b => {
       if (b.dataset.view === viewName) {
         b.classList.add('active');
       } else {
@@ -257,18 +287,37 @@
     } catch (e) {}
 
     const currentUser = marbsDB.getCurrentUser();
+    const isShowingLanding = (viewName === 'home' && !currentUser) || viewName === 'landing';
+    const landingNav = $('#landingNavLinks');
+    const appNav = $('#appNavLinks');
+    const mobileLandingNav = $('#mobileLandingNavLinks');
+    const mobileAppNav = $('#mobileAppNavLinks');
+
+    if (isShowingLanding) {
+      if (landingNav) landingNav.style.display = 'flex';
+      if (appNav) appNav.style.display = 'none';
+      if (mobileLandingNav) mobileLandingNav.style.display = '';
+      if (mobileAppNav) mobileAppNav.style.display = 'none';
+    } else {
+      if (landingNav) landingNav.style.display = 'none';
+      if (appNav) appNav.style.display = 'flex';
+      if (mobileLandingNav) mobileLandingNav.style.display = 'none';
+      if (mobileAppNav) mobileAppNav.style.display = '';
+    }
 
     if (viewName === 'home') {
       currentFilter = 'ALL';
       currentCategory = 'ALL';
       if (!currentUser) {
         if (landingPageView) landingPageView.style.display = 'block';
+        if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
       } else {
         $('#homeView').style.display = 'block';
         renderFeed();
       }
     } else if (viewName === 'landing') {
       if (landingPageView) landingPageView.style.display = 'block';
+      if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
     } else if (viewName === 'lost-items') {
       currentFilter = 'LOST_ITEMS';
       currentCategory = 'ALL';
@@ -2516,6 +2565,10 @@
       switchLandingAuthTab(authTab);
     }
 
+    if (typeof setLandingNavActive === 'function') {
+      setLandingNavActive(pageNum, authTab || (pageNum === 3 ? 'login' : null));
+    }
+
     if (targetEl) {
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -2533,17 +2586,45 @@
       if (regTabBtn) regTabBtn.classList.add('active');
       if (loginPanel) loginPanel.style.display = 'none';
       if (regPanel) regPanel.style.display = 'block';
+      if (typeof setLandingNavActive === 'function') setLandingNavActive(3, 'register');
     } else {
       if (regTabBtn) regTabBtn.classList.remove('active');
       if (loginTabBtn) loginTabBtn.classList.add('active');
       if (regPanel) regPanel.style.display = 'none';
       if (loginPanel) loginPanel.style.display = 'block';
+      if (typeof setLandingNavActive === 'function') setLandingNavActive(3, 'login');
     }
   }
   window.switchLandingAuthTab = switchLandingAuthTab;
 
+  function setupLandingScrollSpy() {
+    window.addEventListener('scroll', () => {
+      const landingView = $('#landingPageView');
+      if (!landingView || landingView.style.display === 'none') return;
+
+      const p1 = $('#lpPage1');
+      const p2 = $('#lpPage2');
+      const p3 = $('#lpPage3');
+      if (!p1 || !p2 || !p3) return;
+
+      const scrollPos = window.scrollY + 200;
+      const p3Top = p3.offsetTop;
+      const p2Top = p2.offsetTop;
+
+      if (scrollPos >= p3Top) {
+        const isReg = $('#lpRegisterPanel') && $('#lpRegisterPanel').style.display !== 'none';
+        if (typeof setLandingNavActive === 'function') setLandingNavActive(3, isReg ? 'register' : 'login');
+      } else if (scrollPos >= p2Top) {
+        if (typeof setLandingNavActive === 'function') setLandingNavActive(2);
+      } else {
+        if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
+      }
+    }, { passive: true });
+  }
+
   // Wire Landing Page Login & Signup Form Submissions
   function setupLandingPageForms() {
+    setupLandingScrollSpy();
     const lpLoginForm = $('#lpLoginForm');
     if (lpLoginForm) {
       lpLoginForm.addEventListener('submit', async (e) => {
@@ -3324,11 +3405,35 @@
       if (signOutBtn) signOutBtn.style.display = 'inline-flex';
       if (loginBtn) loginBtn.style.display = 'none';
       if (registerBtn) registerBtn.style.display = 'none';
+
+      // Show application navigation for authenticated users
+      const landingNav = $('#landingNavLinks');
+      const appNav = $('#appNavLinks');
+      const mobileLandingNav = $('#mobileLandingNavLinks');
+      const mobileAppNav = $('#mobileAppNavLinks');
+      if (landingNav) landingNav.style.display = 'none';
+      if (appNav) appNav.style.display = 'flex';
+      if (mobileLandingNav) mobileLandingNav.style.display = 'none';
+      if (mobileAppNav) mobileAppNav.style.display = '';
     } else {
       if (pill) pill.style.display = 'none';
       if (signOutBtn) signOutBtn.style.display = 'none';
       if (loginBtn) loginBtn.style.display = 'inline-flex';
       if (registerBtn) registerBtn.style.display = 'inline-flex';
+
+      // Show landing page navigation when unauthenticated on landing page
+      const landingPageView = $('#landingPageView');
+      const isLanding = !landingPageView || landingPageView.style.display !== 'none';
+      const landingNav = $('#landingNavLinks');
+      const appNav = $('#appNavLinks');
+      const mobileLandingNav = $('#mobileLandingNavLinks');
+      const mobileAppNav = $('#mobileAppNavLinks');
+      if (isLanding) {
+        if (landingNav) landingNav.style.display = 'flex';
+        if (appNav) appNav.style.display = 'none';
+        if (mobileLandingNav) mobileLandingNav.style.display = '';
+        if (mobileAppNav) mobileAppNav.style.display = 'none';
+      }
     }
   }
 
