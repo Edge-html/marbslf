@@ -633,12 +633,22 @@
         $$('.category-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         currentCategory = chip.dataset.category;
+        // Reflect the choice in the hero search pill
+        const heroCategory = $('#heroCategorySelect');
+        if (heroCategory) heroCategory.value = currentCategory;
         renderFeed();
       });
     });
 
 
 
+  }
+
+  /** Highlight the chip that matches the active filter (used after hero pill changes). */
+  function renderCategoryChips() {
+    $$('.category-chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.category === currentCategory);
+    });
   }
 
   // 4. Real-time Search
@@ -659,6 +669,37 @@
       heroBtn.addEventListener('click', executeSearch);
       heroInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') executeSearch();
+      });
+    }
+
+    // Hero search pill: category + report type feed straight into the feed filter
+    const heroCategory = $('#heroCategorySelect');
+    const heroType = $('#heroReportType');
+
+    if (heroCategory) {
+      heroCategory.addEventListener('change', () => {
+        currentCategory = heroCategory.value;
+        // Keep the chip strip in sync with the pill
+        $$('.category-chip').forEach(c => {
+          c.classList.toggle('active', c.dataset.category === currentCategory);
+        });
+        renderFeed();
+      });
+    }
+
+    if (heroType) {
+      heroType.addEventListener('change', () => {
+        const type = heroType.value;
+        currentCategory = heroCategory ? heroCategory.value : currentCategory;
+        if (type === 'LOST') {
+          currentFilter = currentCategory === 'Pets' ? 'LOST_PETS' : 'LOST_ITEMS';
+        } else if (type === 'FOUND') {
+          currentFilter = currentCategory === 'Pets' ? 'FOUND_PETS' : 'FOUND_ITEMS';
+        } else {
+          currentFilter = 'ALL';
+        }
+        renderFeed();
+        renderCategoryChips();
       });
     }
 
