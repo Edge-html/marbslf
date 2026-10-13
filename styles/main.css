@@ -74,6 +74,187 @@
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ==========================================================================
+   POST DETAIL - INSTAGRAM-STYLE CAROUSEL + LIKES
+   A swipeable track over every photo the poster uploaded, with prev/next
+   arrows, dots and a counter. Likes only - no comments, no share.
+   ========================================================================== */
+.ig-carousel {
+  position: relative;
+  background: #000;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 12px;
+  width: 100%;
+  height: 420px;
+}
+
+@media (max-width: 560px) {
+  .ig-carousel {
+    height: 60vh;
+  }
+}
+
+.ig-carousel-track {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.ig-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.ig-carousel-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Prev / next */
+.ig-carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: #14110D;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s ease;
+  z-index: 3;
+}
+
+.ig-carousel-nav:hover {
+  background: #fff;
+}
+
+.ig-carousel-prev { left: 10px; }
+.ig-carousel-next { right: 10px; }
+
+/* Only show arrows once there is more than one photo */
+.ig-carousel:not(.is-multi) .ig-carousel-nav {
+  display: none;
+}
+
+/* Dots */
+.ig-carousel-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.ig-carousel:not(.is-multi) .ig-carousel-dots {
+  display: none;
+}
+
+.ig-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.45);
+  transition: background 0.2s ease, transform 0.2s ease;
+  pointer-events: auto;
+}
+
+.ig-dot.is-active {
+  background: #fff;
+}
+
+/* "1 / 4" counter */
+.ig-carousel-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+}
+
+.ig-carousel-type {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+}
+
+/* Actions row - like only */
+.ig-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0 2px;
+}
+
+.ig-like-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-main);
+  display: flex;
+  transition: transform 0.15s ease;
+}
+
+.ig-like-btn:hover {
+  transform: scale(1.08);
+}
+
+.ig-like-btn.is-liked {
+  color: #C4433A;
+}
+
+.ig-like-btn.is-liked .ig-heart {
+  fill: currentColor;
+}
+
+.ig-like-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.ig-liked-by {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -710,14 +891,20 @@ body[data-surface="landing"] #homeHero {
 */
 .hero-banner {
   position: relative;
-  border-radius: var(--radius-lg);
   overflow: hidden;
   min-height: 420px;
   display: flex;
   align-items: flex-end;
   padding: 48px 0;
   background-color: var(--navy-dark);
-  border: 1px solid var(--border);
+  /*
+    The banner is full-bleed, so it must sit flush against the navbar. An
+    earlier 1px border in the warm paper tone showed as a bright hairline
+    directly under the dark nav, and the corner radius let the page
+    background bleed through at the top corners.
+  */
+  border: none;
+  border-radius: 0;
   color: #fff;
 }
 

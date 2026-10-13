@@ -270,6 +270,15 @@ function ensureSeedPosts(db) {
       const location = SEED_LOCATIONS[Math.floor(rand() * SEED_LOCATIONS.length)];
       const postId = 'POST-S' + String(posts.length + 1).padStart(4, '0') + '-' + user.user_id.slice(-4);
 
+      // Two extra angles per report, drawn from the shared asset pool, so each
+      // post has a carousel of three photos rather than a single image.
+      const extraAngles = [];
+      const pool = ['assets/images.jpg', 'assets/koronadal.jpg', tpl.image];
+      for (let a = 0; a < 2; a++) {
+        const pick = pool[(Math.floor(rand() * pool.length) + a) % pool.length];
+        if (!extraAngles.includes(pick) && pick !== tpl.image) extraAngles.push(pick);
+      }
+
       posts.push({
         post_id: postId,
         user_id: user.user_id,
@@ -296,10 +305,11 @@ function ensureSeedPosts(db) {
         reward_amount: isLost ? tpl.reward : 0,
         reward_amount_private: false,
         image: tpl.image,
-        images: [tpl.image],
+        // Several angles per report so the detail carousel is demonstrable.
+        images: [tpl.image, ...extraAngles],
         camera_verified: true,
         photo_hash: 'SEED-' + postId.slice(-8),
-        likes_count: Math.floor(rand() * 4),
+        likes_count: 2 + Math.floor(rand() * 12),
         liked_by: [],
         is_seed: true,
         created_at: postDate.toISOString()

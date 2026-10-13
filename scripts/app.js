@@ -986,42 +986,127 @@
     const modal = $('#postDetailModal');
 
     $('#modalPostTitle').textContent = post.item_name;
-    $('#modalPostImage').src = post.image;
 
-    // Multi-photo gallery handling in detail modal
-    const postPhotos = (Array.isArray(post.images) && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
-    const galleryStrip = $('#modalPhotoGalleryStrip');
-    const indexBadge = $('#modalPhotoIndexBadge');
+    // Instagram-style carousel over every photo the poster uploaded.
+    const postPhotos = (Array.isArray(post.images) && post.images.length > 0)
+      ? post.images
+      : (post.image ? [post.image] : []);
 
-    if (galleryStrip && indexBadge) {
-      if (postPhotos.length > 1) {
-        galleryStrip.style.display = 'flex';
-        indexBadge.style.display = 'inline-block';
-        indexBadge.textContent = `1 / ${postPhotos.length}`;
+    const track = $('#modalCarouselTrack');
+    const dots = $('#modalCarouselDots');
+    const countBadge = $('#modalPhotoIndexBadge');
+    const carousel = $('#modalCarousel');
 
-        galleryStrip.innerHTML = postPhotos.map((imgSrc, i) => `
-          <div onclick="window.marbsApp.setModalActivePhoto('${imgSrc}', ${i + 1}, ${postPhotos.length})" style="cursor: pointer; flex-shrink: 0; width: 64px; height: 64px; border-radius: var(--radius-sm); overflow: hidden; border: 2px solid ${i === 0 ? 'var(--primary-dark)' : 'var(--border)'}; background: #000;" class="modal-thumb-item" data-thumb-idx="${i}">
-            <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" alt="thumb ${i + 1}">
-          </div>
-        `).join('');
+    if (track) {
+      track.innerHTML = postPhotos.map((src, i) => `
+        <div class="ig-carousel-slide">
+          <img src="${escapeHtml(src)}" alt="${escapeHtml(post.item_name)} photo ${i + 1}"
+               onerror="this.src='assets/images.jpg'">
+        </div>
+      `).join('');
 
-        window.marbsApp.setModalActivePhoto = function(src, currentIdx, total) {
-          $('#modalPostImage').src = src;
-          indexBadge.textContent = `${currentIdx} / ${total}`;
-          document.querySelectorAll('.modal-thumb-item').forEach((el, idx) => {
-            el.style.borderColor = (idx === currentIdx - 1) ? 'var(--primary-dark)' : 'var(--border)';
-          });
+      const multi = postPhotos.length > 1;
+      carousel.classList.toggle('is-multi', multi);
+
+      // Dots
+      if (dots) {
+        dots.innerHTML = multi
+          ? postPhotos.map((_, i) => `<button type="button" class="ig-dot${i === 0 ? ' is-active' : ''}" data-idx="${i}" aria-label="Photo ${i + 1}"></button>`).join('')
+          : '';
+      }
+      if (countBadge) {
+        countBadge.style.display = multi ? 'inline-block' : 'none';
+        countBadge.textContent = `1 / ${postPhotos.length}`;
+      }
+
+      // Reset scroll to the first slide, then wire navigation
+      track.scrollLeft = 0;
+      let idx = 0;
+
+      const applyIdx = (next) => {
+        idx = Math.max(0, Math.min(postPhotos.length - 1, next));
+        if (dots) {
+          dots.querySelectorAll('.ig-dot').forEach((d, i) => d.classList.toggle('is-active', i === idx));
+        }
+        if (countBadge) countBadge.textContent = `${idx + 1} / ${postPhotos.length}`;
+        const prev = $('#modalCarouselPrev');
+        const nextBtn = $('#modalCarouselNext');
+        if (prev) prev.style.visibility = idx === 0 ? 'hidden' : 'visible';
+        if (nextBtn) nextBtn.style.visibility = idx === postPhotos.length - 1 ? 'hidden' : 'visible';
+      };
+
+      const goTo = (next) => {
+        applyIdx(next);
+        const slide = track.children[idx];
+        if (slide) track.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+      };
+
+      window.marbsApp.carouselGoTo = goTo;
+
+      const prev = $('#modalCarouselPrev');
+      const nextBtn = $('#modalCarouselNext');
+      if (prev) prev.onclick = (e) => { e.stopPropagation(); goTo(idx - 1); };
+      if (nextBtn) nextBtn.onclick = (e) => { e.stopPropagation(); goTo(idx + 1); };
+      if (dots) {
+        dots.onclick = (e) => {
+          const b = e.target.closest('.ig-dot');
+          if (b) goTo(Number(b.dataset.idx));
         };
+      }
+
+      // Keep the indicator in sync when the track is swiped
+      track.onscroll = () => {
+        const slide = track.children[idx];
+        if (!slide) return;
+        const centre = track.scrollLeft + track.clientWidth / 2;
+        if (Math.abs(centre - (slide.offsetLeft + slide.clientWidth / 2)) > 8) {
+          const nearest = Array.from(track.children).reduce((best, el, i) => {
+            const d = Math.abs(centre - (el.offsetLeft + el.clientWidth / 2));
+            return d < best.d ? { d, i } : best;
+          }, { d: Infinity, i: 0 });
+          if (nearest.i !== idx) applyIdx(nearest.i);
+        }
+      };
+
+      applyIdx(0);
+    }
+
+    // Likes (no comments, no share)
+    const currentUser = marbsDB.getCurrentUser();
+    const likedBy = Array.isArray(post.liked_by) ? post.liked_by : [];
+    const viewerId = (currentUser && currentUser.user_id) || 'LOCAL_GUEST';
+    const isLiked = likedBy.includes(viewerId);
+    const likes = typeof post.likes_count === 'number' ? post.likes_count : likedBy.length;
+
+    const likeBtn = $('#modalLikeBtn');
+    if (likeBtn) likeBtn.classList.toggle('is-liked', isLiked);
+
+    const likeCount = $('#modalLikeCount');
+    if (likeCount) likeCount.textContent = `${likes} ${likes === 1 ? 'like' : 'likes'}`;
+
+    const likedByEl = $('#modalLikedBy');
+    if (likedByEl) {
+      const likerAliases = likedBy
+        .filter(id => id !== viewerId)
+        .map(id => {
+          const u = (marbsDB.data.users || []).find(x => x.user_id === id);
+          return u ? getPublicAlias(u) : 'a citizen';
+        });
+      if (isLiked && likerAliases.length) {
+        likedByEl.style.display = 'block';
+        likedByEl.textContent = `Liked by ${likerAliases.slice(0, 2).join(', ')}${likerAliases.length > 2 ? ' and others' : ''}`;
+      } else if (likes > 0) {
+        likedByEl.style.display = 'block';
+        likedByEl.textContent = 'Liked by other citizens';
       } else {
-        galleryStrip.style.display = 'none';
-        galleryStrip.innerHTML = '';
-        indexBadge.style.display = 'none';
+        likedByEl.style.display = 'none';
       }
     }
 
     $('#modalPostCategory').textContent = post.category;
     $('#modalPostType').textContent = post.post_type === 'LOST' ? 'Lost Item' : 'Found Item';
-    $('#modalPostType').className = `post-badge ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}`;
+    // Keep the positioning class - assigning className outright would strip it.
+    $('#modalPostType').className = `post-badge ig-carousel-type ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}`;
     $('#modalPostLocation').textContent = post.general_location;
     $('#modalPostDate').textContent = `${post.date} at ${post.approximate_time || 'Approx time'}`;
     $('#modalPostDescription').textContent = post.description;
@@ -1054,7 +1139,6 @@
 
     // Configure Claim Button vs Own Post Actions
     const claimBtn = $('#claimPostBtn');
-    const currentUser = marbsDB.getCurrentUser();
     const isOwnPost = Boolean(currentUser && (
       (post.user_id && currentUser.user_id === post.user_id) ||
       (post.poster_id && currentUser.user_id === post.poster_id) ||
@@ -1513,6 +1597,22 @@
         }
         countEl.textContent = res.count;
       }
+    },
+
+    /**
+     * Like/unlike from inside the post detail modal, then re-render the modal
+     * so the heart, the count and the "Liked by ..." line all stay in sync.
+     */
+    toggleModalLike: function () {
+      if (!activePostForModal) return;
+      const user = marbsDB.getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+      marbsDB.togglePostReaction(activePostForModal.post_id);
+      openPostDetailModal(activePostForModal.post_id);
+      renderFeed();
     }
   };
 
