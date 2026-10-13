@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=28">
+  <link rel="stylesheet" href="styles/main.css?v=30">
 </head>
 <body>
 
@@ -647,13 +647,8 @@
     </section>
 
     <!-- Main Content Layout (Active When Logged In) -->
-    <main class="app-container">
-
-      <!-- VIEW 1: HOME VIEW (ACTIVE WHEN LOGGED IN) -->
-      <section id="homeView">
-      
       <!-- Hero Wrapper -->
-      <div class="hero-wrapper">
+      <div class="hero-wrapper" id="homeHero">
         <div class="hero-banner">
           <img src="assets/koronadal.jpg" alt="" class="hero-banner-backdrop" aria-hidden="true" onerror="this.style.display='none'">
           <div class="hero-banner-overlay" aria-hidden="true"></div>
@@ -721,7 +716,11 @@
         </div>
 
         </div>
+    <main class="app-container">
 
+      <!-- VIEW 1: HOME VIEW (ACTIVE WHEN LOGGED IN) -->
+      <section id="homeView">
+      
       <!-- Categories Pills Strip -->
       <div class="categories-bar" role="region" aria-label="Category Selection">
         <button class="category-chip active" data-category="ALL">
@@ -779,8 +778,6 @@
           <span class="category-label">Others</span>
         </button>
       </div>
-
-
 
       <!-- Main Two-Column Layout -->
       <div class="main-grid">
@@ -2741,6 +2738,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=23"></script>
   <script src="scripts/camera.js?v=17"></script>
-  <script src="scripts/app.js?v=42"></script>
+  <script src="scripts/app.js?v=43"></script>
 </body>
 </html>

@@ -663,9 +663,28 @@ h1, h2, h3, .hero-tagline, .section-title {
 }
 
 /* Hero Section */
+/*
+  Full-bleed hero.
+
+  #homeHero sits directly inside .main-content-area rather than inside the
+  1200px .app-container, so the banner spans the full viewport with no
+  100vw maths. Using 100vw here would include the scrollbar and leave the hero
+  text a few pixels out of line with the feed below it.
+
+  .hero-banner-body re-establishes the same centred 1200px column (with the same
+  24px gutters) that .app-container uses, so the text stays aligned.
+*/
 .hero-wrapper {
-  display: block;
+  /* Hidden until navigateToView() reveals it, so it never flashes on the
+     landing page during boot. JS sets an inline display to show it. */
+  display: none;
+  width: 100%;
   margin-bottom: 24px;
+}
+
+/* The hero sits outside .app-container, so it needs its own landing guard. */
+body[data-surface="landing"] #homeHero {
+  display: none !important;
 }
 
 /*
@@ -681,7 +700,7 @@ h1, h2, h3, .hero-tagline, .section-title {
   min-height: 420px;
   display: flex;
   align-items: flex-end;
-  padding: 48px 44px;
+  padding: 48px 0;
   background-color: var(--navy-dark);
   border: 1px solid var(--border);
   color: #fff;
@@ -706,11 +725,19 @@ h1, h2, h3, .hero-tagline, .section-title {
     linear-gradient(180deg, rgba(12, 18, 32, 0.55) 0%, transparent 30%, rgba(12, 18, 32, 0.7) 100%);
 }
 
+/*
+  The banner is now full-bleed, so the body re-establishes the same centred
+  1200px column (with matching 24px gutters) that .app-container uses. That
+  keeps the hero text on the same vertical alignment as the feed below it.
+*/
 .hero-banner-body {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 720px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
 }
 
 /* Eyebrow */
@@ -874,7 +901,7 @@ h1, h2, h3, .hero-tagline, .section-title {
 @media (max-width: 860px) {
   .hero-banner {
     min-height: 0;
-    padding: 36px 24px;
+    padding: 36px 0;
   }
 
   .hero-tagline {

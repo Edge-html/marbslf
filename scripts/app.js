@@ -437,6 +437,10 @@
     const landingPageView = $('#landingPageView');
     if (landingPageView) landingPageView.style.display = 'none';
     $('#homeView').style.display = 'none';
+    // The hero lives outside #homeView so it can be full-bleed, so it needs
+    // its own toggle alongside the home view.
+    const homeHero = $('#homeHero');
+    if (homeHero) homeHero.style.display = 'none';
     $('#dashboardView').style.display = 'none';
     $('#adminView').style.display = 'none';
     $('#howItWorksView').style.display = 'none';
@@ -554,6 +558,10 @@
     if (activeViewEl) {
       activeViewEl.style.display = 'block';
       animateViewIn(activeViewEl);
+    }
+    // Reveal the full-bleed hero whenever a feed view is showing.
+    if (homeHero && activeViewEl && activeViewEl.id === 'homeView') {
+      homeHero.style.display = 'block';
     }
     if (activeViewEl && staggerSelector) {
       animateStagger(activeViewEl, staggerSelector);
