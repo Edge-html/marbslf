@@ -1327,6 +1327,34 @@
 
   // 10. Reporting Lost Item (Section 7, 9, 10, 23, 24)
   window.marbsApp = {
+    /**
+     * Landing hero search. Applies the keyword to the public feed and, when a
+     * report type is chosen, jumps straight into the matching feed filter.
+     */
+    openPublicSearch: function () {
+      const query = $('#lpHeroWhere');
+      const type = $('#lpHeroType');
+      const keyword = query ? query.value.trim() : '';
+      const reportType = type ? type.value : '';
+
+      // Guest sees the landing hero, so hand off to the app feed via the router.
+      const view = reportType === 'lost' ? 'lost-items'
+        : reportType === 'found' ? 'found-items'
+        : reportType === 'pet' ? 'lost-pets'
+        : 'home';
+
+      window.navigateToView(view);
+      // Wait for the view to render before filtering so results are correct.
+      setTimeout(() => {
+        const searchInput = $('#heroSearchInput');
+        if (searchInput) {
+          searchInput.value = keyword;
+        }
+        if (typeof currentSearchQuery !== 'undefined') currentSearchQuery = keyword.toLowerCase();
+        renderFeed();
+      }, 0);
+    },
+
     openReportModal: function (type) {
       const user = marbsDB.getCurrentUser();
       if (!checkUserVerification(user, 'post a lost or found item')) {
