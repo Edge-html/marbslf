@@ -10,13 +10,13 @@
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
 
-  <!-- Google Fonts: Source Serif 4 for headings, Inter for UI & body -->
+  <!-- Google Fonts: Playfair Display for display headings, Inter for UI & body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=30">
+  <link rel="stylesheet" href="styles/main.css?v=32">
 </head>
 <body>
 
@@ -469,11 +469,11 @@
               <div class="lp-auth-panel" id="lpLoginPanel">
                 <form id="lpLoginForm">
                   <div class="form-group" style="margin-bottom: 14px;">
-                    <label class="form-label" for="lpLoginIdentifier" style="color: #0f172a; font-weight: 700; font-size: 13px;">Email or Username</label>
+                    <label class="form-label" for="lpLoginIdentifier" style="color: #0B0B0B; font-weight: 700; font-size: 13px;">Email or Username</label>
                     <input type="text" id="lpLoginIdentifier" class="form-input" placeholder="Enter your email or username" required autocomplete="username">
                   </div>
                   <div class="form-group" style="margin-bottom: 14px;">
-                    <label class="form-label" for="lpLoginPassword" style="color: #0f172a; font-weight: 700; font-size: 13px;">Password</label>
+                    <label class="form-label" for="lpLoginPassword" style="color: #0B0B0B; font-weight: 700; font-size: 13px;">Password</label>
                     <div class="password-input-wrapper">
                       <input type="password" id="lpLoginPassword" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
                       <button type="button" class="password-toggle-btn" data-target="lpLoginPassword" title="Show or hide password">
@@ -483,8 +483,8 @@
                     </div>
                   </div>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 12px;">
-                    <a href="javascript:void(0)" onclick="alert('Password reset link has been dispatched to your verified email.')" style="color: #b45309; font-weight: 600;">Forgot Password?</a>
-                    <span style="color: #64748b;">Koronadal Citizen Portal</span>
+                    <a href="javascript:void(0)" onclick="alert('Password reset link has been dispatched to your verified email.')" style="color: #8A6D14; font-weight: 600;">Forgot Password?</a>
+                    <span style="color: #7C7466;">Koronadal Citizen Portal</span>
                   </div>
                   <button type="submit" class="lp-submit-btn">
                     <span>Sign In to MarbsLF</span>
@@ -498,38 +498,38 @@
                 <form id="lpRegisterForm">
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegFirstName" style="font-size: 12px; color: #0f172a; font-weight: 700;">First Name *</label>
+                      <label class="form-label" for="lpRegFirstName" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">First Name *</label>
                       <input type="text" id="lpRegFirstName" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegLastName" style="font-size: 12px; color: #0f172a; font-weight: 700;">Last Name *</label>
+                      <label class="form-label" for="lpRegLastName" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Last Name *</label>
                       <input type="text" id="lpRegLastName" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
                     </div>
                   </div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegDob" style="font-size: 12px; color: #0f172a; font-weight: 700;">Date of Birth *</label>
+                      <label class="form-label" for="lpRegDob" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Date of Birth *</label>
                       <input type="date" id="lpRegDob" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegPhone" style="font-size: 12px; color: #0f172a; font-weight: 700;">Mobile *</label>
+                      <label class="form-label" for="lpRegPhone" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Mobile *</label>
                       <input type="tel" id="lpRegPhone" class="form-input" placeholder="09XX-XXX-XXXX" required style="font-size: 13px; padding: 8px 10px;">
                     </div>
                   </div>
 
                   <div class="form-group" style="margin-bottom: 10px;">
-                    <label class="form-label" for="lpRegEmail" style="font-size: 12px; color: #0f172a; font-weight: 700;">Email Address *</label>
+                    <label class="form-label" for="lpRegEmail" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Email Address *</label>
                     <input type="email" id="lpRegEmail" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
                   </div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegUsername" style="font-size: 12px; color: #0f172a; font-weight: 700;">Username *</label>
+                      <label class="form-label" for="lpRegUsername" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Username *</label>
                       <input type="text" id="lpRegUsername" class="form-input" required style="font-size: 13px; padding: 8px 10px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegBarangay" style="font-size: 12px; color: #0f172a; font-weight: 700;">Barangay *</label>
+                      <label class="form-label" for="lpRegBarangay" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Barangay *</label>
                       <select id="lpRegBarangay" class="form-select" required style="font-size: 13px; padding: 8px 10px;">
                         <option value="Zone I">Zone I (Poblacion)</option>
                         <option value="Zone II" selected>Zone II</option>
@@ -546,11 +546,11 @@
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegPassword" style="font-size: 12px; color: #0f172a; font-weight: 700;">Password *</label>
+                      <label class="form-label" for="lpRegPassword" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Password *</label>
                       <input type="password" id="lpRegPassword" class="form-input" placeholder="Min 6 chars" required minlength="6" style="font-size: 13px; padding: 8px 10px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label class="form-label" for="lpRegConfirmPassword" style="font-size: 12px; color: #0f172a; font-weight: 700;">Confirm *</label>
+                      <label class="form-label" for="lpRegConfirmPassword" style="font-size: 12px; color: #0B0B0B; font-weight: 700;">Confirm *</label>
                       <input type="password" id="lpRegConfirmPassword" class="form-input" placeholder="Re-type" required minlength="6" style="font-size: 13px; padding: 8px 10px;">
                     </div>
                   </div>
@@ -576,7 +576,7 @@
             <div class="lp-footer-brand">
               <div class="lp-footer-logo-row">
                 <img src="assets/logo.png" alt="MarbsLF Logo" class="lp-footer-logo">
-                <span class="lp-footer-brand-name">Marbs<span style="color: #f2b31b;">LF</span></span>
+                <span class="lp-footer-brand-name">Marbs<span style="color: #C9A227;">LF</span></span>
               </div>
               <p class="lp-footer-about">
                 Centralized Lost and Found Civic Network of Koronadal City, South Cotabato. Built to safeguard community belongings, protect citizen privacy, and promote honesty across Marbel.
@@ -808,7 +808,7 @@
               </select>
             </div>
             
-            <div class="map-widget-container" style="position: relative; height: 260px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); background: #f8fafc;">
+            <div class="map-widget-container" style="position: relative; height: 260px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); background: #FBFAF7;">
               <iframe 
                 id="googleMapIframe"
                 src="https://www.openstreetmap.org/export/embed.html?bbox=124.8100%2C6.4750%2C124.8850%2C6.5300&amp;layer=mapnik&amp;marker=6.5020%2C124.8480"
@@ -826,7 +826,7 @@
               </div>
             </div>
             <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; align-items: flex-start; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0; margin-top: 2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0; margin-top: 2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               <span><em>Privacy Shield Active:</em> Live interactive city map of Koronadal City. Exact residential GPS coordinates remain hidden to protect citizen privacy.</span>
             </p>
           </div>
@@ -847,7 +847,7 @@
           <!-- Marbs Points Quick Teaser Card -->
           <div class="sidebar-card" style="background: linear-gradient(135deg, #fef8e7 0%, #fff 100%); border-color: rgba(246, 184, 25, 0.4);">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-              <div style="width: 38px; height: 38px; border-radius: var(--radius-full); background: rgba(246, 184, 25, 0.2); display: flex; align-items: center; justify-content: center; color: #b45309; flex-shrink: 0;">
+              <div style="width: 38px; height: 38px; border-radius: var(--radius-full); background: rgba(246, 184, 25, 0.2); display: flex; align-items: center; justify-content: center; color: #8A6D14; flex-shrink: 0;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
               </div>
               <div>
@@ -1074,10 +1074,10 @@
             <span class="dash-user-badge" id="dashUserStatus">UNVERIFIED</span>
 
             <!-- Reliability Rating & Stars Display -->
-            <div class="dash-reliability-box" id="dashProfileReliability" style="margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; width: 100%; text-align: center;">
+            <div class="dash-reliability-box" id="dashProfileReliability" style="margin-top: 10px; background: #FBFAF7; border: 1px solid #E5E1D8; border-radius: 8px; padding: 8px; width: 100%; text-align: center;">
               <div style="font-size: 10px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 0.5px;">Reliability Rating</div>
               <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 2px;">
-                <span style="color: #cbd5e1; font-size: 14px; letter-spacing: 1px;" id="dashProfileStars">&#9734;&#9734;&#9734;&#9734;&#9734;</span>
+                <span style="color: #D8D2C6; font-size: 14px; letter-spacing: 1px;" id="dashProfileStars">&#9734;&#9734;&#9734;&#9734;&#9734;</span>
                 <span style="font-weight: 800; font-size: 13px; color: #713f12;" id="dashProfileAvg">Not yet rated</span>
               </div>
               <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-top: 2px;" id="dashProfileTier">New Citizen</div>
@@ -1210,7 +1210,7 @@
       <div style="max-width: 1000px; margin: 0 auto;">
         
         <!-- Hero & Safety Shield Header -->
-        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; padding: 26px 28px; border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
+        <div style="background: linear-gradient(135deg, #0B0B0B 0%, #1C1A17 100%); color: #fff; padding: 26px 28px; border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
             <div>
               <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(37,99,235,0.25); color: #93c5fd; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
@@ -1218,7 +1218,7 @@
                 Official Safe Pickup Places (Section 15 & 16)
               </div>
               <h2 style="font-size: 24px; font-weight: 800; margin: 0 0 6px 0; color: #fff;">Confirmed Safe Meetup Schedules</h2>
-              <p style="font-size: 13px; color: #cbd5e1; margin: 0; max-width: 640px; line-height: 1.5;">
+              <p style="font-size: 13px; color: #D8D2C6; margin: 0; max-width: 640px; line-height: 1.5;">
                 All handovers are scheduled strictly at designated official public locations in Koronadal City. Once your item is handed over or retrieved safely, mark it as <strong>Retrieved / Complete</strong> to finalize the transaction and rate the finder's reliability!
               </p>
             </div>
@@ -1234,11 +1234,11 @@
         <div class="meetup-tabs-bar" style="display: flex; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 20px;">
           <button type="button" class="meetup-tab-btn active" id="meetupsTabActiveBtn" onclick="window.switchMeetupsTab('active')">
             <span>Active Safe Meetups</span>
-            <span class="badge" id="meetupsActiveCountBadge" style="background: #2563eb; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+            <span class="badge" id="meetupsActiveCountBadge" style="background: #5A5245; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
           </button>
           <button type="button" class="meetup-tab-btn" id="meetupsTabHistoryBtn" onclick="window.switchMeetupsTab('history')">
             <span>History of Meetups & Done Transactions</span>
-            <span class="badge" id="meetupsHistoryCountBadge" style="background: #10b981; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+            <span class="badge" id="meetupsHistoryCountBadge" style="background: #2F8A53; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
           </button>
         </div>
 
@@ -1261,12 +1261,12 @@
 
     <!-- VIEW 5: ADMIN DASHBOARD (Section 32) -->
     <section id="adminView" style="display: none;">
-      <div style="background: #0f172a; color: #fff; padding: 24px; border-radius: var(--radius-lg); margin-bottom: 24px;">
+      <div style="background: #0B0B0B; color: #fff; padding: 24px; border-radius: var(--radius-lg); margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;">City Government of Koronadal</div>
             <h2 style="font-size: 24px; font-weight: 800;">MarbsLF Central Admin Portal</h2>
-            <p style="font-size: 13px; color: #94a3b8;">System Moderator & Verification Authority Dashboard</p>
+            <p style="font-size: 13px; color: #9C9384;">System Moderator & Verification Authority Dashboard</p>
           </div>
           <div style="display: flex; gap: 10px;">
             <button class="btn btn-outline" style="color: #fff; border-color: rgba(255,255,255,0.3);" onclick="navigateToView('home')">← Back to Public Website</button>
@@ -1275,28 +1275,28 @@
 
         <!-- Analytics Overview per Section 32 -->
         <div class="stats-grid" style="margin-top: 24px; margin-bottom: 0;">
-          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
-            <div class="stat-label" style="color: #94a3b8;">Lost Posts</div>
-            <div class="stat-value" id="adminStatLostCount" style="color: #ef4444;">0</div>
+          <div class="stat-card" style="background: #1C1A17; border-color: #3A352D; color: #fff;">
+            <div class="stat-label" style="color: #9C9384;">Lost Posts</div>
+            <div class="stat-value" id="adminStatLostCount" style="color: #C4433A;">0</div>
           </div>
-          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
-            <div class="stat-label" style="color: #94a3b8;">Found Posts</div>
-            <div class="stat-value" id="adminStatFoundCount" style="color: #10b981;">0</div>
+          <div class="stat-card" style="background: #1C1A17; border-color: #3A352D; color: #fff;">
+            <div class="stat-label" style="color: #9C9384;">Found Posts</div>
+            <div class="stat-value" id="adminStatFoundCount" style="color: #2F8A53;">0</div>
           </div>
-          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
-            <div class="stat-label" style="color: #94a3b8;">Successful Returns</div>
+          <div class="stat-card" style="background: #1C1A17; border-color: #3A352D; color: #fff;">
+            <div class="stat-label" style="color: #9C9384;">Successful Returns</div>
             <div class="stat-value" id="adminStatResolvedCount" style="color: var(--primary);">0</div>
           </div>
-          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
-            <div class="stat-label" style="color: #94a3b8;">Pet Reunions</div>
-            <div class="stat-value" id="adminStatPetReunions" style="color: #60a5fa;">0</div>
+          <div class="stat-card" style="background: #1C1A17; border-color: #3A352D; color: #fff;">
+            <div class="stat-label" style="color: #9C9384;">Pet Reunions</div>
+            <div class="stat-value" id="adminStatPetReunions" style="color: #9C9384;">0</div>
           </div>
-          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
-            <div class="stat-label" style="color: #94a3b8;">Points Distributed</div>
-            <div class="stat-value" id="adminStatPointsTotal" style="color: #f59e0b;">0 MP</div>
+          <div class="stat-card" style="background: #1C1A17; border-color: #3A352D; color: #fff;">
+            <div class="stat-label" style="color: #9C9384;">Points Distributed</div>
+            <div class="stat-value" id="adminStatPointsTotal" style="color: #C08A1E;">0 MP</div>
           </div>
-          <div class="stat-card" style="background: #1e293b; border-color: #334155; color: #fff;">
-            <div class="stat-label" style="color: #94a3b8;">Registered Users</div>
+          <div class="stat-card" style="background: #1C1A17; border-color: #3A352D; color: #fff;">
+            <div class="stat-label" style="color: #9C9384;">Registered Users</div>
             <div class="stat-value" id="adminStatActiveUsers" style="color: #fff;">0</div>
           </div>
         </div>
@@ -1494,7 +1494,7 @@
         </div>
 
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Proof Guarantee: Ordinary gallery uploads are restricted for primary proof. Live capture burns timestamp & anti-tamper hash.
         </p>
 
@@ -1528,7 +1528,7 @@
         <div class="modal-body">
           
           <div class="privacy-alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Privacy Protection Active:</strong> Your exact GPS coordinates and residential address remain strictly confidential. Only general public zones (e.g., "Near Public Market") will appear publicly.
             </div>
@@ -1626,7 +1626,7 @@
                   <strong style="color: var(--text-main);">Upload one or more photos or snap with camera</strong>
                   <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Multiple angles, identifying marks, and clear views help citizens verify faster</p>
                 </div>
-                <div id="lostPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
+                <div id="lostPhotoHashTag" style="display: none; font-size: 11px; color: #155630; font-weight: 700; margin-top: 6px;"></div>
               </div>
             </div>
 
@@ -1735,7 +1735,7 @@
             <!-- Strict Device Camera Verification for Found Posts -->
             <div class="form-group full-width">
               <label class="form-label">Real-Time Photo Proof (Device Camera Required) *</label>
-              <div class="photo-capture-box" id="reportFoundCameraTrigger" style="border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.05); cursor: pointer;">
+              <div class="photo-capture-box" id="reportFoundCameraTrigger" style="border: 2px dashed #C08A1E; background: rgba(245, 158, 11, 0.05); cursor: pointer;">
                 <img id="foundPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured Proof">
                 <div id="foundCameraPrompt">
                   <div style="margin-bottom: 8px; color: #d97706; display: flex; justify-content: center;">
@@ -1747,7 +1747,7 @@
                     Strict Security: Gallery uploads are disabled for found items. You must snap the physical item right now using your device's camera.
                   </p>
                 </div>
-                <div id="foundPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
+                <div id="foundPhotoHashTag" style="display: none; font-size: 11px; color: #155630; font-weight: 700; margin-top: 6px;"></div>
               </div>
             </div>
           </div>
@@ -1811,7 +1811,7 @@
         </div>
 
         <div id="modalPostRewardBox" style="background: #fef8e7; border: 1px solid rgba(246, 184, 25, 0.4); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; display: none;">
-          <div style="font-size: 13px; font-weight: 700; color: #92400e; display: flex; align-items: center; gap: 6px;" id="modalRewardAmount">
+          <div style="font-size: 13px; font-weight: 700; color: #7A5F10; display: flex; align-items: center; gap: 6px;" id="modalRewardAmount">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
             Reward Offered
           </div>
@@ -1834,7 +1834,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
             Report
           </button>
-          <button id="deletePostModalBtn" class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 12px; display: none; align-items: center; gap: 6px;">
+          <button id="deletePostModalBtn" class="btn btn-outline" style="color: #C4433A; border-color: #E8BDB8; font-size: 12px; display: none; align-items: center; gap: 6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
             Delete Post
           </button>
@@ -1857,7 +1857,7 @@
       <form id="ownershipClaimForm">
         <div class="modal-body">
           <div class="warning-alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Private Verification Process:</strong> To prevent fraud, your answers are sent privately only to the finder. Administrators can intervene if disputed.
             </div>
@@ -1933,7 +1933,7 @@
                 </div>
                 <div style="flex-grow: 1; min-width: 0;">
                   <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                    <span id="claimPhotoBadge" style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span id="claimPhotoBadge" style="background: #E3EFE6; color: #186A3A; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
                       LIVE CAMERA PROOF
                     </span>
                   </div>
@@ -1942,7 +1942,7 @@
                     <button type="button" class="btn btn-outline" id="claimPhotoRetakeBtn" style="font-size: 11px; padding: 4px 10px;">
                       Retake / Change
                     </button>
-                    <button type="button" class="btn btn-outline" id="claimPhotoRemoveBtn" style="font-size: 11px; padding: 4px 10px; color: #ef4444; border-color: #fca5a5;">
+                    <button type="button" class="btn btn-outline" id="claimPhotoRemoveBtn" style="font-size: 11px; padding: 4px 10px; color: #C4433A; border-color: #E8BDB8;">
                       Remove
                     </button>
                   </div>
@@ -1965,30 +1965,30 @@
     <div class="modal-card" style="max-width: 880px; width: 95%;">
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           <span id="verifModalHeaderTitle">Private Verification & Messages</span>
         </h3>
         <button class="modal-close-btn" onclick="$('#postVerificationsModal').classList.remove('active')">×</button>
       </div>
 
       <!-- Top Nav Tabs in Verification: Verification Answers vs Messages -->
-      <div class="verif-tab-nav" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding: 10px 20px 0 20px; background: #f8fafc;">
+      <div class="verif-tab-nav" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding: 10px 20px 0 20px; background: #FBFAF7;">
         <button type="button" class="verif-tab-btn active" id="verifTabAnswersBtn" onclick="window.switchVerifModalTab('answers')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
           <span>Verification Answers</span>
-          <span class="badge" id="verifAnswersTabCount" style="background: #2563eb; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+          <span class="badge" id="verifAnswersTabCount" style="background: #5A5245; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
         </button>
         <button type="button" class="verif-tab-btn" id="verifTabMessagesBtn" onclick="window.switchVerifModalTab('messages')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span>Messages</span>
-          <span class="badge" id="verifMessagesTabCount" style="background: #10b981; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
+          <span class="badge" id="verifMessagesTabCount" style="background: #2F8A53; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 12px; margin-left: 6px;">0</span>
         </button>
       </div>
 
       <!-- Tab Content 1: Verification Answers Review -->
       <div id="verifTabContentAnswers" class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <div class="warning-alert" style="background: #eff6ff; border-color: #bfdbfe; margin-bottom: 16px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div class="warning-alert" style="background: #F5F2EC; border-color: #bfdbfe; margin-bottom: 16px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <div style="font-size: 13px; color: #1e3a8a;">
             <strong>Confidential Owner Review:</strong> Below are private verification answers submitted by citizens regarding your lost/found items. Review their answers carefully to confirm if they are the rightful owner or finder before arranging a safe return.
           </div>
@@ -2025,7 +2025,7 @@
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                   <span class="post-badge badge-found" id="marketplaceItemType">FOUND</span>
                   <strong id="marketplaceItemTitle" style="font-size: 14px; color: var(--text-main);">Item Name</strong>
-                  <span class="activity-badge" id="marketplaceItemStatusBadge" style="background: #dbeafe; color: #1e40af; font-size: 10px;">MATCH CONFIRMED</span>
+                  <span class="activity-badge" id="marketplaceItemStatusBadge" style="background: #EDE9E0; color: #3A352D; font-size: 10px;">MATCH CONFIRMED</span>
                 </div>
                 <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: 2px;">
                   <span id="marketplaceItemLocation">Koronadal City</span>
@@ -2041,7 +2041,7 @@
             </div>
 
             <!-- Security Alert Banner -->
-            <div style="background: #eff6ff; border-bottom: 1px solid #dbeafe; padding: 6px 14px; font-size: 11px; color: #1e40af; display: flex; align-items: center; gap: 6px;">
+            <div style="background: #F5F2EC; border-bottom: 1px solid #EDE9E0; padding: 6px 14px; font-size: 11px; color: #3A352D; display: flex; align-items: center; gap: 6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               <span><strong>Real-Time Safe Messenger:</strong> Always coordinate handover at official Safe Pickup Places. Never send money or passwords.</span>
             </div>
@@ -2089,7 +2089,7 @@
       <form id="meetupScheduleForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Non-Negotiable Rule (Section 15):</strong> Returns must use official Safe Pickup Places. Private homes, dark alleys, and isolated areas are strictly prohibited.
             </div>
@@ -2175,7 +2175,7 @@
     <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A6D14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           Rate Citizen Reliability
         </h3>
         <button class="modal-close-btn" onclick="$('#ratingModal').classList.remove('active')">×</button>
@@ -2183,14 +2183,14 @@
       <form id="citizenRatingForm" onsubmit="window.submitCitizenRating(event)">
         <div class="modal-body" style="padding: 20px 24px; text-align: center;">
           <!-- Target Person Card -->
-          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; text-align: left;">
-            <div class="user-avatar-sm" id="ratingTargetAvatar" style="width: 48px; height: 48px; font-size: 18px; flex-shrink: 0; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800;">
+          <div style="background: #FBFAF7; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; text-align: left;">
+            <div class="user-avatar-sm" id="ratingTargetAvatar" style="width: 48px; height: 48px; font-size: 18px; flex-shrink: 0; background: #5A5245; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800;">
               C
             </div>
             <div style="flex-grow: 1;">
               <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Rating Verified Citizen</div>
               <strong id="ratingTargetName" style="font-size: 15px; color: var(--text-main); display: block; margin-top: 1px;">Verified Citizen</strong>
-              <div style="font-size: 11px; color: #15803d; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+              <div style="font-size: 11px; color: #186A3A; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><polyline points="20 6 9 17 4 12"/></svg>Safe Item Return Confirmed
                 <span id="ratingItemNameTag" style="color: var(--text-muted); font-weight: normal;">• Item</span>
               </div>
@@ -2209,7 +2209,7 @@
             <button type="button" class="star-btn active" data-star="4" onclick="window.setRatingStars(4)" aria-label="4 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
             <button type="button" class="star-btn active" data-star="5" onclick="window.setRatingStars(5)" aria-label="5 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
           </div>
-          <div id="starPickerLabel" style="font-weight: 800; font-size: 13px; color: #b45309; margin-top: 6px; margin-bottom: 18px;">
+          <div id="starPickerLabel" style="font-weight: 800; font-size: 13px; color: #8A6D14; margin-top: 6px; margin-bottom: 18px;">
             5 Stars — Exceptional &amp; Highly Reliable Citizen
           </div>
 
@@ -2230,7 +2230,7 @@
         </div>
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-outline" onclick="$('#ratingModal').classList.remove('active')">Skip</button>
-          <button type="submit" class="btn btn-primary" style="background: #f59e0b; border-color: #d97706; color: #000; font-weight: 800; padding: 8px 18px;">
+          <button type="submit" class="btn btn-primary" style="background: #C08A1E; border-color: #d97706; color: #000; font-weight: 800; padding: 8px 18px;">
             Submit Rating
           </button>
         </div>
@@ -2243,7 +2243,7 @@
     <div class="modal-card modal-lg">
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #b45309;"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #8A6D14;"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
           Marbs Points (MP) Wallet & Rewards
         </h3>
         <button class="modal-close-btn" id="pointsModalClose">×</button>
@@ -2251,10 +2251,10 @@
       <div class="modal-body">
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-          <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 24px; border-radius: var(--radius-md);">
-            <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Available Points</div>
+          <div style="background: linear-gradient(135deg, #1C1A17 0%, #0B0B0B 100%); color: #fff; padding: 24px; border-radius: var(--radius-md);">
+            <div style="font-size: 12px; color: #9C9384; text-transform: uppercase; font-weight: 700;">Available Points</div>
             <div style="font-size: 38px; font-weight: 800; color: var(--primary); margin: 6px 0;" id="walletPointsAvailable">0</div>
-            <div style="font-size: 12px; color: #cbd5e1;">Earned from legitimate item returns and community help.</div>
+            <div style="font-size: 12px; color: #D8D2C6;">Earned from legitimate item returns and community help.</div>
           </div>
 
           <div style="background: var(--surface-alt); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
@@ -2308,7 +2308,7 @@
       <form id="idVerificationForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <div>
               <strong>Strict Privacy Standard:</strong> Sensitive ID details are reviewed strictly by authorized city administrators and are NEVER revealed to other users or the public.
             </div>
@@ -2342,7 +2342,7 @@
                 <strong style="color: var(--text-main);">Tap to Capture ID</strong>
                 <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Hold your valid government/school ID inside the camera frame</p>
               </div>
-              <div id="idPhotoHashTag" style="display: none; font-size: 11px; color: #166534; font-weight: 700; margin-top: 6px;"></div>
+              <div id="idPhotoHashTag" style="display: none; font-size: 11px; color: #155630; font-weight: 700; margin-top: 6px;"></div>
             </div>
           </div>
         </div>
@@ -2437,7 +2437,7 @@
       <form id="registrationForm">
         <div class="modal-body">
           <div class="privacy-alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div>
               <strong>Real Name Privacy Rule (Section 3):</strong> Users must provide their real legal name. However, your full legal name is NEVER displayed publicly. Only your privacy-safe alias (e.g. Verified Citizen #104) is shown.
             </div>
@@ -2575,7 +2575,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               Take Photo
             </button>
-            <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px; color: #ef4444; border-color: #fca5a5;" onclick="window.removeProfilePhoto()">
+            <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px; color: #C4433A; border-color: #E8BDB8;" onclick="window.removeProfilePhoto()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               Remove
             </button>
@@ -2617,7 +2617,7 @@
         </div>
 
         <div class="privacy-alert" style="margin-top: 14px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #2563eb; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #5A5245; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <div style="font-size: 11px;">
             <strong>Privacy Notice:</strong> Your real name is never displayed publicly. Only your alias is visible to others.
           </div>
@@ -2647,7 +2647,7 @@
           <!-- Left Column: Captured Photo -->
           <div>
             <label class="form-label" style="margin-bottom: 8px; font-weight: 700;">Captured Document Image</label>
-            <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0b1120; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative;">
+            <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0B0B0B; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative;">
               <img id="adminDetailIdImage" src="" alt="Captured Document" style="width: 100%; max-height: 280px; object-fit: contain; display: block;">
               <div id="adminDetailHashBadge" style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #86efac; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-family: monospace; text-align: center;"></div>
             </div>
@@ -2702,7 +2702,7 @@
         <button type="button" class="btn btn-outline" onclick="$('#adminIdDetailsModal').classList.remove('active')">Close</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="btn btn-outline" id="adminDetailSuspendBtn" style="color: #7e22ce; border-color: #d8b4fe; font-weight: 700;">Suspend</button>
-          <button type="button" class="btn btn-outline" id="adminDetailRejectBtn" style="color: #ef4444; border-color: #fca5a5; font-weight: 700;">Reject</button>
+          <button type="button" class="btn btn-outline" id="adminDetailRejectBtn" style="color: #C4433A; border-color: #E8BDB8; font-weight: 700;">Reject</button>
           <button type="button" class="btn btn-primary" id="adminDetailAcceptBtn" style="font-weight: 700; padding: 10px 20px;">Accept & Verify</button>
         </div>
       </div>
@@ -2711,7 +2711,7 @@
 
   <!-- Image Zoom / Fullscreen Lightbox Modal -->
   <div class="modal-overlay" id="imageZoomModal" role="dialog" aria-modal="true" style="z-index: 2500;">
-    <div class="modal-card" style="max-width: 650px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 18px; border-radius: var(--radius-md);">
+    <div class="modal-card" style="max-width: 650px; background: #0B0B0B; border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 18px; border-radius: var(--radius-md);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <strong style="font-size: 14px; color: #fff; display: flex; align-items: center; gap: 8px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -2722,8 +2722,8 @@
       <div style="text-align: center; border-radius: 8px; overflow: hidden; background: #000; max-height: 70vh; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1);">
         <img id="imageZoomModalImg" src="" alt="Enlarged Proof" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
       </div>
-      <div style="margin-top: 10px; font-size: 11px; color: #94a3b8; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #22c55e;"><polyline points="20 6 9 17 4 12"/></svg>
+      <div style="margin-top: 10px; font-size: 11px; color: #9C9384; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #2F8A53;"><polyline points="20 6 9 17 4 12"/></svg>
         Live device capture recorded with anti-tamper watermark and timestamp.
       </div>
     </div>
@@ -2738,6 +2738,6 @@
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=23"></script>
   <script src="scripts/camera.js?v=17"></script>
-  <script src="scripts/app.js?v=43"></script>
+  <script src="scripts/app.js?v=44"></script>
 </body>
 </html>

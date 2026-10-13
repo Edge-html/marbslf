@@ -1305,8 +1305,8 @@
         badge.style.color = '#0369a1';
       } else {
         badge.textContent = 'LIVE CAMERA PROOF';
-        badge.style.background = '#dcfce7';
-        badge.style.color = '#15803d';
+        badge.style.background = '#E3EFE6';
+        badge.style.color = '#186A3A';
       }
     }
     if (timestamp) {
@@ -2295,7 +2295,7 @@
 
     if (bannerCounterparty) {
       const ratingBadge = reliability.hasRatings
-        ? `<span style="color: #f59e0b; font-size: 11px; margin-left: 4px; font-weight: 800;" title="${reliability.countLabel}">★ ${reliability.avg}</span>`
+        ? `<span style="color: #C08A1E; font-size: 11px; margin-left: 4px; font-weight: 800;" title="${reliability.countLabel}">★ ${reliability.avg}</span>`
         : `<span style="color: var(--text-muted); font-size: 11px; margin-left: 4px; font-weight: 700;" title="${reliability.countLabel}">New citizen</span>`;
       bannerCounterparty.innerHTML = `With: <strong>${escapeHtml(getPublicAlias(counterparty))}</strong>${ratingBadge}`;
     }
@@ -2554,8 +2554,8 @@
           <tr>
             <td><strong>${tx.transaction_id}</strong></td>
             <td>${escapeHtml(tx.reason)}</td>
-            <td style="color: ${tx.amount > 0 ? '#10b981' : '#ef4444'}; font-weight: 700;">+${tx.amount} MP</td>
-            <td><span class="activity-badge" style="background: #d1fae5; color: #065f46;">${tx.status}</span></td>
+            <td style="color: ${tx.amount > 0 ? '#2F8A53' : '#C4433A'}; font-weight: 700;">+${tx.amount} MP</td>
+            <td><span class="activity-badge" style="background: #E4F0E6; color: #14512F;">${tx.status}</span></td>
           </tr>
         `).join('');
       }
@@ -3182,18 +3182,18 @@
     const dashBox = $('#dashProfileReliability');
     if (dashStars) {
       dashStars.textContent = reliability.starsHtml;
-      dashStars.style.color = reliability.hasRatings ? '#f59e0b' : '#cbd5e1';
+      dashStars.style.color = reliability.hasRatings ? '#C08A1E' : '#D8D2C6';
     }
     if (dashAvg) dashAvg.textContent = reliability.hasRatings ? `${reliability.avg} / 5.0` : 'Not yet rated';
     if (dashTier) {
       dashTier.textContent = reliability.tier;
-      dashTier.style.color = reliability.hasRatings ? '#16a34a' : 'var(--text-muted)';
+      dashTier.style.color = reliability.hasRatings ? '#1E7A46' : 'var(--text-muted)';
     }
     if (dashCount) dashCount.textContent = reliability.countLabel;
     // Neutral styling for accounts with no ratings yet
     if (dashBox) {
-      dashBox.style.background = reliability.hasRatings ? '#fffbeb' : '#f8fafc';
-      dashBox.style.borderColor = reliability.hasRatings ? '#fef08a' : '#e2e8f0';
+      dashBox.style.background = reliability.hasRatings ? '#fffbeb' : '#FBFAF7';
+      dashBox.style.borderColor = reliability.hasRatings ? '#fef08a' : '#E5E1D8';
     }
 
     // Stats
@@ -3222,9 +3222,9 @@
             <td>${p.general_location}</td>
             <td>
               <span class="activity-badge" style="${
-                p.status === 'APPROVED' ? 'background: #d1fae5; color: #065f46; font-weight: 700;' :
-                p.status === 'REJECTED' ? 'background: #fee2e2; color: #991b1b; font-weight: 700;' :
-                'background: #fef3c7; color: #92400e; font-weight: 700;'
+                p.status === 'APPROVED' ? 'background: #E4F0E6; color: #14512F; font-weight: 700;' :
+                p.status === 'REJECTED' ? 'background: #F7E7E4; color: #7E2A22; font-weight: 700;' :
+                'background: #F4EBD2; color: #7A5F10; font-weight: 700;'
               }">
                 ${p.status === 'PENDING_REVIEW' ? 'PENDING REVIEW' : p.status}
               </span>
@@ -3232,8 +3232,8 @@
             <td>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="window.marbsApp.openPostDetailModal('${p.post_id}')">View</button>
-                <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #2563eb; border-color: #bfdbfe;" onclick="window.openPostVerificationAnswers('${p.post_id}')" title="Review verification answers submitted for this post">Answers</button>
-                <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #ef4444; border-color: #fca5a5;" onclick="window.marbsApp.deletePost('${p.post_id}')">Delete</button>
+                <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #5A5245; border-color: #bfdbfe;" onclick="window.openPostVerificationAnswers('${p.post_id}')" title="Review verification answers submitted for this post">Answers</button>
+                <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #C4433A; border-color: #E8BDB8;" onclick="window.marbsApp.deletePost('${p.post_id}')">Delete</button>
               </div>
             </td>
           </tr>
@@ -3252,7 +3252,7 @@
           <div class="handshake-card">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <span class="activity-badge" style="background: #dbeafe; color: #1e40af; font-weight: 800;">${m.status}</span>
+                <span class="activity-badge" style="background: #EDE9E0; color: #3A352D; font-weight: 800;">${m.status}</span>
                 <h4 style="font-size: 15px; font-weight: 800; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
                   ${escapeHtml(m.place_name)}
@@ -3266,13 +3266,13 @@
             <div class="handshake-steps">
               <div class="handshake-box">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Lost Item Owner Step:</div>
-                <button class="btn btn-primary" style="width: 100%; font-size: 12px;" ${m.owner_confirmed_return ? 'disabled style="background: #10b981; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
+                <button class="btn btn-primary" style="width: 100%; font-size: 12px;" ${m.owner_confirmed_return ? 'disabled style="background: #2F8A53; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
                   ${m.owner_confirmed_return ? 'ITEM RECEIVED (CONFIRMED)' : 'ITEM RECEIVED'}
                 </button>
               </div>
               <div class="handshake-box">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Finder Step:</div>
-                <button class="btn btn-dark" style="width: 100%; font-size: 12px;" ${m.finder_confirmed_return ? 'disabled style="background: #10b981; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
+                <button class="btn btn-dark" style="width: 100%; font-size: 12px;" ${m.finder_confirmed_return ? 'disabled style="background: #2F8A53; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
                   ${m.finder_confirmed_return ? 'ITEM RETURNED (CONFIRMED)' : 'ITEM RETURNED'}
                 </button>
               </div>
@@ -3374,9 +3374,9 @@
         <td>${p.general_location}</td>
         <td>
           <span class="activity-badge" style="${
-            p.status === 'APPROVED' ? 'background: #d1fae5; color: #065f46; font-weight: 700;' :
-            p.status === 'REJECTED' ? 'background: #fee2e2; color: #991b1b; font-weight: 700;' :
-            'background: #fef3c7; color: #92400e; font-weight: 700;'
+            p.status === 'APPROVED' ? 'background: #E4F0E6; color: #14512F; font-weight: 700;' :
+            p.status === 'REJECTED' ? 'background: #F7E7E4; color: #7E2A22; font-weight: 700;' :
+            'background: #F4EBD2; color: #7A5F10; font-weight: 700;'
           }">
             ${p.status === 'PENDING_REVIEW' ? 'PENDING REVIEW' : p.status}
           </span>
@@ -3384,7 +3384,7 @@
         <td>
           <div style="display: flex; gap: 6px;">
             ${p.status !== 'APPROVED' ? `<button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminApprovePost('${p.post_id}')">Approve</button>` : ''}
-            ${p.status !== 'REJECTED' ? `<button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #ef4444;" onclick="window.adminRejectPost('${p.post_id}')">Reject</button>` : ''}
+            ${p.status !== 'REJECTED' ? `<button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #C4433A;" onclick="window.adminRejectPost('${p.post_id}')">Reject</button>` : ''}
           </div>
         </td>
       </tr>
@@ -3462,15 +3462,15 @@
     }
 
     const badgeColors = {
-      'UNVERIFIED': 'background: #f1f5f9; color: #475569;',
-      'PENDING': 'background: #fef3c7; color: #92400e;',
-      'VERIFIED': 'background: #d1fae5; color: #065f46;',
-      'REJECTED': 'background: #fee2e2; color: #991b1b;',
+      'UNVERIFIED': 'background: #F4F1EA; color: #4E483E;',
+      'PENDING': 'background: #F4EBD2; color: #7A5F10;',
+      'VERIFIED': 'background: #E4F0E6; color: #14512F;',
+      'REJECTED': 'background: #F7E7E4; color: #7E2A22;',
       'SUSPENDED': 'background: #f3e8ff; color: #6b21a8;'
     };
 
     tbody.innerHTML = marbsDB.data.id_verifications.map(v => {
-      const statusColor = badgeColors[v.status] || 'background: #f1f5f9; color: #475569;';
+      const statusColor = badgeColors[v.status] || 'background: #F4F1EA; color: #4E483E;';
       const dateStr = v.submitted_at ? new Date(v.submitted_at).toLocaleDateString() : 'N/A';
 
       return `
@@ -3512,13 +3512,13 @@
     }
 
     const badgeColors = {
-      'UNVERIFIED': 'background: #f1f5f9; color: #475569;',
-      'PENDING': 'background: #fef3c7; color: #92400e;',
-      'VERIFIED': 'background: #d1fae5; color: #065f46;',
-      'REJECTED': 'background: #fee2e2; color: #991b1b;',
+      'UNVERIFIED': 'background: #F4F1EA; color: #4E483E;',
+      'PENDING': 'background: #F4EBD2; color: #7A5F10;',
+      'VERIFIED': 'background: #E4F0E6; color: #14512F;',
+      'REJECTED': 'background: #F7E7E4; color: #7E2A22;',
       'SUSPENDED': 'background: #f3e8ff; color: #6b21a8;'
     };
-    const statusColor = badgeColors[ver.status] || 'background: #f1f5f9; color: #475569;';
+    const statusColor = badgeColors[ver.status] || 'background: #F4F1EA; color: #4E483E;';
     $('#adminDetailStatus').innerHTML = `<span class="activity-badge" style="${statusColor}">${ver.status}</span>`;
 
     modal.classList.add('active');
@@ -3636,7 +3636,7 @@
         <td>${escapeHtml(sp.name)}</td>
         <td>${escapeHtml(sp.address)}</td>
         <td>${escapeHtml(sp.operating_hours)}</td>
-        <td><span class="activity-badge" style="background: #d1fae5; color: #065f46;">${sp.active_status}</span></td>
+        <td><span class="activity-badge" style="background: #E4F0E6; color: #14512F;">${sp.active_status}</span></td>
       </tr>
     `).join('');
   }
@@ -3650,7 +3650,7 @@
         <td><strong>${r.report_id}</strong></td>
         <td>${r.reason}</td>
         <td>${escapeHtml(r.details)}</td>
-        <td><span class="activity-badge" style="background: #fee2e2; color: #991b1b;">${r.status}</span></td>
+        <td><span class="activity-badge" style="background: #F7E7E4; color: #7E2A22;">${r.status}</span></td>
         <td>
           <button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminResolveReport('${r.report_id}')">Resolve Report</button>
         </td>
@@ -3677,7 +3677,7 @@
     tbody.innerHTML = marbsDB.data.audit_logs.slice(0, 15).map(l => `
       <tr>
         <td><strong>${l.log_id}</strong></td>
-        <td><span class="activity-badge" style="background: #e2e8f0; color: #1e293b;">${l.action_type}</span></td>
+        <td><span class="activity-badge" style="background: #E5E1D8; color: #1C1A17;">${l.action_type}</span></td>
         <td>${escapeHtml(l.description)}</td>
         <td style="font-size: 11px; color: var(--text-muted);">${new Date(l.timestamp).toLocaleString()}</td>
       </tr>
@@ -3778,16 +3778,16 @@
           <div class="user-avatar-sm" style="position: relative;">
             ${user.avatar_url ? `<img src="${user.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (user.first_name[0] || 'U').toUpperCase()}
             ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
-              <span style="position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #ef4444; border: 2px solid #fff; border-radius: 50%;"></span>
+              <span style="position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #C4433A; border: 2px solid #fff; border-radius: 50%;"></span>
             ` : ''}
           </div>
           <span class="user-name-sm">
             ${user.role === 'ADMIN' ? 'Admin Portal' : user.first_name}
             ${user.role !== 'ADMIN' ? (userRel.hasRatings
-              ? `<span style="color: #f59e0b; font-size: 11px; font-weight: 800; margin-left: 4px;" title="${userRel.countLabel}">★ ${userRel.avg}</span>`
+              ? `<span style="color: #C08A1E; font-size: 11px; font-weight: 800; margin-left: 4px;" title="${userRel.countLabel}">★ ${userRel.avg}</span>`
               : `<span style="color: var(--text-muted); font-size: 11px; font-weight: 700; margin-left: 4px;" title="${userRel.countLabel}">New</span>`) : ''}
             ${(user.role === 'ADMIN' && pendingReviewPostsCount > 0) ? `
-              <span style="background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">${pendingReviewPostsCount}</span>
+              <span style="background: #C4433A; color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">${pendingReviewPostsCount}</span>
             ` : ''}
           </span>
         `;
@@ -3910,7 +3910,7 @@
         position: fixed;
         bottom: 24px;
         right: 24px;
-        background: #0f172a;
+        background: #0B0B0B;
         color: #fff;
         padding: 12px 20px;
         border-radius: var(--radius-full);
@@ -4084,8 +4084,8 @@
       };
 
       const qna = m.qna_responses || {};
-      const statusColor = m.status === 'MATCH_CONFIRMED' || m.status === 'RETURN_SCHEDULED' ? '#10b981' :
-                          m.status === 'MATCH_REJECTED' ? '#ef4444' : '#2563eb';
+      const statusColor = m.status === 'MATCH_CONFIRMED' || m.status === 'RETURN_SCHEDULED' ? '#2F8A53' :
+                          m.status === 'MATCH_REJECTED' ? '#C4433A' : '#5A5245';
 
       return `
         <div class="card" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -4110,15 +4110,15 @@
           </div>
 
           <!-- Claimant Badge -->
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <div style="background: #FBFAF7; border: 1px solid #E5E1D8; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
             <div>
               <span style="color: var(--text-muted);">Submitted by:</span>
               <strong style="color: var(--text-main); margin-left: 4px;">${escapeHtml(getPublicAlias(claimant))}</strong>
               ${claimant.verification_status === 'VERIFIED' ? `
-                <span style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 4px;">ID VERIFIED</span>
+                <span style="background: #E3EFE6; color: #186A3A; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 4px;">ID VERIFIED</span>
               ` : ''}
             </div>
-            <div style="font-size: 11px; color: #2563eb; font-weight: 700;">
+            <div style="font-size: 11px; color: #5A5245; font-weight: 700;">
               Match Score: ${m.match_score || 90}%
             </div>
           </div>
@@ -4132,44 +4132,44 @@
 
           <!-- Private Q&A Answers Grid (Hidden by Default) -->
           <div class="verif-answers-hidden-body" id="verifAnswersBody_${m.match_id}">
-            <div style="background: #fafafa; border: 1px solid #f1f5f9; border-radius: 8px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <div style="background: #fafafa; border: 1px solid #F4F1EA; border-radius: 8px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
               <div style="font-weight: 800; color: #1e3a8a; font-size: 12px; display: flex; align-items: center; gap: 5px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Submitted Verification Answers:
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #E5E1D8;">
                   <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">1. Location:</div>
                   <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.location_lost || 'Not provided')}</div>
                 </div>
 
-                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #E5E1D8;">
                   <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">2. Approximate Time:</div>
                   <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.approx_time || 'Not provided')}</div>
                 </div>
 
-                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #E5E1D8;">
                   <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">3. Color & Markings:</div>
                   <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.color || 'Not provided')}</div>
                 </div>
 
                 ${qna.identifying_marks ? `
-                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #E5E1D8;">
                     <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">4. Distinct Identifying Marks:</div>
                     <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.identifying_marks)}</div>
                   </div>
                 ` : ''}
 
                 ${qna.accessories ? `
-                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #E5E1D8;">
                     <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">5. Attached Accessories / Charms:</div>
                     <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.accessories)}</div>
                   </div>
                 ` : ''}
 
                 ${qna.inside_contents ? `
-                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #E5E1D8;">
                     <div style="color: var(--text-muted); font-size: 11px; font-weight: 600;">6. Inside Contents (if bag/wallet):</div>
                     <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">${escapeHtml(qna.inside_contents)}</div>
                   </div>
@@ -4181,23 +4181,23 @@
                 </div>
 
                 ${(qna.proof_photo_url || m.proof_photo_url) ? `
-                  <div style="background: #f0fdf4; padding: 10px 12px; border-radius: 6px; border: 1px solid #bbf7d0; margin-top: 4px;">
+                  <div style="background: #EDF5EF; padding: 10px 12px; border-radius: 6px; border: 1px solid #DCEBE0; margin-top: 4px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                      <span style="color: #166534; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
+                      <span style="color: #155630; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                         Captured Photo Proof:
                       </span>
-                      <span style="background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">
+                      <span style="background: #E3EFE6; color: #186A3A; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">
                         ${qna.camera_verification_status === 'GALLERY_UPLOAD' ? 'UPLOADED PHOTO' : 'LIVE CAMERA VERIFIED'}
                       </span>
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                       <img src="${qna.proof_photo_url || m.proof_photo_url}" alt="Verification Proof" style="width: 90px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #86efac; cursor: pointer; transition: transform 0.15s ease;" onclick="window.openImageZoomModal('${qna.proof_photo_url || m.proof_photo_url}')" title="Click to inspect full photo" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-                      <div style="font-size: 11px; color: #166534; line-height: 1.5;">
+                      <div style="font-size: 11px; color: #155630; line-height: 1.5;">
                         <div style="font-weight: 600;">Authentic photo proof submitted by claimant</div>
-                        ${qna.proof_photo_hash ? `<div style="font-family: monospace; font-size: 10px; color: #15803d; margin-top: 3px; word-break: break-all;">Hash: ${escapeHtml(qna.proof_photo_hash)}</div>` : ''}
+                        ${qna.proof_photo_hash ? `<div style="font-family: monospace; font-size: 10px; color: #186A3A; margin-top: 3px; word-break: break-all;">Hash: ${escapeHtml(qna.proof_photo_hash)}</div>` : ''}
                         <div style="margin-top: 6px;">
-                          <button type="button" class="btn btn-outline" style="font-size: 10px; padding: 3px 8px; color: #15803d; border-color: #86efac; background: #fff;" onclick="window.openImageZoomModal('${qna.proof_photo_url || m.proof_photo_url}')">
+                          <button type="button" class="btn btn-outline" style="font-size: 10px; padding: 3px 8px; color: #186A3A; border-color: #86efac; background: #fff;" onclick="window.openImageZoomModal('${qna.proof_photo_url || m.proof_photo_url}')">
                             Inspect Full Photo
                           </button>
                         </div>
@@ -4214,7 +4214,7 @@
             <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openMessengerForPost('${post.post_id}', '${m.claimant_id}')">
               Open Private Chat
             </button>
-            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #ef4444; border-color: #fca5a5;" onclick="window.rejectVerificationMatch('${m.match_id}')">
+            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #C4433A; border-color: #E8BDB8;" onclick="window.rejectVerificationMatch('${m.match_id}')">
               Reject Claim
             </button>
             <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 6px 14px;" onclick="window.acceptVerificationMatch('${m.match_id}', '${post.post_id}')">
@@ -4585,15 +4585,15 @@
                 </div>
 
                 <div style="text-align: right; min-width: 180px;">
-                  <span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #16a34a;"></span>
+                  <span style="background: #E3EFE6; color: #186A3A; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #1E7A46;"></span>
                     CONFIRMED SCHEDULE
                   </span>
                   
                   <div style="margin-top: 8px; font-size: 12px;">
                     <div style="color: var(--text-muted); font-size: 11px;">Exchanging with:</div>
                     <strong style="color: var(--text-main); font-size: 13px;">${escapeHtml(getPublicAlias(counterparty))}</strong>
-                    <div style="color: ${reliability.hasRatings ? '#f59e0b' : 'var(--text-muted)'}; font-weight: 800; font-size: 11px; margin-top: 1px;">
+                    <div style="color: ${reliability.hasRatings ? '#C08A1E' : 'var(--text-muted)'}; font-weight: 800; font-size: 11px; margin-top: 1px;">
                       ${reliability.hasRatings
                         ? `★ ${reliability.avg} (${reliability.count} review${reliability.count === 1 ? '' : 's'})`
                         : 'No ratings yet'}
@@ -4602,16 +4602,16 @@
                 </div>
               </div>
 
-              <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; flex-wrap: wrap;">
+              <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #F4F1EA; flex-wrap: wrap;">
                 <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.openMessengerForPost('${post.post_id}', '${counterpartyId}')">
                   Open Messages
                 </button>
                 ${isOwner ? `
-                  <button type="button" class="btn btn-primary" style="font-size: 12px; padding: 6px 16px; background: #16a34a; border-color: #15803d; color: #fff; font-weight: 800;" onclick="window.markMeetupComplete('${m.meetup_id}')">
+                  <button type="button" class="btn btn-primary" style="font-size: 12px; padding: 6px 16px; background: #1E7A46; border-color: #186A3A; color: #fff; font-weight: 800;" onclick="window.markMeetupComplete('${m.meetup_id}')">
                     Mark as Retrieved / Complete
                   </button>
                 ` : `
-                  <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #16a34a; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
+                  <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #1E7A46; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
                     Confirm Handover Done
                   </button>
                 `}
@@ -4651,26 +4651,26 @@
           };
 
           return `
-            <div class="meetup-schedule-card" style="border-left: 4px solid #10b981; background: #fbfdfc;">
+            <div class="meetup-schedule-card" style="border-left: 4px solid #2F8A53; background: #fbfdfc;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 14px; align-items: center;">
                   <img src="${post.image || 'assets/images.jpg'}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <span class="activity-badge" style="background: #dcfce7; color: #166534; font-weight: 800; font-size: 10px;">COMPLETED & RETRIEVED</span>
+                      <span class="activity-badge" style="background: #E3EFE6; color: #155630; font-weight: 800; font-size: 10px;">COMPLETED & RETRIEVED</span>
                       <strong style="font-size: 15px; color: var(--text-main);">${escapeHtml(post.item_name)}</strong>
                     </div>
                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
                       Location: <strong>${escapeHtml(m.place_name)}</strong> • Handover Date: ${m.date}
                     </div>
-                    <div style="font-size: 12px; color: #15803d; font-weight: 700; margin-top: 3px;">
+                    <div style="font-size: 12px; color: #186A3A; font-weight: 700; margin-top: 3px;">
                       Citizen: ${escapeHtml(getPublicAlias(counterparty))}
                     </div>
                   </div>
                 </div>
 
-                <div style="text-align: right; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px;">
-                  <div style="color: #f59e0b; font-size: 14px; font-weight: 800;">
+                <div style="text-align: right; background: #fff; border: 1px solid #E5E1D8; border-radius: 8px; padding: 8px 12px;">
+                  <div style="color: #C08A1E; font-size: 14px; font-weight: 800;">
                     ${'★'.repeat(ratingObj.stars || 5)} (${ratingObj.stars || 5}.0 Stars)
                   </div>
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; max-width: 240px; font-style: italic;">
