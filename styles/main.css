@@ -1339,8 +1339,252 @@ body[data-surface="landing"] #homeHero {
 /* Two-Column Grid: Feed vs Sidebar */
 .main-grid {
   display: grid;
-  grid-template-columns: 2.1fr 1fr;
-  gap: 24px;
+  /* Feed column matches the Instagram desktop feed width; the sidebar keeps
+     the remaining space. Collapses to one column once there is no room for
+     both without squeezing the sidebar. */
+  grid-template-columns: minmax(0, 620px) minmax(280px, 1fr);
+  gap: 28px;
+  justify-content: center;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   INSTAGRAM-STYLE FEED
+   One post per row in a single centred column: author header, swipeable media
+   with dots overlaid, likes, then the caption and the claim action.
+   ========================================================================== */
+.ig-post {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.ig-post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.ig-post-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-alt);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ig-post-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.ig-post-headtext {
+  flex: 1;
+  min-width: 0;
+}
+
+.ig-post-author {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-post-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Media carousel */
+.ig-post-media {
+  position: relative;
+  background: #000;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.ig-post-track {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.ig-post-track::-webkit-scrollbar {
+  display: none;
+}
+
+.ig-post-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-post-slide img {
+  width: 100%;
+  height: 100%;
+  /* contain, not cover: a cropped lost-item photo is harder to recognise, and
+     poster screenshots arrive in wildly different aspect ratios. */
+  object-fit: contain;
+}
+
+.ig-post-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.88);
+  color: #14110D;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.ig-post-nav:hover { background: #fff; }
+.ig-post-nav.prev { left: 10px; }
+.ig-post-nav.next { right: 10px; }
+
+.ig-post.is-single .ig-post-nav { display: none; }
+
+/* Lost / Found badge in the header */
+.ig-post-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.ig-post-badge.is-lost {
+  background: rgba(196, 67, 58, 0.1);
+  color: #A33A32;
+  border: 1px solid rgba(196, 67, 58, 0.25);
+}
+
+.ig-post-badge.is-found {
+  background: rgba(46, 122, 88, 0.1);
+  color: #2E7A58;
+  border: 1px solid rgba(46, 122, 88, 0.25);
+}
+
+/* Dots overlaid on the media, as Instagram does */
+.ig-post-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ig-post.is-single .ig-post-dots { display: none; }
+
+.ig-post-dots .ig-dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: auto;
+}
+
+.ig-post-dots .ig-dot.is-active {
+  background: #fff;
+}
+
+.ig-post-count {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+}
+
+.ig-post.is-single .ig-post-count { display: none; }
+
+/* Actions */
+.ig-post-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 2px;
+}
+
+.ig-post-caption {
+  padding: 6px 14px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.ig-post-caption strong {
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+.ig-post-caption .ig-post-item {
+  font-weight: 600;
+}
+
+.ig-post-caption span {
+  color: var(--text-muted);
+}
+
+.ig-post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px 12px;
+}
+
+.ig-post-time {
+  font-size: 11px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* Posts Feed */
@@ -1370,9 +1614,18 @@ body[data-surface="landing"] #homeHero {
 
 /* Post Cards Grid */
 .posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+/* Instagram's feed column never grows past this, whatever the viewport - and
+   the heading above it stays aligned with the posts rather than the page. */
+.feed-col {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 /* Skeleton Loading Shimmer for Recent Posts */

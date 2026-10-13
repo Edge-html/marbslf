@@ -768,15 +768,17 @@
 
     if (posts.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: #fff; border-radius: var(--radius-lg); border: 1px dashed var(--border);">
-          <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: var(--surface-alt); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--text-muted);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="ig-post ig-empty-state">
+          <div style="text-align: center; padding: 48px 20px;">
+            <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: var(--surface-alt); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--text-muted);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">No matching reports found</h3>
+            <p style="font-size: 13px; color: var(--text-muted); max-width: 400px; margin: 0 auto 16px auto;">
+              Try clearing search filters or report a new lost or found item to let the Koronadal community know.
+            </p>
+            <button class="btn btn-primary" onclick="window.marbsApp.openReportModal('LOST')">Report Lost Item</button>
           </div>
-          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">No matching reports found</h3>
-          <p style="font-size: 13px; color: var(--text-muted); max-width: 400px; margin: 0 auto 16px auto;">
-            Try clearing search filters or report a new lost or found item to let the Koronadal community know.
-          </p>
-          <button class="btn btn-primary" onclick="window.marbsApp.openReportModal('LOST')">Report Lost Item</button>
         </div>
       `;
       return;
@@ -790,7 +792,7 @@
       const statusDotClass = isLost ? 'lost' : 'found';
       const isLiked = Array.isArray(post.liked_by) && post.liked_by.includes(currentUserId);
       const likesCount = typeof post.likes_count === 'number' ? post.likes_count : 0;
-      
+
       const currentUser = marbsDB.getCurrentUser();
       const isOwnPost = Boolean(currentUser && (
         (post.user_id && currentUser.user_id === post.user_id) ||
@@ -799,65 +801,171 @@
       ));
 
       const canManage = Boolean(currentUser && (currentUser.role === 'ADMIN' || isOwnPost));
+      const author = (marbsDB.data.users || []).find(u => u.user_id === post.user_id);
+      const authorAlias = author ? getPublicAlias(author) : 'Verified Citizen';
+      const initials = (author && author.first_name ? author.first_name[0] : 'C').toUpperCase();
+
+      // Every photo the poster uploaded, for the carousel
+      const photos = (Array.isArray(post.images) && post.images.length) ? post.images : [post.image];
+      const isMulti = photos.length > 1;
+
+      const timeAgo = (() => {
+        const then = new Date(post.created_at || post.date).getTime();
+        if (Number.isNaN(then)) return '';
+        const hrs = Math.floor((Date.now() - then) / 3600000);
+        if (hrs < 1) return 'Just now';
+        if (hrs < 24) return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+        const days = Math.floor(hrs / 24);
+        return days + (days === 1 ? ' day ago' : ' days ago');
+      })();
+
+      const prettyDate = (() => {
+        const d = new Date(post.created_at || post.date);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+      })();
 
       return `
-        <article class="post-card" onclick="window.marbsApp.openPostDetailModal('${post.post_id}')">
-          <div class="post-image-container">
-            <img src="${post.image}" alt="${escapeHtml(post.item_name)}" class="post-image" onerror="this.src='assets/images.jpg'">
-          </div>
-          <div class="post-body">
-            <div class="card-status-row">
-              <span class="status-dot ${statusDotClass}"></span>
-              <span class="status-label ${statusDotClass}">${statusText}</span>
-              <span class="meta-sep">•</span>
-              <span class="card-location">${escapeHtml(post.general_location)}</span>
-              <span class="meta-sep">•</span>
-              <span class="card-date">${post.date}</span>
+        <article class="ig-post${isMulti ? '' : ' is-single'}" data-post-id="${post.post_id}">
+
+          <header class="ig-post-header">
+            <div class="ig-post-avatar">${author && author.avatar_url ? `<img src="${escapeHtml(author.avatar_url)}" alt="">` : escapeHtml(initials)}</div>
+            <div class="ig-post-headtext">
+              <div class="ig-post-author">${escapeHtml(authorAlias)}</div>
+              <div class="ig-post-meta">${escapeHtml(post.general_location)} &middot; ${escapeHtml(timeAgo)}</div>
             </div>
-            <h3 class="post-title" title="${escapeHtml(post.item_name)}">${escapeHtml(post.item_name)}</h3>
-            <p class="post-desc">${escapeHtml(post.description)}</p>
-            <div class="post-footer">
-              <button type="button" class="post-like-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post.post_id}" onclick="event.stopPropagation(); window.marbsApp.toggleLike('${post.post_id}')" title="Heart this post">
-                <span class="heart-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                </span>
-                <span class="like-count" id="like-count-${post.post_id}">${likesCount}</span>
+            <span class="ig-post-badge ${isLost ? 'is-lost' : 'is-found'}">${statusText}</span>
+            ${canManage ? `
+              <button type="button" class="icon-btn" style="width: 26px; height: 26px; border: none; background: transparent; padding: 0;" onclick="event.stopPropagation(); window.marbsApp.deletePost('${post.post_id}')" title="Post options">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
+            ` : ''}
+          </header>
 
-              <div style="display: flex; align-items: center; gap: 8px;">
-                ${isOwnPost ? `<span class="quiet-own-post">Your post</span>` : ''}
-                ${(() => {
-                  if (isOwnPost) {
-                    const postAnswersCount = (marbsDB.data.matches || []).filter(m =>
-                      (m.lost_post_id === post.post_id || m.found_post_id === post.post_id) &&
-                      (!currentUser || m.claimant_id !== currentUser.user_id)
-                    ).length;
-
-                    return `
-                      <button type="button" class="post-answers-btn" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')" title="View verification answers">
-                        <span>Verification Answers ${postAnswersCount > 0 ? `(${postAnswersCount})` : ''}</span>
-                      </button>
-                    `;
-                  }
-
-                  return `
-                    <button type="button" class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
-                      ${isLost ? 'Found this?' : 'I Think This Is Mine'}
-                    </button>
-                  `;
-                })()}
-
-                ${canManage ? `
-                  <button type="button" class="icon-btn" style="width: 26px; height: 26px; border: none; background: transparent; padding: 0;" onclick="event.stopPropagation(); window.marbsApp.deletePost('${post.post_id}')" title="Post options">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-                  </button>
-                ` : ''}
-              </div>
+          <div class="ig-post-media" onclick="event.stopPropagation()">
+            <div class="ig-post-track" data-track="${post.post_id}" onscroll="window.marbsApp.feedTrackScrolled(this)">
+              ${photos.map((src, i) => `
+                <div class="ig-post-slide">
+                  <img src="${escapeHtml(src)}" alt="${escapeHtml(post.item_name)} ${i + 1}"
+                       onerror="this.src='assets/images.jpg'">
+                </div>
+              `).join('')}
             </div>
+
+            ${isMulti ? `
+              <button type="button" class="ig-post-nav prev" onclick="window.marbsApp.feedCarousel('${post.post_id}', -1)" aria-label="Previous photo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button type="button" class="ig-post-nav next" onclick="window.marbsApp.feedCarousel('${post.post_id}', 1)" aria-label="Next photo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div class="ig-post-dots">${photos.map((_, i) => `<button type="button" class="ig-dot${i === 0 ? ' is-active' : ''}" data-post="${post.post_id}" data-idx="${i}" onclick="window.marbsApp.feedCarouselTo('${post.post_id}', ${i})" aria-label="Photo ${i + 1}"></button>`).join('')}</div>
+              <span class="ig-post-count" data-count="${post.post_id}">1 / ${photos.length}</span>
+            ` : ''}
+          </div>
+
+          <div class="ig-post-actions">
+            <button type="button" class="ig-like-btn${isLiked ? ' is-liked' : ''}" data-like="${post.post_id}"
+                    onclick="event.stopPropagation(); window.marbsApp.toggleLike('${post.post_id}')" aria-label="Like this post">
+              <svg class="ig-heart" width="24" height="24" viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </button>
+            <span class="ig-like-count" data-likecount="${post.post_id}">${likesCount} ${likesCount === 1 ? 'like' : 'likes'}</span>
+          </div>
+
+          <div class="ig-post-caption" onclick="window.marbsApp.openPostDetailModal('${post.post_id}')">
+            <strong>${escapeHtml(authorAlias)}</strong>
+            <strong class="ig-post-item">${escapeHtml(post.item_name)}</strong>
+            <span>&mdash; ${escapeHtml(post.description)}</span>
+          </div>
+
+          <div class="ig-post-footer">
+            <span class="ig-post-time">${escapeHtml(prettyDate)}</span>
+            ${(() => {
+              if (isOwnPost) {
+                const postAnswersCount = (marbsDB.data.matches || []).filter(m =>
+                  (m.lost_post_id === post.post_id || m.found_post_id === post.post_id) &&
+                  (!currentUser || m.claimant_id !== currentUser.user_id)
+                ).length;
+                return `
+                  <button type="button" class="post-answers-btn" onclick="event.stopPropagation(); window.openPostVerificationAnswers('${post.post_id}')">
+                    <span>Verification Answers ${postAnswersCount > 0 ? `(${postAnswersCount})` : ''}</span>
+                  </button>
+                `;
+              }
+              return `
+                <button type="button" class="post-claim-btn" onclick="event.stopPropagation(); window.marbsApp.handlePostAction('${post.post_id}')">
+                  ${isLost ? 'Found this?' : 'I Think This Is Mine'}
+                </button>
+              `;
+            })()}
           </div>
         </article>
       `;
     }).join('');
+
+    // Arrows hide on the first/last slide of each carousel
+    syncFeedCarouselArrows();
+  }
+
+  /**
+   * Feed carousel controls. These are plain functions rather than properties
+   * on window.marbsApp because renderFeed() runs before that object exists.
+   */
+
+  /** Move a feed carousel by `dir` slides. It stops at the ends, as Instagram does. */
+  function feedCarousel(postId, dir) {
+    const track = document.querySelector(`.ig-post-track[data-track="${postId}"]`);
+    if (!track) return;
+    const slides = Array.from(track.children);
+    if (!slides.length) return;
+    const idx = feedSlideIndex(track, slides);
+    const next = Math.max(0, Math.min(slides.length - 1, idx + dir));
+    track.scrollTo({ left: slides[next].offsetLeft, behavior: 'smooth' });
+  }
+
+  function feedCarouselTo(postId, index) {
+    const track = document.querySelector(`.ig-post-track[data-track="${postId}"]`);
+    if (!track) return;
+    const slides = Array.from(track.children);
+    if (!slides[index]) return;
+    track.scrollTo({ left: slides[index].offsetLeft, behavior: 'smooth' });
+  }
+
+  function feedSlideIndex(track, slides) {
+    const centre = track.scrollLeft + track.clientWidth / 2;
+    let best = 0;
+    let bestD = Infinity;
+    slides.forEach((el, i) => {
+      const d = Math.abs(centre - (el.offsetLeft + el.clientWidth / 2));
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    return best;
+  }
+
+  /** Keep dots, arrows and the counter in step when a track is swiped. */
+  function feedTrackScrolled(track) {
+    const postId = track.getAttribute('data-track');
+    const slides = Array.from(track.children);
+    if (!slides.length) return;
+    const idx = feedSlideIndex(track, slides);
+    const post = track.closest('.ig-post');
+
+    if (post) {
+      post.querySelectorAll('.ig-dot').forEach((d, i) => d.classList.toggle('is-active', i === idx));
+      const prev = post.querySelector('.ig-post-nav.prev');
+      const next = post.querySelector('.ig-post-nav.next');
+      if (prev) prev.style.visibility = idx === 0 ? 'hidden' : 'visible';
+      if (next) next.style.visibility = idx === slides.length - 1 ? 'hidden' : 'visible';
+    }
+    const counter = document.querySelector(`.ig-post-count[data-count="${postId}"]`);
+    if (counter) counter.textContent = `${idx + 1} / ${slides.length}`;
+  }
+
+  function syncFeedCarouselArrows() {
+    $$('.ig-post:not(.is-single)').forEach(post => {
+      const prev = post.querySelector('.ig-post-nav.prev');
+      if (prev) prev.style.visibility = 'hidden';
+    });
   }
 
   // 6. Recent Activity Feed (Right Column of Mockup)
@@ -1582,20 +1690,38 @@
       openOwnershipClaimModal(post);
     },
 
+    /**
+     * Like/unlike straight from the feed. Patches the card in place so the
+     * carousel position and scroll are not lost, and mirrors the change into
+     * the detail modal if it happens to be open on the same post.
+     */
+    // Feed carousel - defined inside the IIFE, surfaced here so the inline
+    // handlers in renderFeed's markup can reach them.
+    feedCarousel: feedCarousel,
+    feedCarouselTo: feedCarouselTo,
+    feedTrackScrolled: feedTrackScrolled,
+
     toggleLike: function (postId) {
+      const user = marbsDB.getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+
       const res = marbsDB.togglePostReaction(postId);
-      const btn = document.getElementById(`like-btn-${postId}`);
-      const countEl = document.getElementById(`like-count-${postId}`);
-      if (btn && countEl) {
-        const heartSpan = btn.querySelector('.heart-icon');
-        if (res.liked) {
-          btn.classList.add('liked');
-          if (heartSpan) heartSpan.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
-        } else {
-          btn.classList.remove('liked');
-          if (heartSpan) heartSpan.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
-        }
-        countEl.textContent = res.count;
+
+      const btn = document.querySelector(`.ig-like-btn[data-like="${postId}"]`);
+      if (btn) {
+        btn.classList.toggle('is-liked', res.liked);
+        const heart = btn.querySelector('.ig-heart');
+        if (heart) heart.setAttribute('fill', res.liked ? 'currentColor' : 'none');
+      }
+
+      const countEl = document.querySelector(`.ig-like-count[data-likecount="${postId}"]`);
+      if (countEl) countEl.textContent = `${res.count} ${res.count === 1 ? 'like' : 'likes'}`;
+
+      if (activePostForModal && activePostForModal.post_id === postId) {
+        openPostDetailModal(postId);
       }
     },
 
