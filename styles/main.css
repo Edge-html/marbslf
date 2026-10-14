@@ -261,11 +261,16 @@
   padding: 0;
 }
 
-html,
+html {
+  width: 100%;
+  /* Clipping happens on the root only. Putting overflow on <body> would make
+     it a scroll container, which silently breaks position:sticky on the nav. */
+  overflow-x: hidden;
+}
+
 body {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
   position: relative;
 }
 
@@ -984,27 +989,36 @@ body[data-surface="landing"] #homeHero {
 }
 
 /* White pill search bar */
+/* One composite action bar: the three search fields, the two report actions and
+   the search submit all sit in a single control rather than floating apart. */
 .hero-search-pill {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   gap: 0;
   width: 100%;
-  max-width: 660px;
-  margin-top: 22px;
-  padding: 5px;
-  background: rgba(255, 255, 255, 0.97);
-  border-radius: 9999px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  max-width: 820px;
+  margin-top: 24px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
 .hero-search-field {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 8px 10px;
   color: #4E483E;
   min-width: 0;
-  flex: 1 1 0;
+  /* No grow: if the fields expand they squeeze the actions onto a second row.
+     The free-text field gets an explicit width, the selects size to content. */
+  flex: 0 1 auto;
+}
+
+.hero-search-field:first-of-type {
+  flex: 0 1 195px;
 }
 
 .hero-search-field > svg {
@@ -1022,7 +1036,7 @@ body[data-surface="landing"] #homeHero {
 .hero-search-text label {
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #9C9384;
 }
@@ -1035,7 +1049,7 @@ body[data-surface="landing"] #homeHero {
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
-  color: #0B0B0B;
+  color: var(--text-main);
   padding: 0;
   width: 100%;
   min-width: 0;
@@ -1050,7 +1064,43 @@ body[data-surface="landing"] #homeHero {
   width: 1px;
   align-self: stretch;
   margin: 6px 0;
-  background: #E5E1D8;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* Report actions + search submit travel together as one group, so when the
+   bar wraps they land on a single row instead of splitting across three. */
+.hero-composite-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-shrink: 0;
+  /* Absorbs whatever slack is left, keeping the actions hard right. */
+  margin-left: auto;
+}
+
+.hero-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary-yellow-ink);
+  background: var(--primary-yellow);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.3s ease-out, border-color 0.3s ease-out;
+}
+
+.hero-report-btn:hover {
+  background: var(--primary-yellow-hover);
+}
+
+.hero-report-btn svg {
   flex-shrink: 0;
 }
 
@@ -1061,45 +1111,18 @@ body[data-surface="landing"] #homeHero {
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 700;
-  color: #ffffff;
-  background: #0B0B0B;
-  padding: 0 24px;
-  border-radius: 9999px;
-  transition: background 0.2s ease;
+  color: var(--surface);
+  background: var(--navy-dark);
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  transition: background-color 0.3s ease-out;
 }
 
 .hero-search-pill-btn:hover {
-  background: #1C1A17;
+  background: var(--navy-subtle);
 }
 
-/* Compact report actions sit under the search bar */
-.hero-quick-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
-
-.hero-quick-btn {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 9999px;
-  padding: 8px 18px;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.hero-quick-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Responsive: stack the pill instead of letting it overflow */
+/* The hero loses its height floor once the bar needs vertical room */
 @media (max-width: 860px) {
   .hero-banner {
     min-height: 0;
@@ -1111,12 +1134,14 @@ body[data-surface="landing"] #homeHero {
   }
 
   .hero-search-pill {
-    flex-wrap: wrap;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     padding: 10px;
     gap: 2px;
   }
+}
 
+/* Only on genuinely narrow screens does every segment take its own row */
+@media (max-width: 640px) {
   .hero-search-field {
     flex: 1 1 100%;
     padding: 10px 12px;
@@ -1126,11 +1151,21 @@ body[data-surface="landing"] #homeHero {
     display: none;
   }
 
-  .hero-search-pill-btn {
+  .hero-composite-actions {
     flex: 1 1 100%;
-    margin-top: 8px;
+    margin-top: 6px;
+  }
+
+  .hero-report-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 12px 10px;
+  }
+
+  .hero-search-pill-btn {
+    flex: 1 1 auto;
     padding: 12px 20px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
   }
 }
 
@@ -5268,6 +5303,218 @@ body.is-transitioning.is-route-complete .route-progress {
   .route-progress {
     display: none !important;
   }
+}
+
+/* ==========================================================================
+   RAMP-INSPIRED DESIGN LAYER
+
+   A monochrome editorial surface where the brand yellow is the single accent,
+   reserved for actions and active states. The governing rules:
+
+     - Hairline borders replace shadows. Cards rest on a 1px outline, so
+       elevation comes from surface tone (canvas -> card -> inverted), never
+       from a drop shadow.
+     - One radius vocabulary: 6px buttons and tags, 10px inputs, 12px washes,
+       16px cards. No 4px, no fully-rounded pills on UI.
+     - Motion is utility, not ornament: 0.3-0.4s ease-out on colour and
+       border only.
+     - Uppercase micro-labels at 10px open their tracking; display type
+       pulls it tight. That contrast is the system's voice.
+
+   Brand colour is deliberately preserved - the yellow and the near-black ink
+   stay as they are. Only the structural language changes.
+
+   Bold is retained on a few semantic elements (button labels, badges, counts)
+   so those states stay legible. Hierarchy elsewhere comes from size and
+   tracking, per the reference.
+   ========================================================================== */
+
+:root {
+  /* Radius vocabulary - replaces the old 3/4/6/8 set */
+  --radius-sm: 6px;    /* tags, small controls */
+  --radius-md: 6px;    /* buttons */
+  --radius-lg: 12px;   /* wash cards */
+  --radius-xl: 16px;   /* content cards, modals */
+
+  /* Hairlines carry elevation, so the shadow tokens collapse to nothing. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-hover: none;
+
+  /* Utility motion: colour and border only, ease-out, moderate duration. */
+  --transition: all 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layout */
+  --page-max-width: 1200px;
+}
+
+/* --- Primary / outlined / ghost buttons ------------------------------- */
+.btn,
+.lp-btn-primary,
+.lp-submit-btn,
+.post-claim-btn,
+.post-answers-btn,
+.hero-search-pill-btn,
+.hero-report-btn {
+  border-radius: var(--radius-md);
+  transition: background-color 0.32s ease-out, border-color 0.32s ease-out,
+    color 0.32s ease-out;
+  box-shadow: none;
+}
+
+/* --- Inputs: 10px radius, hairline, no focus glow --------------------- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="date"],
+input[type="search"],
+select,
+textarea,
+.form-input,
+.form-select,
+.form-textarea {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.32s ease-out, background-color 0.32s ease-out;
+  box-shadow: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--navy-dark);
+  box-shadow: none;
+}
+
+/* The composite bars' own fields sit on the bar's surface, so they stay
+   borderless - the bar already carries the outline. */
+.hero-search-text input,
+.hero-search-text select,
+.lp-hero-search input,
+.lp-hero-search select,
+.lp-hero-search-box input {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* --- Content cards: white fill, hairline border, no shadow -------------- */
+.ig-post,
+.sidebar-card,
+.hiw-card,
+.meetup-schedule-card,
+.lp-feature-card,
+.lp-auth-card,
+.lp-hero-search,
+.modal-card,
+.post-card,
+.dashboard-card,
+.stat-card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: none !important;
+  background: var(--surface);
+  transition: border-color 0.32s ease-out, background-color 0.32s ease-out;
+}
+
+.ig-post:hover,
+.hiw-card:hover,
+.lp-feature-card:hover {
+  border-color: var(--text-subtle) !important;
+  box-shadow: none !important;
+}
+
+/* --- Wash cards: muted callouts, 12px, no border ----------------------- */
+.hiw-cta-box,
+.quiet-own-post {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: none;
+}
+
+/* --- Dropdowns and popovers -------------------------------------------- */
+.dropdown-menu,
+.user-pill {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  background: var(--surface);
+}
+
+/* --- Pills become tags: no fully-rounded UI shapes, no drop shadows ---- */
+.hero-eyebrow-mark,
+.lp-pill-badge,
+.lp-stat-pill,
+.lp-landmark-tag,
+.hiw-guarantee-pill,
+.category-chip,
+.quick-filter-btn {
+  border-radius: var(--radius-sm) !important;
+  box-shadow: none !important;
+  transition: background-color 0.32s ease-out, border-color 0.32s ease-out,
+    color 0.32s ease-out;
+}
+
+/* --- Uppercase micro-labels: 10px, positive tracking ------------------- */
+.lp-section-eyebrow,
+.hiw-eyebrow,
+.section-kicker,
+.sidebar-eyebrow,
+.modal-body label,
+.form-label,
+.hero-search-text label,
+.ig-post-time,
+.ig-post-badge,
+.lp-hero-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* --- Page column: capped, left-aligned inside --------------------------- */
+.app-container,
+.landing-container {
+  max-width: var(--page-max-width);
+}
+
+/* --- Dark panels use obsidian, not pure ink ----------------------------- */
+.top-nav-bar {
+  background: var(--navy-subtle);
+  border-bottom: 1px solid var(--border);
+  /* Ramp's one permitted shadow: an inset white highlight, a frosted edge
+     rather than a drop shadow. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* --- Remaining flat components: no drop shadows ------------------------ */
+.edit-avatar-preview-box,
+.verif-toggle-btn,
+.marketplace-item-banner,
+.lp-icon-circle,
+.lp-tab-btn,
+.lp-submit-btn,
+.lp-auth-card,
+.category-chip.active {
+  box-shadow: none !important;
+}
+
+/* Tabs mark the active state with a rule, not a lift */
+.lp-tab-btn.active {
+  border-bottom: 1px solid var(--navy-dark);
+}
+
+/* The carousel arrows sit on top of photography, so they keep a contrast
+   shadow - the one place a shadow is doing accessibility work. */
+.ig-carousel-nav,
+.ig-post-nav {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 /* ==========================================================================

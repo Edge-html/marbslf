@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=38">
+  <link rel="stylesheet" href="styles/main.css?v=50">
 </head>
 <body>
 
@@ -667,7 +667,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <div class="hero-search-text">
                   <label for="heroSearchInput">Search item</label>
-                  <input type="text" id="heroSearchInput" placeholder="Wallet, phone, pet..." aria-label="Search items">
+                  <input type="text" id="heroSearchInput" placeholder="Wallet, phone, pet" aria-label="Search items">
                 </div>
               </div>
 
@@ -678,7 +678,7 @@
                 <div class="hero-search-text">
                   <label for="heroCategorySelect">Category</label>
                   <select id="heroCategorySelect" aria-label="Filter by category">
-                    <option value="ALL">All categories</option>
+                    <option value="ALL">All</option>
                     <option value="Pets">Pets</option>
                     <option value="Electronics">Electronics</option>
                     <option value="Personal Items">Personal Items</option>
@@ -698,19 +698,26 @@
                 <div class="hero-search-text">
                   <label for="heroReportType">Report type</label>
                   <select id="heroReportType" aria-label="Filter by report type">
-                    <option value="ALL">Lost &amp; found</option>
+                    <option value="ALL">All</option>
                     <option value="LOST">Lost only</option>
                     <option value="FOUND">Found only</option>
                   </select>
                 </div>
               </div>
 
-              <button id="heroSearchBtn" class="hero-search-pill-btn">Search</button>
-            </div>
+              <span class="hero-search-divider" aria-hidden="true"></span>
 
-            <div class="hero-quick-actions">
-              <button type="button" class="hero-quick-btn" onclick="window.marbsApp.openReportModal('LOST')">Report a lost item</button>
-              <button type="button" class="hero-quick-btn" onclick="window.marbsApp.openReportModal('FOUND')">Report a found item</button>
+              <div class="hero-composite-actions">
+                <button type="button" class="hero-report-btn" onclick="window.marbsApp.openReportModal('LOST')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Lost
+                </button>
+                <button type="button" class="hero-report-btn" onclick="window.marbsApp.openReportModal('FOUND')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Found
+                </button>
+                <button id="heroSearchBtn" class="hero-search-pill-btn">Search</button>
+              </div>
             </div>
           </div>
         </div>
