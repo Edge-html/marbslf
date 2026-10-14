@@ -5087,11 +5087,220 @@
     }
   });
 
+  /* ==========================================================================
+     CUSTOM SELECT
+
+     A native <select> popup is drawn by the operating system, so it cannot be
+     styled - every browser falls back to the same blue system list. This wraps
+     each select in a styled trigger + listbox while leaving the original
+     element in place, visually hidden but still holding .value and still
+     form-associated. Picking an option writes to the native select and fires
+     change/input, so all the existing listeners keep working untouched.
+
+     The option list is rebuilt on every open, which is what makes this safe
+     for selects that are populated dynamically after load.
+     ========================================================================== */
+
+  const CHEVRON_SVG =
+    '<svg class="cs-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+
+  let openCustomSelect = null;
+
+  function closeCustomSelect() {
+    if (!openCustomSelect) return;
+    openCustomSelect.classList.remove('is-open');
+    const trigger = openCustomSelect.querySelector('.cs-trigger');
+    const menu = openCustomSelect.querySelector('.cs-menu');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    if (menu) menu.hidden = true;
+    openCustomSelect = null;
+  }
+
+  function buildCustomSelect(sel) {
+    if (!sel || sel.dataset.csBuilt === '1') return;
+    sel.dataset.csBuilt = '1';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'cs';
+
+    // Mirror the select's own classes so form styling still applies.
+    const mirrored = (sel.className || '').trim();
+    if (mirrored) wrap.className += ' ' + mirrored;
+
+    const parent = sel.parentNode;
+    parent.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    sel.classList.add('cs-native');
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'cs-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.innerHTML = '<span class="cs-value"></span>' + CHEVRON_SVG;
+    wrap.appendChild(trigger);
+
+    const menu = document.createElement('div');
+    menu.className = 'cs-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
+    wrap.appendChild(menu);
+
+    const syncValue = () => {
+      const opt = sel.options[sel.selectedIndex];
+      const label = wrap.querySelector('.cs-value');
+      if (label) label.textContent = opt ? opt.textContent : '';
+      wrap.classList.toggle('is-placeholder', !opt || !opt.value);
+    };
+
+    const rebuild = () => {
+      menu.innerHTML = '';
+      for (let i = 0; i < sel.options.length; i++) {
+        const o = sel.options[i];
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'cs-option';
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', o.selected ? 'true' : 'false');
+        item.dataset.value = o.value;
+        item.textContent = o.textContent;
+        menu.appendChild(item);
+      }
+      syncValue();
+    };
+
+    const open = () => {
+      if (openCustomSelect && openCustomSelect !== wrap) closeCustomSelect();
+      rebuild();
+      wrap.classList.add('is-open');
+      trigger.setAttribute('aria-expanded', 'true');
+      menu.hidden = false;
+      openCustomSelect = wrap;
+      const sel2 = menu.querySelector('.cs-option[aria-selected="true"]') || menu.querySelector('.cs-option');
+      if (sel2) {
+        sel2.classList.add('is-active');
+        if (sel2.scrollIntoView) sel2.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (wrap.classList.contains('is-open')) closeCustomSelect();
+      else open();
+    });
+
+    menu.addEventListener('click', (e) => {
+      const item = e.target.closest('.cs-option');
+      if (!item) return;
+      e.preventDefault();
+      e.stopPropagation();
+      sel.value = item.dataset.value;
+      // The listeners already bound to this select only care about the change.
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      closeCustomSelect();
+      trigger.focus();
+    });
+
+    // Arrow keys move the highlight, Enter commits, Escape cancels.
+    wrap.addEventListener('keydown', (e) => {
+      const items = Array.from(menu.querySelectorAll('.cs-option'));
+      if (!items.length) return;
+
+      if (e.key === 'Escape' && wrap.classList.contains('is-open')) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeCustomSelect();
+        return;
+      }
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!wrap.classList.contains('is-open')) { open(); return; }
+        const cur = items.findIndex(i => i.classList.contains('is-active'));
+        const next = e.key === 'ArrowDown'
+          ? Math.min(items.length - 1, cur + 1)
+          : Math.max(0, cur <= 0 ? 0 : cur - 1);
+        items.forEach(i => i.classList.remove('is-active'));
+        items[next].classList.add('is-active');
+        if (items[next].scrollIntoView) items[next].scrollIntoView({ block: 'nearest' });
+        return;
+      }
+
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (wrap.classList.contains('is-open')) {
+          const active = menu.querySelector('.cs-option.is-active');
+          if (active) {
+            e.preventDefault();
+            e.stopPropagation();
+            sel.value = active.dataset.value;
+            sel.dispatchEvent(new Event('input', { bubbles: true }));
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            closeCustomSelect();
+          }
+        }
+      }
+    });
+
+    // If some other code changes the value, reflect it in the trigger.
+    sel.addEventListener('change', syncValue);
+
+    sel._csSync = syncValue;
+    syncValue();
+  }
+
+  function enhanceAllSelects(root) {
+    (root || document).querySelectorAll('select').forEach(buildCustomSelect);
+  }
+
+  // One listener closes the open list, whichever one it is.
+  document.addEventListener('click', (e) => {
+    if (!openCustomSelect) return;
+    if (!openCustomSelect.contains(e.target)) closeCustomSelect();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && openCustomSelect) closeCustomSelect();
+  });
+
+  /**
+   * Selects also arrive after boot - modals build their markup on demand and
+   * some are populated from the database. A MutationObserver catches them as
+   * they land, which is far cheaper than re-scanning on every click.
+   */
+  function watchForSelects() {
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          if (node.tagName === 'SELECT') buildCustomSelect(node);
+          else if (node.querySelectorAll) {
+            const found = node.querySelectorAll('select');
+            for (const s of found) buildCustomSelect(s);
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   // Boot on DOM Ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
+    document.addEventListener('DOMContentLoaded', function () {
+      initApp();
+      enhanceAllSelects();
+      watchForSelects();
+    });
   } else {
     initApp();
+    enhanceAllSelects();
+    watchForSelects();
   }
+
+  // Expose for anything that populates options late.
+  window.marbsApp.enhanceSelects = enhanceAllSelects;
+  window.marbsApp.syncSelect = (sel) => { if (sel && sel._csSync) sel._csSync(); };
 
 })();

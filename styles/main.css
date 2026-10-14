@@ -5410,7 +5410,6 @@ textarea:focus,
 .sidebar-card,
 .hiw-card,
 .meetup-schedule-card,
-.lp-feature-card,
 .lp-auth-card,
 .lp-hero-search,
 .modal-card,
@@ -5425,9 +5424,26 @@ textarea:focus,
 }
 
 .ig-post:hover,
-.hiw-card:hover,
-.lp-feature-card:hover {
+.hiw-card:hover {
   border-color: var(--text-subtle) !important;
+  box-shadow: none !important;
+}
+
+/* Landing feature cards are dark and stay dark. They were being forced white
+   by the surface group above, which made the hover state look like a state
+   change when it was actually the reverse. */
+.lp-feature-card {
+  background: #161412 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-xl);
+  box-shadow: none !important;
+  transition: border-color 0.32s ease-out;
+}
+
+.lp-feature-card:hover {
+  transform: none;
+  background: #161412 !important;
+  border-color: rgba(242, 179, 27, 0.28) !important;
   box-shadow: none !important;
 }
 
@@ -5515,6 +5531,173 @@ textarea:focus,
 .ig-carousel-nav,
 .ig-post-nav {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ==========================================================================
+   CUSTOM SELECT
+
+   The native popup is drawn by the OS and cannot be styled, so every select
+   gets a styled trigger and listbox layered over a visually hidden native
+   element. The chevron is the affordance: it is always visible, and it rotates
+   when the menu is open.
+   ========================================================================== */
+.cs {
+  position: relative;
+  display: inline-block;
+  min-width: 0;
+}
+
+select.cs-native {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cs-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 2px 2px 2px 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.32s ease-out, background-color 0.32s ease-out;
+}
+
+.cs-trigger:hover {
+  color: var(--text-muted);
+}
+
+/* The chevron is the whole point: it says "this opens something". */
+.cs-chevron {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  transition: transform 0.32s ease-out, color 0.32s ease-out;
+}
+
+.cs:hover .cs-chevron,
+.cs.is-open .cs-chevron {
+  color: var(--primary-yellow);
+}
+
+.cs.is-open .cs-chevron {
+  transform: rotate(180deg);
+}
+
+.cs.is-placeholder .cs-value {
+  color: var(--text-subtle);
+}
+
+.cs-menu {
+  position: absolute;
+  z-index: 1200;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  /* Overlays keep a minimal shadow - without it the menu blends into the page
+     content behind it and the boundary becomes unreadable. */
+  box-shadow: 0 8px 24px rgba(20, 17, 13, 0.12);
+  animation: cs-in 0.18s ease-out;
+}
+
+.cs-menu[hidden] {
+  display: none;
+}
+
+@keyframes cs-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cs-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+
+.cs-option:hover {
+  background: var(--surface-alt);
+}
+
+.cs-option.is-active {
+  background: var(--surface-alt);
+}
+
+/* The brand yellow marks the chosen option - the accent is reserved for
+   state, never decoration. */
+.cs-option[aria-selected="true"] {
+  background: var(--primary-yellow-soft);
+  color: var(--primary-yellow-text);
+  font-weight: 700;
+}
+
+.cs-option[aria-selected="true"]::after {
+  content: '';
+  float: right;
+  width: 5px;
+  height: 5px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--primary-yellow);
+}
+
+/* Standalone form selects get the full bordered treatment */
+.form-select.cs,
+.cs.form-select {
+  display: block;
+  width: 100%;
+}
+
+.form-select.cs > .cs-trigger {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.form-select.cs > .cs-trigger:hover {
+  border-color: var(--text-subtle);
+}
+
+.form-select.cs > .cs-menu {
+  border-radius: var(--radius-md);
 }
 
 /* ==========================================================================
