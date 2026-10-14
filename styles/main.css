@@ -901,14 +901,19 @@ body[data-surface="landing"] #homeHero {
   display: flex;
   align-items: flex-end;
   /*
-    The bottom padding is the fade runway. The banner is masked so its last
-    ~30% dissolves into the page canvas instead of stopping at a hard
-    rectangle, and the copy needs room above that fade or it dissolves too.
+    The bottom padding is the fade runway: the banner is masked so its last
+    band dissolves into the page canvas instead of stopping at a hard
+    rectangle. The band is a fixed pixel height rather than a percentage,
+    because a percentage grew with the padding and left a growing band of dead
+    space above the category strip. --hero-fade must stay smaller than
+    --hero-runway so the copy always clears the dissolve.
   */
-  padding: 48px 0 210px;
+  --hero-fade: 110px;
+  --hero-runway: 175px;
+  padding: 48px 0 var(--hero-runway);
   background-color: var(--navy-dark);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - var(--hero-fade)), transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - var(--hero-fade)), transparent 100%);
   /*
     The banner is full-bleed, so it must sit flush against the navbar. An
     earlier 1px border in the warm paper tone showed as a bright hairline
@@ -1133,7 +1138,9 @@ body[data-surface="landing"] #homeHero {
 @media (max-width: 860px) {
   .hero-banner {
     min-height: 0;
-    padding: 36px 0 150px;
+    --hero-fade: 90px;
+    --hero-runway: 135px;
+    padding: 36px 0 var(--hero-runway);
   }
 
   .hero-tagline {
@@ -1316,9 +1323,25 @@ body[data-surface="landing"] #homeHero {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 8px 14px;
-  margin-bottom: 16px;
+  /*
+    Pulled up into the hero's fade so the dissolve runs behind the strip
+    instead of leaving a band of empty dark canvas between the two. The hero
+    is masked, so the strip sits over the tail of the dissolve, not over a
+    hard edge. position/z-index are needed because it now overlaps the hero,
+    which is position:relative and would otherwise paint on top.
+  */
+  margin: -70px 0 16px;
+  position: relative;
+  z-index: 2;
   overflow-x: auto;
   gap: 12px;
+}
+
+/* Narrow screens overlap less, so the strip never crowds the search bar. */
+@media (max-width: 860px) {
+  .categories-bar {
+    margin-top: -34px;
+  }
 }
 
 .category-chip {
