@@ -900,8 +900,15 @@ body[data-surface="landing"] #homeHero {
   min-height: 420px;
   display: flex;
   align-items: flex-end;
-  padding: 48px 0;
+  /*
+    The bottom padding is the fade runway. The banner is masked so its last
+    ~30% dissolves into the page canvas instead of stopping at a hard
+    rectangle, and the copy needs room above that fade or it dissolves too.
+  */
+  padding: 48px 0 210px;
   background-color: var(--navy-dark);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
   /*
     The banner is full-bleed, so it must sit flush against the navbar. An
     earlier 1px border in the warm paper tone showed as a bright hairline
@@ -919,7 +926,7 @@ body[data-surface="landing"] #homeHero {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% center;
+  object-position: center 55%;
   opacity: 0.9;
   filter: contrast(1.05) brightness(0.9);
 }
@@ -1126,7 +1133,7 @@ body[data-surface="landing"] #homeHero {
 @media (max-width: 860px) {
   .hero-banner {
     min-height: 0;
-    padding: 36px 0;
+    padding: 36px 0 150px;
   }
 
   .hero-tagline {
@@ -5503,9 +5510,10 @@ textarea:focus,
 /* --- Dark panels use obsidian, not pure ink ----------------------------- */
 .top-nav-bar {
   background: var(--navy-subtle);
-  border-bottom: 1px solid var(--border);
-  /* Ramp's one permitted shadow: an inset white highlight, a frosted edge
-     rather than a drop shadow. */
+  /* No bottom border. The hero sits flush underneath in a near-identical
+     dark, so any hairline here reads as a light seam rather than an edge.
+     --border is a pale paper tone and was drawing a visible white line. */
+  border-bottom: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
