@@ -668,13 +668,23 @@ class MarbsLFDatabase {
 
     this.save();
 
-    // Sync reaction count to Firestore if available (use set with merge to avoid 'No document to update' error)
+    // Sync the reaction count to Firestore if available.
+    //
+    // update() rather than set(..., {merge:true}): a merged set CREATES the
+    // document when the id is not already in the collection. Local demo posts
+    // do not exist in Firestore, so every like on one wrote a stub document
+    // holding only likes_count and liked_by. The next sync read those stubs
+    // back into data.posts as if they were reports, which surfaced in the admin
+    // moderation table as rows of literal "undefined".
+    //
+    // update() is a no-op when the document is absent, and the rejection is
+    // swallowed below, so a like on a local-only post just stays local.
     if (window.firestoreDb) {
       try {
-        window.firestoreDb.collection('posts').doc(postId).set({
+        window.firestoreDb.collection('posts').doc(postId).update({
           likes_count: post.likes_count,
           liked_by: post.liked_by
-        }, { merge: true }).catch(() => {});
+        }).catch(() => {});
       } catch (err) {}
     }
 

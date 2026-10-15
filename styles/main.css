@@ -5732,6 +5732,193 @@ select.cs-native {
 }
 
 /* ==========================================================================
+   ADMIN PORTAL
+
+   The sub-tabs and the moderation rows were both unstyled: .admin-tab-btn,
+   .feed-filter-btn and .admin-tab-content are referenced in the markup but
+   never existed in this stylesheet, so the tabs rendered as raw browser
+   buttons. These give the portal its own vocabulary inside the admin surface.
+
+   Admin reads as a denser, more utilitarian space than the public app: the
+   tabs are an underline set rather than pills, and the row actions are small
+   square-cornered controls.
+   ========================================================================== */
+.admin-tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-tab-btn {
+  position: relative;
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  padding: 10px 2px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.32s ease-out;
+}
+
+.admin-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.admin-tab-btn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--primary-yellow);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.admin-tab-btn.active {
+  color: var(--text-main);
+}
+
+.admin-tab-btn.active::after {
+  transform: scaleX(1);
+}
+
+/* --- Moderation queue rows --------------------------------------------- */
+.admin-post-row {
+  cursor: pointer;
+  transition: background-color 0.32s ease-out;
+}
+
+.admin-post-row:hover,
+.admin-post-row:focus-visible {
+  background: var(--surface-alt);
+  outline: none;
+}
+
+.admin-post-id {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.admin-item-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-item-cell img {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-alt);
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-action-btn {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.32s ease-out, border-color 0.32s ease-out,
+    color 0.32s ease-out;
+}
+
+.admin-action-btn--approve {
+  background: var(--primary-yellow);
+  border: 1px solid var(--primary-yellow);
+  color: var(--primary-yellow-ink);
+}
+
+.admin-action-btn--approve:hover {
+  background: var(--primary-yellow-hover);
+  border-color: var(--primary-yellow-hover);
+}
+
+.admin-action-btn--reject {
+  background: transparent;
+  border: 1px solid rgba(196, 67, 58, 0.35);
+  color: #A33A32;
+}
+
+.admin-action-btn--reject:hover {
+  background: rgba(196, 67, 58, 0.08);
+  border-color: #C4433A;
+}
+
+.admin-action-btn--view {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.admin-action-btn--view:hover {
+  background: var(--navy-dark);
+  border-color: var(--navy-dark);
+  color: var(--surface);
+}
+
+/* --- Status pills ------------------------------------------------------ */
+.admin-status {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+}
+
+.admin-status--approved {
+  background: var(--found-bg);
+  color: var(--found-color);
+}
+
+.admin-status--rejected {
+  background: var(--lost-bg);
+  color: var(--lost-color);
+}
+
+.admin-status--pending {
+  background: var(--primary-yellow-soft);
+  color: var(--primary-yellow-text);
+}
+
+.admin-malformed-note td {
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ==========================================================================
    EDITORIAL DISPLAY TYPE
    Large headings move from heavy sans to a high-contrast serif at a lighter
    weight with tight tracking - the change that reads as editorial rather than

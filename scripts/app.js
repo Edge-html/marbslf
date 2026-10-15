@@ -3517,12 +3517,17 @@
   function setupAdminPortal() {
     $$('.admin-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        $$('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+        $$('.admin-tab-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
         btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
 
         const tab = btn.dataset.admintab;
         $$('.admin-tab-content').forEach(c => c.style.display = 'none');
-        $(`#adminTab_${tab}`).style.display = 'block';
+        const panel = $(`#adminTab_${tab}`);
+        if (panel) panel.style.display = 'block';
       });
     });
 
@@ -3587,34 +3592,73 @@
     const tbody = $('#adminPostsTbody');
     if (!tbody) return;
 
-    tbody.innerHTML = marbsDB.data.posts.map(p => `
-      <tr>
-        <td><strong>${p.post_id}</strong></td>
+    /*
+      Firestore sync copies each remote document verbatim into data.posts, so
+      a stray or legacy document in the collection arrives here with none of
+      the fields this table reads. Rendering those directly produced rows of
+      literal "undefined", so anything missing an id or a name is reported
+      instead of being drawn as a blank moderation target - an admin cannot
+      approve or reject a row that has nothing in it.
+    */
+    const all = marbsDB.data.posts || [];
+    const valid = all.filter(p => p && (p.post_id || p.item_name));
+    const malformed = all.length - valid.length;
+
+    if (valid.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px;">
+            No reports are waiting for moderation.
+          </td>
+        </tr>`;
+      return;
+    }
+
+    const notice = malformed > 0 ? `
+      <tr class="admin-malformed-note">
+        <td colspan="6">
+          ${malformed} record${malformed === 1 ? '' : 's'} in the database
+          ${malformed === 1 ? 'is' : 'are'} missing an id and a name, so
+          ${malformed === 1 ? 'it is' : 'they are'} not shown here.
+        </td>
+      </tr>` : '';
+
+    tbody.innerHTML = notice + valid.map(p => {
+      const postId = escapeHtml(p.post_id || '(no id)');
+      const type = p.post_type === 'LOST' ? 'LOST' : p.post_type === 'FOUND' ? 'FOUND' : 'UNKNOWN';
+      const status = p.status || 'PENDING_REVIEW';
+
+      return `
+      <tr class="admin-post-row" data-post-id="${postId}" tabindex="0" role="button"
+          aria-label="View details for ${postId}"
+          onclick="window.marbsApp.openPostDetailModal('${postId}')"
+          onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.marbsApp.openPostDetailModal('${postId}'); }">
+        <td><strong class="admin-post-id">${postId}</strong></td>
         <td>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="${p.image}" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;" onerror="this.src='assets/images.jpg'">
-            <span>${escapeHtml(p.item_name)}</span>
+          <div class="admin-item-cell">
+            <img src="${escapeHtml(p.image || 'assets/images.jpg')}" alt="" loading="lazy"
+                 onerror="this.src='assets/images.jpg'">
+            <span>${escapeHtml(p.item_name || 'Untitled report')}</span>
           </div>
         </td>
-        <td><span class="post-badge ${p.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}">${p.post_type}</span></td>
-        <td>${p.general_location}</td>
+        <td><span class="ig-post-badge ${type === 'FOUND' ? 'is-found' : 'is-lost'}">${type}</span></td>
+        <td>${escapeHtml(p.general_location || 'Not stated')}</td>
         <td>
-          <span class="activity-badge" style="${
-            p.status === 'APPROVED' ? 'background: #E4F0E6; color: #14512F; font-weight: 700;' :
-            p.status === 'REJECTED' ? 'background: #F7E7E4; color: #7E2A22; font-weight: 700;' :
-            'background: #F4EBD2; color: #7A5F10; font-weight: 700;'
-          }">
-            ${p.status === 'PENDING_REVIEW' ? 'PENDING REVIEW' : p.status}
-          </span>
+          <span class="activity-badge admin-status admin-status--${
+            status === 'APPROVED' ? 'approved' : status === 'REJECTED' ? 'rejected' : 'pending'
+          }">${status === 'PENDING_REVIEW' ? 'PENDING REVIEW' : escapeHtml(status)}</span>
         </td>
         <td>
-          <div style="display: flex; gap: 6px;">
-            ${p.status !== 'APPROVED' ? `<button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminApprovePost('${p.post_id}')">Approve</button>` : ''}
-            ${p.status !== 'REJECTED' ? `<button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #C4433A;" onclick="window.adminRejectPost('${p.post_id}')">Reject</button>` : ''}
+          <div class="admin-row-actions">
+            ${status !== 'APPROVED' ? `<button type="button" class="admin-action-btn admin-action-btn--approve" onclick="event.stopPropagation(); window.adminApprovePost('${postId}')">Approve</button>` : ''}
+            ${status !== 'REJECTED' ? `<button type="button" class="admin-action-btn admin-action-btn--reject" onclick="event.stopPropagation(); window.adminRejectPost('${postId}')">Reject</button>` : ''}
+            <button type="button" class="admin-action-btn admin-action-btn--view" onclick="event.stopPropagation(); window.marbsApp.openPostDetailModal('${postId}')">
+              View
+            </button>
           </div>
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   }
 
   window.adminApprovePost = function (postId) {
