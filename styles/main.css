@@ -908,8 +908,8 @@ body[data-surface="landing"] #homeHero {
     space above the category strip. --hero-fade must stay smaller than
     --hero-runway so the copy always clears the dissolve.
   */
-  --hero-fade: 110px;
-  --hero-runway: 175px;
+  --hero-fade: 72px;
+  --hero-runway: 120px;
   padding: 48px 0 var(--hero-runway);
   background-color: var(--navy-dark);
   -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - var(--hero-fade)), transparent 100%);
@@ -1138,8 +1138,8 @@ body[data-surface="landing"] #homeHero {
 @media (max-width: 860px) {
   .hero-banner {
     min-height: 0;
-    --hero-fade: 90px;
-    --hero-runway: 135px;
+    --hero-fade: 56px;
+    --hero-runway: 92px;
     padding: 36px 0 var(--hero-runway);
   }
 
@@ -1330,7 +1330,7 @@ body[data-surface="landing"] #homeHero {
     hard edge. position/z-index are needed because it now overlaps the hero,
     which is position:relative and would otherwise paint on top.
   */
-  margin: -70px 0 16px;
+  margin: -108px 0 16px;
   position: relative;
   z-index: 2;
   overflow-x: auto;
@@ -1340,7 +1340,7 @@ body[data-surface="landing"] #homeHero {
 /* Narrow screens overlap less, so the strip never crowds the search bar. */
 @media (max-width: 860px) {
   .categories-bar {
-    margin-top: -34px;
+    margin-top: -90px;
   }
 }
 
