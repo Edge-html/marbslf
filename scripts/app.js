@@ -225,10 +225,16 @@
         if (typeof window.marbsDB.startFirestoreListeners === 'function') {
           window.marbsDB.startFirestoreListeners();
         }
+        if (typeof window.marbsDB.startPrivateWorkflowListeners === 'function') {
+          window.marbsDB.startPrivateWorkflowListeners();
+        }
       }).catch(() => {
         revealPostsWhenReady();
         if (typeof window.marbsDB.startFirestoreListeners === 'function') {
           window.marbsDB.startFirestoreListeners();
+        }
+        if (typeof window.marbsDB.startPrivateWorkflowListeners === 'function') {
+          window.marbsDB.startPrivateWorkflowListeners();
         }
       });
     } else {
@@ -240,6 +246,9 @@
       Promise.resolve(window.checkCurrentSession())
         .catch(() => null)
         .then(() => {
+          if (window.marbsDB && typeof window.marbsDB.startPrivateWorkflowListeners === 'function') {
+            window.marbsDB.startPrivateWorkflowListeners();
+          }
           // Top up demo reports for any citizen registered in a previous session.
           if (window.marbsDB && typeof window.marbsDB.seedDemoPosts === 'function') {
             if (window.marbsDB.seedDemoPosts() > 0) {
@@ -1782,7 +1791,7 @@
       const rewardAmount = parseFloat($('#lostRewardAmount').value) || 0;
       const hideReward = $('#lostRewardPrivacy').checked;
 
-      const newPostId = 'POST-' + Date.now().toString().slice(-4);
+      const newPostId = marbsDB.createId('POST');
       const post = {
         post_id: newPostId,
         user_id: user.user_id,
@@ -1816,6 +1825,7 @@
       marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted lost post ${newPostId} (${itemName}) - Pending Admin Review`);
       marbsDB.save();
       if (marbsDB.syncPostToFirestore) marbsDB.syncPostToFirestore(post);
+      if (marbsDB.startPrivateWorkflowListeners) marbsDB.startPrivateWorkflowListeners();
 
       // Trigger automatic matching engine per Section 12
       runMatchingEngineForPost(post);
@@ -1877,7 +1887,7 @@
         return;
       }
 
-      const newPostId = 'POST-' + Date.now().toString().slice(-4);
+      const newPostId = marbsDB.createId('POST');
       const post = {
         post_id: newPostId,
         user_id: user.user_id,
@@ -1909,6 +1919,7 @@
       marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted found post ${newPostId} (${itemName}) - Pending Admin Review`);
       marbsDB.save();
       if (marbsDB.syncPostToFirestore) marbsDB.syncPostToFirestore(post);
+      if (marbsDB.startPrivateWorkflowListeners) marbsDB.startPrivateWorkflowListeners();
 
       runMatchingEngineForPost(post);
 
@@ -1952,7 +1963,8 @@
 
       if (score >= 60) {
         const match = {
-          match_id: 'MAT-' + Date.now().toString().slice(-5),
+          match_id: marbsDB.createId('MAT'),
+          post_id: activePostForModal.post_id,
           lost_post_id: isLost ? newPost.post_id : candidate.post_id,
           found_post_id: isLost ? candidate.post_id : newPost.post_id,
           claimant_id: isLost ? newPost.user_id : candidate.user_id,
@@ -2075,19 +2087,22 @@
         };
 
         marbsDB.data.matches.unshift(newMatch);
+        marbsDB.syncRecordToFirestore('matches', newMatch);
 
         // Add private message thread reference per Section 14
-        marbsDB.data.messages.push({
-          message_id: 'MSG-' + Date.now().toString().slice(-4),
+        const claimMessage = {
+          message_id: marbsDB.createId('MSG'),
           sender_id: user.user_id,
-          receiver_id: activePostForModal.user_id || 'USR-ADMIN',
+          receiver_id: activePostForModal.user_id,
           post_id: activePostForModal.post_id,
           message: isFoundPost 
             ? `[System Notice] User ${getPublicAlias(user)} submitted an ownership claim with private identifying answers ${claimPhotoPayload ? 'and verified camera photo proof ' : ''}for your found item.`
             : `[System Notice] User ${getPublicAlias(user)} reported that they found your lost item with identifying details ${claimPhotoPayload ? 'and live camera photo proof' : ''}.`,
           timestamp: new Date().toISOString(),
           status: 'UNREAD'
-        });
+        };
+        marbsDB.data.messages.push(claimMessage);
+        marbsDB.syncRecordToFirestore('messages', claimMessage);
 
         // Notify poster
         if (activePostForModal.user_id) {
@@ -2204,17 +2219,30 @@
         const time = $('#meetupTime').value;
         const place = marbsDB.data.safe_places.find(p => p.place_id === placeId);
 
-        const currentMatchId = window._activeSchedulingMatchId || 'MAT-1001';
-        const currentMatch = (marbsDB.data.matches || []).find(m => m.match_id === currentMatchId);
-        const currentPostId = window._activeSchedulingPostId || (currentMatch ? (currentMatch.lost_post_id || currentMatch.found_post_id) : (activeChatPost ? activeChatPost.post_id : 'POST-002'));
-        const currentFinderId = window._activeSchedulingClaimantId || (currentMatch ? currentMatch.claimant_id : 'USR-102');
+        const currentMatch = (marbsDB.data.matches || []).find(m => m.match_id === window._activeSchedulingMatchId);
+        const currentPostId = window._activeSchedulingPostId;
+        const currentPost = (marbsDB.data.posts || []).find(p => p.post_id === currentPostId);
+        if (!user || !place || !currentPost || !currentMatch || currentMatch.status !== 'MATCH_CONFIRMED' ||
+            (user.user_id !== currentPost.user_id && user.user_id !== currentMatch.claimant_id)) {
+          showToast('The post owner must accept the claim before a meetup can be scheduled.');
+          return;
+        }
+        const existingMeetup = (marbsDB.data.meetups || []).find(m => m.match_id === currentMatch.match_id &&
+          m.status !== 'CANCELLED' && m.status !== 'COMPLETED');
+        if (existingMeetup) {
+          showToast('A meetup is already scheduled for this claim. Open Meetups to review it.');
+          return;
+        }
+
+        const ownerId = currentPost.post_type === 'LOST' ? currentPost.user_id : currentMatch.claimant_id;
+        const finderId = currentPost.post_type === 'LOST' ? currentMatch.claimant_id : currentPost.user_id;
 
         const meetup = {
-          meetup_id: 'MT-' + Date.now().toString().slice(-4),
-          match_id: currentMatchId,
+          meetup_id: marbsDB.createId('MT'),
+          match_id: currentMatch.match_id,
           post_id: currentPostId,
-          owner_id: user ? user.user_id : 'USR-101',
-          finder_id: currentFinderId,
+          owner_id: ownerId,
+          finder_id: finderId,
           place_id: placeId,
           place_name: place ? place.name : 'Koronadal City Hall',
           date: date,
@@ -2227,6 +2255,11 @@
         };
 
         marbsDB.data.meetups.unshift(meetup);
+        currentMatch.status = 'RETURN_SCHEDULED';
+        marbsDB.syncRecordToFirestore('meetups', meetup);
+        marbsDB.syncRecordToFirestore('matches', currentMatch);
+        const otherPartyId = user.user_id === ownerId ? finderId : ownerId;
+        marbsDB.addNotification(otherPartyId, 'Safe meetup scheduled', `${place.name} on ${date} at ${time}.`, 'MEETUP');
         marbsDB.logAudit('MEETUP_SCHEDULED', `Meetup ${meetup.meetup_id} scheduled at ${meetup.place_name}`);
         marbsDB.save();
 
@@ -2243,11 +2276,20 @@
   window.confirmReturnStep = function (meetupId, actionRole) {
     const meetup = marbsDB.data.meetups.find(m => m.meetup_id === meetupId);
     if (!meetup) return;
+    const user = marbsDB.getCurrentUser();
+    const expectedUserId = actionRole === 'OWNER' ? meetup.owner_id : actionRole === 'FINDER' ? meetup.finder_id : null;
+    if (!user || !expectedUserId || user.user_id !== expectedUserId) {
+      showToast('Only the matching meetup participant can confirm this step.');
+      return;
+    }
+    if (meetup.status === 'COMPLETED') return;
 
     if (actionRole === 'OWNER') {
+      if (meetup.owner_confirmed_return) return;
       meetup.owner_confirmed_return = true;
       showToast('Owner confirmed: "ITEM RECEIVED"');
     } else if (actionRole === 'FINDER') {
+      if (meetup.finder_confirmed_return) return;
       meetup.finder_confirmed_return = true;
       showToast('Finder confirmed: "ITEM RETURNED"');
     }
@@ -2263,6 +2305,7 @@
         if (post.reward_offered) {
           post.reward_status = 'REWARD_RELEASED';
         }
+        marbsDB.syncPostToFirestore(post);
       }
 
       // Award Marbs Points (+100 for verified return, +150 if pet)
@@ -2272,11 +2315,12 @@
       const finder = marbsDB.data.users.find(u => u.user_id === meetup.finder_id);
       if (finder) {
         finder.points_balance += pointsToAward;
+        marbsDB.syncFieldsToFirestore('users', finder.user_id, { points_balance: finder.points_balance });
       }
 
       // Record Points Transaction per Section 21
-      marbsDB.data.points_transactions.unshift({
-        transaction_id: 'TX-' + Date.now().toString().slice(-4),
+      const pointsTransaction = {
+        transaction_id: marbsDB.createId('TX'),
         user_id: meetup.finder_id,
         amount: pointsToAward,
         transaction_type: 'EARNED',
@@ -2284,19 +2328,28 @@
         related_post_id: meetup.post_id,
         date: new Date().toISOString(),
         status: 'APPROVED'
-      });
+      };
+      marbsDB.data.points_transactions.unshift(pointsTransaction);
+      marbsDB.syncRecordToFirestore('points_transactions', pointsTransaction);
 
       marbsDB.logAudit('RETURN_COMPLETED', `Meetup ${meetupId} successfully confirmed by both parties. Awarded ${pointsToAward} MP to ${meetup.finder_id}`);
+      marbsDB.addNotification(meetup.owner_id, 'Return confirmed', 'Both participants confirmed the item handoff. This report is now resolved.', 'MEETUP');
+      marbsDB.addNotification(meetup.finder_id, 'Return confirmed', `Both participants confirmed the handoff. You earned ${pointsToAward} Marbs Points.`, 'MEETUP');
 
       // Offer Optional "Thank The Finder" Bonus prompt per Section 29
-      showThankFinderPrompt(meetup.finder_id);
+      showThankFinderPrompt(meetup.finder_id, meetup.meetup_id);
     }
 
     marbsDB.save();
+    marbsDB.syncRecordToFirestore('meetups', meetup);
     renderUserDashboard();
+    renderMeetupsView();
   };
 
-  function showThankFinderPrompt(finderId) {
+  function showThankFinderPrompt(finderId, meetupId) {
+    const currentUser = marbsDB.getCurrentUser();
+    const completedMeetup = (marbsDB.data.meetups || []).find(m => m.meetup_id === meetupId && m.status === 'COMPLETED');
+    if (!currentUser || !completedMeetup || currentUser.user_id !== completedMeetup.owner_id) return;
     showNotificationModal({
       title: 'Item Return Complete!',
       message: 'Both parties confirmed the return! The finder was awarded legitimate Marbs Points. Would you like to award an extra +10 MP "Thank the Finder" bonus?',
@@ -2305,8 +2358,9 @@
         const finder = marbsDB.data.users.find(u => u.user_id === finderId);
         if (finder) {
           finder.points_balance += 10;
-          marbsDB.data.points_transactions.unshift({
-            transaction_id: 'TX-' + Date.now().toString().slice(-4),
+          marbsDB.syncFieldsToFirestore('users', finder.user_id, { points_balance: finder.points_balance });
+          const bonusTransaction = {
+            transaction_id: marbsDB.createId('TX'),
             user_id: finderId,
             amount: 10,
             transaction_type: 'EARNED',
@@ -2314,7 +2368,9 @@
             related_post_id: 'N/A',
             date: new Date().toISOString(),
             status: 'APPROVED'
-          });
+          };
+          marbsDB.data.points_transactions.unshift(bonusTransaction);
+          marbsDB.syncRecordToFirestore('points_transactions', bonusTransaction);
           marbsDB.save();
           showToast('Sent +10 MP Thank-You bonus to the finder!');
         }
@@ -2324,7 +2380,7 @@
 
   // 15. Real-Time Messenger & Anti-Scam Filter (Facebook Messenger & Marketplace Style)
   let activeChatCounterpartyId = null;
-  let messengerPollingTimer = null;
+  let messengerUnsubscribers = [];
 
   /**
    * Citizen reliability rating, derived ONLY from ratings actually submitted
@@ -2377,7 +2433,7 @@
   }
   window.getUserReliability = getUserReliability;
 
-  function switchVerifModalTab(tab, focusPostId = null, claimantId = null) {
+  function switchVerifModalTab(tab, focusPostId = null, counterpartyId = null, matchId = null) {
     const answersBtn = $('#verifTabAnswersBtn');
     const messagesBtn = $('#verifTabMessagesBtn');
     const answersContent = $('#verifTabContentAnswers');
@@ -2393,15 +2449,18 @@
 
       renderMessengerThreadsList();
       if (focusPostId) {
-        selectMessengerConversation(focusPostId, claimantId);
+        const match = (marbsDB.data.matches || []).find(m => m.match_id === matchId) ||
+          (marbsDB.data.matches || []).find(m =>
+            (m.post_id === focusPostId || m.lost_post_id === focusPostId || m.found_post_id === focusPostId) &&
+            (!counterpartyId || m.claimant_id === counterpartyId ||
+              (marbsDB.data.posts || []).some(p => p.post_id === focusPostId && p.user_id === counterpartyId))
+          );
+        selectMessengerConversation(focusPostId, counterpartyId, match?.match_id);
       } else {
-        const firstPost = (marbsDB.data.posts || []).find(p => p.post_id === (activeChatPost ? activeChatPost.post_id : null)) ||
-                          (marbsDB.data.posts || [])[0];
-        if (firstPost) {
-          selectMessengerConversation(firstPost.post_id, claimantId);
-        }
+        const firstThread = $('#messengerThreadsList .messenger-thread-item');
+        if (firstThread) firstThread.click();
+        else stopMessengerRealTimeSync();
       }
-      startMessengerRealTimeSync();
     } else {
       if (messagesBtn) messagesBtn.classList.remove('active');
       if (answersBtn) answersBtn.classList.add('active');
@@ -2416,22 +2475,41 @@
 
   function startMessengerRealTimeSync() {
     stopMessengerRealTimeSync();
-    messengerPollingTimer = setInterval(() => {
-      const modal = $('#postVerificationsModal');
-      const messagesTab = $('#verifTabContentMessages');
-      if (modal && modal.classList.contains('active') && messagesTab && messagesTab.style.display !== 'none') {
-        renderLiveMessengerMessages(false);
-      } else {
-        stopMessengerRealTimeSync();
-      }
-    }, 1200);
+    if (!window.firestoreDb || !activeChatPost || !activeChatCounterpartyId) return;
+    const postId = activeChatPost.post_id;
+    const user = marbsDB.getCurrentUser();
+    const counterpartyId = activeChatCounterpartyId;
+    if (!user) return;
+    const streams = new Map();
+    const applySnapshot = (streamKey, snapshot) => {
+      const records = [];
+      snapshot.forEach(doc => records.push(doc.data()));
+      streams.set(streamKey, records);
+      const remoteMessages = Array.from(streams.values()).flat();
+      const belongsToConversation = message => message.post_id === postId &&
+        ((message.sender_id === user.user_id && message.receiver_id === counterpartyId) ||
+         (message.sender_id === counterpartyId && message.receiver_id === user.user_id));
+      const untouched = (marbsDB.data.messages || []).filter(message => !belongsToConversation(message));
+      const remoteIds = new Set(remoteMessages.map(message => message.message_id));
+      const localPending = (marbsDB.data.messages || []).filter(message => belongsToConversation(message) && !remoteIds.has(message.message_id));
+      marbsDB.data.messages = untouched.concat(remoteMessages, localPending);
+      marbsDB.save();
+      renderLiveMessengerMessages(false);
+      renderMessengerThreadsList();
+    };
+    ['sender_id', 'receiver_id'].forEach(field => {
+      const streamKey = `${field}:${user.user_id}`;
+      const unsubscribe = window.firestoreDb.collection('messages')
+        .where('post_id', '==', postId)
+        .where(field, '==', user.user_id)
+        .onSnapshot(snapshot => applySnapshot(streamKey, snapshot), error => console.warn('Firestore live chat listener:', error));
+      messengerUnsubscribers.push(unsubscribe);
+    });
   }
 
   function stopMessengerRealTimeSync() {
-    if (messengerPollingTimer) {
-      clearInterval(messengerPollingTimer);
-      messengerPollingTimer = null;
-    }
+    messengerUnsubscribers.forEach(unsubscribe => unsubscribe());
+    messengerUnsubscribers = [];
   }
   window.stopMessengerRealTimeSync = stopMessengerRealTimeSync;
 
@@ -2442,30 +2520,14 @@
     const user = marbsDB.getCurrentUser();
     if (!user) return;
 
-    const userPosts = (marbsDB.data.posts || []).filter(p =>
-      p.user_id === user.user_id || p.poster_id === user.user_id || user.role === 'ADMIN'
-    );
-    const userMatches = (marbsDB.data.matches || []).filter(m =>
-      user.role === 'ADMIN' || m.claimant_id === user.user_id || userPosts.some(p => p.post_id === m.lost_post_id || p.post_id === m.found_post_id)
-    );
-
-    const threads = [];
-    const seenPostIds = new Set();
-
-    userMatches.forEach(m => {
-      const pid = m.lost_post_id || m.found_post_id;
-      if (!seenPostIds.has(pid)) {
-        seenPostIds.add(pid);
-        const p = (marbsDB.data.posts || []).find(post => post.post_id === pid);
-        if (p) threads.push({ post: p, match: m, claimantId: m.claimant_id });
-      }
-    });
-
-    userPosts.forEach(p => {
-      if (!seenPostIds.has(p.post_id)) {
-        seenPostIds.add(p.post_id);
-        threads.push({ post: p, match: null, claimantId: 'USR-102' });
-      }
+    const threads = (marbsDB.data.matches || []).flatMap(match => {
+      const postId = match.post_id || [match.lost_post_id, match.found_post_id]
+        .find(id => (marbsDB.data.posts || []).some(post => post.post_id === id));
+      const post = (marbsDB.data.posts || []).find(item => item.post_id === postId);
+      if (!post || !match.claimant_id) return [];
+      if (user.role !== 'ADMIN' && match.claimant_id !== user.user_id && post.user_id !== user.user_id) return [];
+      const counterpartyId = match.claimant_id === user.user_id ? post.user_id : match.claimant_id;
+      return counterpartyId ? [{ post, match, counterpartyId }] : [];
     });
 
     const badge = $('#verifMessagesTabCount');
@@ -2478,24 +2540,21 @@
 
     container.innerHTML = threads.map(t => {
       const p = t.post;
-      const isSelected = activeChatPost && activeChatPost.post_id === p.post_id;
-      const claimant = (marbsDB.data.users || []).find(u => u.user_id === t.claimantId) || {
-        first_name: 'Verified Citizen',
-        public_alias: 'Citizen #vOIUJk',
-        verification_status: 'UNVERIFIED'
-      };
-
-      const lastMsg = [...(marbsDB.data.messages || [])].reverse().find(m => m.post_id === p.post_id);
+      const isSelected = activeChatPost && activeChatPost.post_id === p.post_id && activeChatCounterpartyId === t.counterpartyId;
+      const counterparty = (marbsDB.data.users || []).find(u => u.user_id === t.counterpartyId);
+      const lastMsg = [...(marbsDB.data.messages || [])].reverse().find(m => m.post_id === p.post_id &&
+        ((m.sender_id === user.user_id && m.receiver_id === t.counterpartyId) ||
+         (m.sender_id === t.counterpartyId && m.receiver_id === user.user_id)));
       const snippet = lastMsg ? lastMsg.message : 'Tap to start conversation...';
 
       return `
-        <div class="messenger-thread-item ${isSelected ? 'active' : ''}" onclick="window.selectMessengerConversation('${p.post_id}', '${t.claimantId}')">
+        <div class="messenger-thread-item ${isSelected ? 'active' : ''}" onclick="window.selectMessengerConversation('${p.post_id}', '${t.counterpartyId}', '${t.match.match_id}')">
           <div class="messenger-thread-avatar">
             <img src="${p.image || 'assets/images.jpg'}" alt="Item" onerror="this.src='assets/images.jpg'">
             <span class="messenger-online-dot" title="Active Now"></span>
           </div>
           <div class="messenger-thread-content">
-            <div class="messenger-thread-name">${escapeHtml(getPublicAlias(claimant))}</div>
+            <div class="messenger-thread-name">${escapeHtml(counterparty ? getPublicAlias(counterparty) : 'Citizen')}</div>
             <div class="messenger-thread-item-title">${escapeHtml(p.item_name)}</div>
             <div class="messenger-thread-snippet">${escapeHtml(snippet)}</div>
           </div>
@@ -2504,12 +2563,22 @@
     }).join('');
   }
 
-  function selectMessengerConversation(postId, counterpartyId = null) {
+  function selectMessengerConversation(postId, counterpartyId = null, matchId = null) {
     const post = (marbsDB.data.posts || []).find(p => p.post_id === postId) || (marbsDB.data.posts || [])[0];
     if (!post) return;
+    const user = marbsDB.getCurrentUser();
 
     activeChatPost = post;
-    activeChatCounterpartyId = counterpartyId || 'USR-102';
+    activeChatCounterpartyId = counterpartyId || null;
+    window._activeSchedulingPostId = post.post_id;
+    window._activeSchedulingClaimantId = activeChatCounterpartyId;
+    const relatedMatch = (marbsDB.data.matches || []).find(m => m.match_id === matchId) ||
+      (marbsDB.data.matches || []).find(m =>
+        (m.post_id === post.post_id || m.lost_post_id === post.post_id || m.found_post_id === post.post_id) &&
+        (m.claimant_id === user?.user_id || post.user_id === user?.user_id) &&
+        (!counterpartyId || m.claimant_id === counterpartyId || post.user_id === counterpartyId)
+      );
+    window._activeSchedulingMatchId = relatedMatch ? relatedMatch.match_id : null;
 
     $$('.messenger-thread-item').forEach(item => item.classList.remove('active'));
 
@@ -2532,13 +2601,10 @@
     }
     if (bannerLocation) bannerLocation.textContent = post.general_location || 'Koronadal City';
 
-    const counterparty = (marbsDB.data.users || []).find(u => u.user_id === activeChatCounterpartyId) || {
-      first_name: 'Verified Citizen',
-      public_alias: 'Citizen #vOIUJk'
-    };
+    const counterparty = (marbsDB.data.users || []).find(u => u.user_id === activeChatCounterpartyId);
     const reliability = getUserReliability(activeChatCounterpartyId);
 
-    if (bannerCounterparty) {
+    if (bannerCounterparty && counterparty) {
       const ratingBadge = reliability.hasRatings
         ? `<span style="color: #C08A1E; font-size: 11px; margin-left: 4px; font-weight: 800;" title="${reliability.countLabel}">★ ${reliability.avg}</span>`
         : `<span style="color: var(--text-muted); font-size: 11px; margin-left: 4px; font-weight: 700;" title="${reliability.countLabel}">New citizen</span>`;
@@ -2546,6 +2612,7 @@
     }
 
     renderLiveMessengerMessages(true);
+    startMessengerRealTimeSync();
   }
   window.selectMessengerConversation = selectMessengerConversation;
 
@@ -2555,13 +2622,16 @@
 
     const user = marbsDB.getCurrentUser();
     const pid = activeChatPost.post_id;
-    const postMessages = (marbsDB.data.messages || []).filter(m => m.post_id === pid);
+    const postMessages = (marbsDB.data.messages || []).filter(m => m.post_id === pid && user && activeChatCounterpartyId &&
+      ((m.sender_id === user.user_id && m.receiver_id === activeChatCounterpartyId) ||
+       (m.sender_id === activeChatCounterpartyId && m.receiver_id === user.user_id)))
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     if (postMessages.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-          <strong style="color: var(--text-main); font-size: 14px;">Direct Real-Time Chat Started</strong>
-          <p style="font-size: 12px; margin-top: 4px;">Send a message below or use quick replies to coordinate return at Koronadal City Hall or approved Safe Pickup Place.</p>
+          <strong style="color: var(--text-main); font-size: 14px;">Start your conversation</strong>
+          <p style="font-size: 12px; margin-top: 4px;">Coordinate the claim here, then meet at an approved public pickup place. Never send money before a verified return.</p>
         </div>
       `;
       return;
@@ -2575,7 +2645,7 @@
       return `
         <div class="messenger-bubble ${isMine ? 'mine' : 'other'}">
           <div>${escapeHtml(msg.message)}</div>
-          <div class="messenger-bubble-time">${timeStr} ${isMine ? 'Delivered' : ''}</div>
+          <div class="messenger-bubble-time">${timeStr} ${isMine ? 'Sent' : ''}</div>
         </div>
       `;
     }).join('');
@@ -2612,11 +2682,16 @@
       return;
     }
 
+    if (!activeChatPost || !activeChatCounterpartyId || activeChatCounterpartyId === user.user_id) {
+      showToast('Open a conversation from a submitted claim before sending a message.');
+      return;
+    }
+
     const newMsg = {
-      message_id: 'MSG-' + Date.now().toString().slice(-4),
+      message_id: marbsDB.createId('MSG'),
       sender_id: user.user_id,
-      receiver_id: activeChatCounterpartyId || 'USR-102',
-      post_id: activeChatPost ? activeChatPost.post_id : 'POST-002',
+      receiver_id: activeChatCounterpartyId,
+      post_id: activeChatPost.post_id,
       message: text,
       timestamp: new Date().toISOString(),
       status: 'SENT'
@@ -2624,37 +2699,12 @@
 
     marbsDB.data.messages.push(newMsg);
     marbsDB.save();
+    marbsDB.syncRecordToFirestore('messages', newMsg);
     input.value = '';
 
     renderLiveMessengerMessages(true);
     renderMessengerThreadsList();
 
-    // Realistic Real-Time Simulated Reply after 1.5 seconds for interactive experience
-    const currentPostId = activeChatPost.post_id;
-    const counterpartyId = activeChatCounterpartyId;
-    setTimeout(() => {
-      if (activeChatPost && activeChatPost.post_id === currentPostId) {
-        const autoReplies = [
-          "Thank you for reaching out! Yes, the item is safe with me. I agree to meet at the official Safe Pickup Place.",
-          "Received your message! I'm ready to schedule our return handover at Koronadal City Hall.",
-          "Noted! Let's confirm the safe meetup schedule through the Safe Meetup scheduler."
-        ];
-        const randomReply = autoReplies[Math.floor(Math.random() * autoReplies.length)];
-        const replyMsg = {
-          message_id: 'MSG-' + Date.now().toString().slice(-4),
-          sender_id: counterpartyId,
-          receiver_id: user.user_id,
-          post_id: currentPostId,
-          message: randomReply,
-          timestamp: new Date().toISOString(),
-          status: 'SENT'
-        };
-        marbsDB.data.messages.push(replyMsg);
-        marbsDB.save();
-        renderLiveMessengerMessages(true);
-        renderMessengerThreadsList();
-      }
-    }, 1500);
   }
 
   window.sendQuickMessengerText = function(text) {
@@ -2668,7 +2718,7 @@
   window.triggerScheduleFromChat = function() {
     if (activeChatPost) {
       window._activeSchedulingPostId = activeChatPost.post_id;
-      window._activeSchedulingClaimantId = activeChatCounterpartyId || 'USR-102';
+      window._activeSchedulingClaimantId = activeChatCounterpartyId;
     }
     $('#postVerificationsModal').classList.remove('active');
     stopMessengerRealTimeSync();
@@ -2676,11 +2726,11 @@
     $('#meetupModal').classList.add('active');
   };
 
-  window.openMessengerForPost = function(postId, claimantId = null) {
+  window.openMessengerForPost = function(postId, counterpartyId = null, matchId = null) {
     const modal = $('#postVerificationsModal');
     if (!modal) return;
     modal.classList.add('active');
-    switchVerifModalTab('messages', postId, claimantId);
+    switchVerifModalTab('messages', postId, counterpartyId, matchId);
   };
 
   function setupMessaging() {
@@ -2704,17 +2754,22 @@
         const text = legacyInput.value.trim();
         if (!text) return;
         const user = marbsDB.getCurrentUser();
+        if (!user || !activeChatPost || !activeChatCounterpartyId) {
+          showToast('Open a conversation from a submitted claim before sending a message.');
+          return;
+        }
         const msg = {
-          message_id: 'MSG-' + Date.now().toString().slice(-4),
+          message_id: marbsDB.createId('MSG'),
           sender_id: user.user_id,
-          receiver_id: 'USR-102',
-          post_id: activeChatPost ? activeChatPost.post_id : 'POST-002',
+          receiver_id: activeChatCounterpartyId,
+          post_id: activeChatPost.post_id,
           message: text,
           timestamp: new Date().toISOString(),
           status: 'SENT'
         };
         marbsDB.data.messages.push(msg);
         marbsDB.save();
+        marbsDB.syncRecordToFirestore('messages', msg);
         legacyInput.value = '';
         renderChatMessages();
       });
@@ -3489,7 +3544,9 @@
     // Render Meetups in Dashboard
     const myMeetupsContainer = $('#myMeetupsContainer');
     if (myMeetupsContainer) {
-      const meetups = marbsDB.data.meetups.filter(m => m.owner_id === user.user_id || m.finder_id === user.user_id);
+      const meetups = marbsDB.data.meetups.filter(m =>
+        (m.owner_id === user.user_id || m.finder_id === user.user_id) && m.status !== 'COMPLETED' && m.status !== 'CANCELLED'
+      );
       if (meetups.length === 0) {
         myMeetupsContainer.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">No scheduled meetups at approved Safe Pickup Places.</p>`;
       } else {
@@ -3504,22 +3561,26 @@
                 </h4>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Scheduled: ${m.date} at ${m.time}</div>
               </div>
-              <button class="btn btn-outline" style="font-size: 11px;" onclick="window.openChat('${m.post_id}')">Open Private Chat</button>
+              <button class="btn btn-outline" style="font-size: 11px;" onclick="window.openMessengerForPost('${m.post_id}', '${user.user_id === m.owner_id ? m.finder_id : m.owner_id}', '${m.match_id}')">Open Private Chat</button>
             </div>
 
             <!-- 2-Way Handshake Buttons per Section 17 -->
             <div class="handshake-steps">
               <div class="handshake-box">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Lost Item Owner Step:</div>
-                <button class="btn btn-primary" style="width: 100%; font-size: 12px;" ${m.owner_confirmed_return ? 'disabled style="background: #2F8A53; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
-                  ${m.owner_confirmed_return ? 'ITEM RECEIVED (CONFIRMED)' : 'ITEM RECEIVED'}
-                </button>
+                ${user.user_id === m.owner_id ? `
+                  <button class="btn btn-primary" style="width: 100%; font-size: 12px;" ${m.owner_confirmed_return ? 'disabled' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
+                    ${m.owner_confirmed_return ? 'ITEM RECEIVED (CONFIRMED)' : 'ITEM RECEIVED'}
+                  </button>
+                ` : `<span class="activity-badge" style="background: #F4F1EA; color: #5A5245;">${m.owner_confirmed_return ? 'Confirmed' : 'Waiting for owner'}</span>`}
               </div>
               <div class="handshake-box">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">Finder Step:</div>
-                <button class="btn btn-dark" style="width: 100%; font-size: 12px;" ${m.finder_confirmed_return ? 'disabled style="background: #2F8A53; color: #fff;"' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
-                  ${m.finder_confirmed_return ? 'ITEM RETURNED (CONFIRMED)' : 'ITEM RETURNED'}
-                </button>
+                ${user.user_id === m.finder_id ? `
+                  <button class="btn btn-dark" style="width: 100%; font-size: 12px;" ${m.finder_confirmed_return ? 'disabled' : ''} onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
+                    ${m.finder_confirmed_return ? 'ITEM RETURNED (CONFIRMED)' : 'ITEM RETURNED'}
+                  </button>
+                ` : `<span class="activity-badge" style="background: #F4F1EA; color: #5A5245;">${m.finder_confirmed_return ? 'Confirmed' : 'Waiting for finder'}</span>`}
               </div>
             </div>
           </div>
@@ -3686,6 +3747,9 @@
 
     post.status = 'APPROVED';
     marbsDB.logAudit('POST_APPROVAL', `Approved post ${postId} (${post.item_name})`);
+    if (post.user_id) {
+      marbsDB.addNotification(post.user_id, 'Report approved', `“${post.item_name}” is now visible to the community.`, 'POST');
+    }
 
     // If it was a found item, award +10 Marbs Points per Section 14
     if (post.post_type === 'FOUND') {
@@ -3725,6 +3789,9 @@
 
     post.status = 'REJECTED';
     marbsDB.logAudit('POST_REJECTION', `Rejected post ${postId}`);
+    if (post.user_id) {
+      marbsDB.addNotification(post.user_id, 'Report needs changes', `Your report “${post.item_name}” was not approved. Please review it or contact support.`, 'POST');
+    }
     marbsDB.save();
     if (window.firestoreDb) {
       window.firestoreDb.collection('posts').doc(postId).set({ status: 'REJECTED' }, { merge: true })
@@ -4024,7 +4091,7 @@
         );
         const userPostIds = new Set(userPosts.map(p => p.post_id));
         const pendingClaimsCount = (marbsDB.data.matches || []).filter(m =>
-          (userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id)) &&
+          (userPostIds.has(m.post_id) || userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id)) &&
           m.claimant_id !== user.user_id &&
           m.status !== 'RESOLVED' && m.status !== 'MATCH_REJECTED'
         ).length;
@@ -4119,7 +4186,9 @@
   window.updateAuthUI = renderUserPill;
 
   function updateNotificationBadges() {
-    const count = marbsDB.data.notifications.filter(n => !n.read).length;
+    const user = marbsDB.getCurrentUser();
+    const userNotifications = marbsDB.data.notifications.filter(n => user && n.user_id === user.user_id);
+    const count = userNotifications.filter(n => !n.read).length;
     const badge = $('#notifBadge');
     if (badge) {
       if (count > 0) {
@@ -4172,18 +4241,24 @@
   }
 
   function openNotificationsModal() {
+    const user = marbsDB.getCurrentUser();
+    const userNotifications = marbsDB.data.notifications.filter(n => user && n.user_id === user.user_id)
+      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
     const list = $('#notifModalList');
     if (list) {
-      list.innerHTML = marbsDB.data.notifications.map(n => `
+      list.innerHTML = userNotifications.length ? userNotifications.map(n => `
         <div style="padding: 12px; border-radius: var(--radius-sm); background: ${n.read ? 'var(--surface)' : 'var(--primary-light)'}; border: 1px solid var(--border); margin-bottom: 8px;">
           <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">${escapeHtml(n.title)}</div>
           <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${escapeHtml(n.body)}</p>
           <div style="font-size: 10px; color: var(--text-subtle); margin-top: 4px;">${new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
-      `).join('');
+      `).join('') : '<p style="padding:20px;text-align:center;color:var(--text-muted);">You’re all caught up. New updates will appear here.</p>';
     }
 
-    marbsDB.data.notifications.forEach(n => n.read = true);
+    userNotifications.forEach(n => {
+      n.read = true;
+      marbsDB.syncFieldsToFirestore('notifications', n.notification_id, { read: true });
+    });
     marbsDB.save();
     updateNotificationBadges();
 
@@ -4258,6 +4333,10 @@
   window.showToast = showToast;
   window.renderUserPill = renderUserPill;
   window.renderFeed = renderFeed;
+  window.renderUserDashboard = renderUserDashboard;
+  window.renderRecentActivity = renderRecentActivity;
+  window.updateNotificationBadges = updateNotificationBadges;
+  window.renderMessengerThreadsList = renderMessengerThreadsList;
   window.setPostsLoading = function(loading) {
     isPostsLoading = !!loading;
     renderFeed();
@@ -4332,13 +4411,13 @@
 
     let relevantMatches = (marbsDB.data.matches || []).filter(m => {
       // Must pertain to one of user's posts
-      const isRelated = userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id);
+      const isRelated = userPostIds.has(m.post_id) || userPostIds.has(m.lost_post_id) || userPostIds.has(m.found_post_id);
       // And submitted by someone else (or if admin, show all)
       return isRelated && (user.role === 'ADMIN' || m.claimant_id !== user.user_id);
     });
 
     if (targetPostId && targetPostId !== 'ALL') {
-      relevantMatches = relevantMatches.filter(m => m.lost_post_id === targetPostId || m.found_post_id === targetPostId);
+      relevantMatches = relevantMatches.filter(m => m.post_id === targetPostId || m.lost_post_id === targetPostId || m.found_post_id === targetPostId);
     }
 
     if (countLabel) {
@@ -4359,7 +4438,7 @@
 
     list.innerHTML = relevantMatches.map(m => {
       // Find matching post
-      const post = (marbsDB.data.posts || []).find(p => p.post_id === m.lost_post_id || p.post_id === m.found_post_id) || {
+      const post = (marbsDB.data.posts || []).find(p => p.post_id === m.post_id || p.post_id === m.lost_post_id || p.post_id === m.found_post_id) || {
         item_name: 'Lost / Found Item',
         post_type: 'POST',
         image: 'assets/images.jpg',
@@ -4500,7 +4579,7 @@
 
           <!-- Action Buttons -->
           <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openMessengerForPost('${post.post_id}', '${m.claimant_id}')">
+            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openMessengerForPost('${post.post_id}', '${m.claimant_id}', '${m.match_id}')">
               Open Private Chat
             </button>
             <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #C4433A; border-color: #E8BDB8;" onclick="window.rejectVerificationMatch('${m.match_id}')">
@@ -4535,6 +4614,8 @@
     match.status = 'MATCH_CONFIRMED';
     marbsDB.logAudit('MATCH_CONFIRMED', `Post owner confirmed match ${matchId}`);
     marbsDB.save();
+    marbsDB.syncRecordToFirestore('matches', match);
+    marbsDB.addNotification(match.claimant_id, 'Claim accepted', 'The post owner accepted your claim. You can now coordinate a safe return.', 'CLAIM');
 
     window._activeSchedulingMatchId = matchId;
     window._activeSchedulingPostId = postId;
@@ -4557,6 +4638,8 @@
     match.status = 'MATCH_REJECTED';
     marbsDB.logAudit('MATCH_REJECTED', `Post owner declined claim ${matchId}`);
     marbsDB.save();
+    marbsDB.syncRecordToFirestore('matches', match);
+    marbsDB.addNotification(match.claimant_id, 'Claim update', 'The post owner could not verify this claim. Contact support if you think this was a mistake.', 'CLAIM');
 
     showToast('Claim was declined.');
     renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
@@ -4842,7 +4925,8 @@
             verification_status: 'VERIFIED'
           };
           const reliability = getUserReliability(counterpartyId);
-          const isOwner = user.role === 'ADMIN' || user.user_id === m.owner_id;
+          const isOwner = user.user_id === m.owner_id;
+          const isFinder = user.user_id === m.finder_id;
 
           return `
             <div class="meetup-schedule-card">
@@ -4892,18 +4976,22 @@
               </div>
 
               <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #F4F1EA; flex-wrap: wrap;">
-                <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.openMessengerForPost('${post.post_id}', '${counterpartyId}')">
+                <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.openMessengerForPost('${post.post_id}', '${counterpartyId}', '${m.match_id}')">
                   Open Messages
                 </button>
-                ${isOwner ? `
-                  <button type="button" class="btn btn-primary" style="font-size: 12px; padding: 6px 16px; background: #1E7A46; border-color: #186A3A; color: #fff; font-weight: 800;" onclick="window.markMeetupComplete('${m.meetup_id}')">
-                    Mark as Retrieved / Complete
+                ${isOwner && !m.owner_confirmed_return ? `
+                  <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #1E7A46; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
+                    Confirm I Received It
                   </button>
-                ` : `
+                ` : ''}
+                ${isFinder && !m.finder_confirmed_return ? `
                   <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #1E7A46; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'FINDER')">
-                    Confirm Handover Done
+                    Confirm I Handed It Over
                   </button>
-                `}
+                ` : ''}
+                ${(isOwner && m.owner_confirmed_return) || (isFinder && m.finder_confirmed_return) ? `
+                  <span class="activity-badge" style="background: #E3EFE6; color: #186A3A;">Your confirmation is recorded</span>
+                ` : ''}
               </div>
             </div>
           `;
@@ -4976,33 +5064,7 @@
   window.renderMeetupsView = renderMeetupsView;
 
   window.markMeetupComplete = function(meetupId) {
-    const meetup = (marbsDB.data.meetups || []).find(m => m.meetup_id === meetupId);
-    if (!meetup) return;
-
-    const user = marbsDB.getCurrentUser();
-
-    meetup.status = 'COMPLETED';
-    meetup.completed_at = new Date().toISOString();
-    meetup.owner_confirmed_return = true;
-    meetup.finder_confirmed_return = true;
-
-    // Update associated post to RESOLVED
-    const post = (marbsDB.data.posts || []).find(p => p.post_id === meetup.post_id);
-    if (post) {
-      post.status = 'RESOLVED';
-    }
-
-    marbsDB.logAudit('TRANSACTION_COMPLETED', `Meetup ${meetupId} marked as Retrieved/Completed by ${user ? user.user_id : 'OWNER'}`);
-    marbsDB.save();
-
-    showToast('Item marked as Retrieved / Complete! Schedule archived to History.');
-
-    renderMeetupsView();
-    renderUserDashboard();
-    updateNotificationBadges();
-
-    const targetUserId = (user && user.user_id === meetup.owner_id) ? meetup.finder_id : meetup.owner_id;
-    window.openRatingModal(targetUserId, meetupId, meetup.post_id);
+    window.confirmReturnStep(meetupId, 'OWNER');
   };
 
   // =========================================================================

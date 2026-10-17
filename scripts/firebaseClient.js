@@ -378,6 +378,9 @@ if (firebaseAuth) {
     if (user) {
       console.log('✓ Firebase Auth State: Logged In as', user.email);
       await syncFirebaseUserProfile(user);
+      if (window.marbsDB && typeof window.marbsDB.startPrivateWorkflowListeners === 'function') {
+        window.marbsDB.startPrivateWorkflowListeners();
+      }
       try {
         if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
           await window.marbsDB.syncWithFirestore();

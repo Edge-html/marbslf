@@ -502,6 +502,37 @@ class MarbsLFDatabase {
     ensureSeedPosts(this);
   }
 
+  createId(prefix) {
+    const randomPart = (window.crypto && typeof window.crypto.randomUUID === 'function')
+      ? window.crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    return `${prefix}-${randomPart}`;
+  }
+
+  async syncRecordToFirestore(collectionName, record) {
+    if (!window.firestoreDb || !record) return false;
+    const key = record.message_id || record.match_id || record.meetup_id || record.notification_id || record.transaction_id;
+    if (!key) return false;
+    try {
+      await window.firestoreDb.collection(collectionName).doc(key).set(record, { merge: true });
+      return true;
+    } catch (err) {
+      console.warn(`Firestore ${collectionName} sync note:`, err);
+      return false;
+    }
+  }
+
+  async syncFieldsToFirestore(collectionName, documentId, fields) {
+    if (!window.firestoreDb || !documentId || !fields) return false;
+    try {
+      await window.firestoreDb.collection(collectionName).doc(documentId).set(fields, { merge: true });
+      return true;
+    } catch (err) {
+      console.warn(`Firestore ${collectionName} field sync note:`, err);
+      return false;
+    }
+  }
+
   load() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -637,8 +668,16 @@ class MarbsLFDatabase {
   }
 
   setCurrentUser(userId) {
+    if (this.data.current_user_id !== userId) this.stopPrivateWorkflowListeners();
     this.data.current_user_id = userId;
     this.save();
+  }
+
+  stopPrivateWorkflowListeners() {
+    (this._workflowUnsubscribers || []).forEach(unsubscribe => unsubscribe());
+    this._workflowUnsubscribers = [];
+    this._workflowListenerKeys = new Set();
+    this._workflowListenerUid = null;
   }
 
   // Toggle Heart / Reaction on a post
@@ -722,7 +761,7 @@ class MarbsLFDatabase {
   // Add Notification
   addNotification(userId, title, body, type = 'SYSTEM') {
     const notif = {
-      notification_id: 'NOTIF-' + Date.now().toString().slice(-6),
+      notification_id: this.createId('NOTIF'),
       user_id: userId,
       title: title,
       body: body,
@@ -732,6 +771,7 @@ class MarbsLFDatabase {
     };
     this.data.notifications.unshift(notif);
     this.save();
+    this.syncRecordToFirestore('notifications', notif);
     return notif;
   }
 
@@ -825,6 +865,7 @@ class MarbsLFDatabase {
       if (typeof window.renderFeed === 'function') window.renderFeed();
       if (typeof window.renderRecentActivity === 'function') window.renderRecentActivity();
       if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('live');
+      if (typeof this.startPrivateWorkflowListeners === 'function') this.startPrivateWorkflowListeners();
     }, (error) => {
       console.warn('Firestore live post listener:', error);
       if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('offline');
@@ -838,6 +879,60 @@ class MarbsLFDatabase {
         this.save();
       }
     }, (error) => console.warn('Firestore live pickup-place listener:', error));
+  }
+
+  startPrivateWorkflowListeners() {
+    const authUser = window.firebaseAuth && window.firebaseAuth.currentUser;
+    if (!window.firestoreDb || !authUser || authUser.uid !== this.data.current_user_id) return;
+    if (this._workflowListenerUid !== authUser.uid) {
+      (this._workflowUnsubscribers || []).forEach(unsubscribe => unsubscribe());
+      this._workflowUnsubscribers = [];
+      this._workflowListenerKeys = new Set();
+      this._workflowListenerUid = authUser.uid;
+    }
+
+    const mergeRemote = (key, idField, records) => {
+      const current = new Map((this.data[key] || []).filter(record => record && record[idField]).map(record => [record[idField], record]));
+      records.forEach(record => {
+        if (record && record[idField]) current.set(record[idField], record);
+      });
+      this.data[key] = Array.from(current.values());
+      if (key === 'notifications') {
+        this.data.notifications.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      }
+      this.save();
+      if (key === 'matches') {
+        if (typeof window.renderUserDashboard === 'function') window.renderUserDashboard();
+        if (typeof window.renderMeetupsView === 'function') window.renderMeetupsView();
+        if (typeof window.renderMessengerThreadsList === 'function') window.renderMessengerThreadsList();
+      }
+      if (key === 'meetups') {
+        if (typeof window.renderUserDashboard === 'function') window.renderUserDashboard();
+        if (typeof window.renderMeetupsView === 'function') window.renderMeetupsView();
+      }
+      if (key === 'notifications' && typeof window.updateNotificationBadges === 'function') {
+        window.updateNotificationBadges();
+      }
+    };
+    const listen = (collection, query, stateKey, idField, listenerKey) => {
+      if (this._workflowListenerKeys.has(listenerKey)) return;
+      this._workflowListenerKeys.add(listenerKey);
+      this._workflowUnsubscribers.push(query.onSnapshot(snapshot => {
+        const records = [];
+        snapshot.forEach(doc => records.push(doc.data()));
+        mergeRemote(stateKey, idField, records);
+      }, error => console.warn(`Firestore ${collection} live listener:`, error)));
+    };
+
+    const uid = authUser.uid;
+    listen('matches', window.firestoreDb.collection('matches').where('claimant_id', '==', uid), 'matches', 'match_id', `claimant:${uid}`);
+    const ownedPostIds = (this.data.posts || []).filter(post => post.user_id === uid).map(post => post.post_id);
+    ownedPostIds.forEach(postId => {
+      listen('matches', window.firestoreDb.collection('matches').where('post_id', '==', postId), 'matches', 'match_id', `post:${postId}`);
+    });
+    listen('meetups', window.firestoreDb.collection('meetups').where('owner_id', '==', uid), 'meetups', 'meetup_id', `meetup-owner:${uid}`);
+    listen('meetups', window.firestoreDb.collection('meetups').where('finder_id', '==', uid), 'meetups', 'meetup_id', `meetup-finder:${uid}`);
+    listen('notifications', window.firestoreDb.collection('notifications').where('user_id', '==', uid), 'notifications', 'notification_id', `notifications:${uid}`);
   }
 
   async syncPostToFirestore(post) {
