@@ -141,6 +141,17 @@
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => document.querySelectorAll(selector);
 
+  function updateSyncStatus(state) {
+    const status = $('#syncStatus');
+    if (!status) return;
+    const label = status.querySelector('.sync-status-label');
+    status.dataset.state = state;
+    if (label) {
+      label.textContent = state === 'live' ? 'Live sync' : state === 'syncing' ? 'Syncing' : 'Local mode';
+    }
+  }
+  window.updateSyncStatus = updateSyncStatus;
+
   // Render Skeleton Loading Placeholder for Recent Posts
   function renderSkeletonFeed() {
     const grid = $('#postsGrid');
@@ -211,9 +222,17 @@
     if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
       window.marbsDB.syncWithFirestore().then(() => {
         revealPostsWhenReady();
+        if (typeof window.marbsDB.startFirestoreListeners === 'function') {
+          window.marbsDB.startFirestoreListeners();
+        }
       }).catch(() => {
         revealPostsWhenReady();
+        if (typeof window.marbsDB.startFirestoreListeners === 'function') {
+          window.marbsDB.startFirestoreListeners();
+        }
       });
+    } else {
+      updateSyncStatus('offline');
     }
 
     // Check Firebase / session after all modules are initialized
@@ -758,11 +777,11 @@
     // Filter by search query
     if (currentSearchQuery) {
       posts = posts.filter(p =>
-        p.item_name.toLowerCase().includes(currentSearchQuery) ||
-        p.description.toLowerCase().includes(currentSearchQuery) ||
-        p.general_location.toLowerCase().includes(currentSearchQuery) ||
-        p.color.toLowerCase().includes(currentSearchQuery) ||
-        (p.breed && p.breed.toLowerCase().includes(currentSearchQuery))
+        String(p.item_name || '').toLowerCase().includes(currentSearchQuery) ||
+        String(p.description || '').toLowerCase().includes(currentSearchQuery) ||
+        String(p.general_location || '').toLowerCase().includes(currentSearchQuery) ||
+        String(p.color || '').toLowerCase().includes(currentSearchQuery) ||
+        String(p.breed || '').toLowerCase().includes(currentSearchQuery)
       );
     }
 

@@ -74,6 +74,43 @@
   --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Small connection indicator: useful feedback when reports and moderation
+   updates are being synced, while remaining quiet in local/demo mode. */
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  color: rgba(255,255,255,.72);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.sync-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #D0A82C; box-shadow: 0 0 0 3px rgba(208,168,44,.14); }
+.sync-status[data-state="live"] .sync-status-dot { background: #54C982; box-shadow: 0 0 0 3px rgba(84,201,130,.14); }
+.sync-status[data-state="offline"] .sync-status-dot { background: #C4433A; box-shadow: 0 0 0 3px rgba(196,67,58,.14); }
+
+.btn, .icon-btn, .form-input, .form-select, .form-textarea { transition: var(--transition); }
+.btn:hover, .icon-btn:hover { transform: translateY(-1px); }
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--primary-yellow);
+  box-shadow: 0 0 0 3px rgba(208,168,44,.16);
+}
+.ig-post, .activity-item, .card, .dashboard-card {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.ig-post:hover, .activity-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+@media (max-width: 640px) {
+  .sync-status { padding: 0 7px; }
+  .sync-status-label { display: none; }
+  .nav-actions-box { gap: 5px; }
+}
+
 /* ==========================================================================
    POST DETAIL - INSTAGRAM-STYLE CAROUSEL + LIKES
    A swipeable track over every photo the poster uploaded, with prev/next

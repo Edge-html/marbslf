@@ -737,7 +737,11 @@ class MarbsLFDatabase {
 
   // Firebase Firestore Cloud Sync
   async syncWithFirestore() {
-    if (!window.firestoreDb) return;
+    if (!window.firestoreDb) {
+      if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('offline');
+      return;
+    }
+    if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('syncing');
     try {
       // 1. Fetch live posts
       const postsSnap = await window.firestoreDb.collection('posts').get();
@@ -787,9 +791,53 @@ class MarbsLFDatabase {
         this.save();
         console.log('✓ Synced safe pickup places from Firebase Firestore');
       }
+      if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('live');
     } catch (err) {
       console.warn('Firestore sync note:', err);
+      if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('offline');
     }
+  }
+
+  /** Keep the public feed and pickup places fresh without requiring a reload. */
+  startFirestoreListeners() {
+    if (!window.firestoreDb || this._firestoreListenersStarted) return;
+    this._firestoreListenersStarted = true;
+
+    const isHiddenDemoRecord = (p) => {
+      const name = String(p.item_name || '').toLowerCase();
+      const desc = String(p.description || '').toLowerCase();
+      const loc = String(p.general_location || '').toLowerCase();
+      return ['mochi', 'toyota car key', 'redmi note', 'black leather bifold', 'brown aspin'].some(x => name.includes(x)) ||
+        name.includes('black wallet') || loc.includes('dwadawda') || desc.includes('dawawdawdawdaw');
+    };
+
+    window.firestoreDb.collection('posts').onSnapshot((snapshot) => {
+      const remotePosts = [];
+      snapshot.forEach((doc) => {
+        const post = doc.data();
+        if (post && !isHiddenDemoRecord(post)) remotePosts.push(post);
+      });
+      const remoteIds = new Set(remotePosts.map(p => p.post_id));
+      const localOnly = (this.data.posts || []).filter(p => !p.is_seed && !remoteIds.has(p.post_id));
+      const seeds = (this.data.posts || []).filter(p => p.is_seed && !remoteIds.has(p.post_id));
+      this.data.posts = remotePosts.concat(localOnly, seeds);
+      this.save();
+      if (typeof window.renderFeed === 'function') window.renderFeed();
+      if (typeof window.renderRecentActivity === 'function') window.renderRecentActivity();
+      if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('live');
+    }, (error) => {
+      console.warn('Firestore live post listener:', error);
+      if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('offline');
+    });
+
+    window.firestoreDb.collection('safe_pickup_places').onSnapshot((snapshot) => {
+      const places = [];
+      snapshot.forEach((doc) => places.push(doc.data()));
+      if (places.length) {
+        this.data.safe_places = places;
+        this.save();
+      }
+    }, (error) => console.warn('Firestore live pickup-place listener:', error));
   }
 
   async syncPostToFirestore(post) {
