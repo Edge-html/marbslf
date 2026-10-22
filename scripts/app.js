@@ -220,6 +220,11 @@
 
     // Sync posts from Firestore cloud so posts are always up to date for guests and logged-in users
     if (window.marbsDB && typeof window.marbsDB.syncWithFirestore === 'function') {
+      // Attach realtime listeners immediately so cached/server snapshots can
+      // paint the feed while the one-time sync completes in the background.
+      if (typeof window.marbsDB.startFirestoreListeners === 'function') {
+        window.marbsDB.startFirestoreListeners();
+      }
       window.marbsDB.syncWithFirestore().then(() => {
         revealPostsWhenReady();
         if (typeof window.marbsDB.startFirestoreListeners === 'function') {

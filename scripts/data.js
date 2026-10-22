@@ -785,16 +785,25 @@ class MarbsLFDatabase {
   }
 
   // Firebase Firestore Cloud Sync
-  async syncWithFirestore() {
+  syncWithFirestore() {
+    if (this._syncPromise) return this._syncPromise;
+    this._syncPromise = this._performFirestoreSync().finally(() => { this._syncPromise = null; });
+    return this._syncPromise;
+  }
+
+  async _performFirestoreSync() {
     if (!window.firestoreDb) {
       if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('offline');
       return;
     }
     if (typeof window.updateSyncStatus === 'function') window.updateSyncStatus('syncing');
     try {
-      // 1. Fetch live posts
-      const postsSnap = await window.firestoreDb.collection('posts').get();
-      if (!postsSnap.empty) {
+      // Fetch independent collections together to avoid serial network latency.
+      const [postsSnap, placesSnap] = await Promise.all([
+        window.firestoreDb.collection('posts').get(),
+        window.firestoreDb.collection('safe_pickup_places').get()
+      ]);
+      {
         const remotePosts = [];
         const mockIds = ['POST-001', 'POST-002', 'POST-003', 'POST-004', 'POST-005'];
         postsSnap.forEach(doc => {
@@ -816,14 +825,13 @@ class MarbsLFDatabase {
           }
         });
 
-        // Preserve locally generated demo reports. Demo posts are never pushed
-        // to Firestore, so a remote sync must not wipe them out of the database.
+        // Preserve local user posts not yet visible in the remote snapshot.
         const remoteIds = new Set(remotePosts.map(p => p.post_id));
-        const localOnlySeeds = (this.data.posts || []).filter(
-          p => p.is_seed && !remoteIds.has(p.post_id)
+        const localOnlyPosts = (this.data.posts || []).filter(
+          p => !p.is_seed && !remoteIds.has(p.post_id)
         );
 
-        this.data.posts = remotePosts.concat(localOnlySeeds);
+        this.data.posts = remotePosts.concat(localOnlyPosts);
         this.save();
         if (typeof window.setPostsLoading === 'function') {
           window.setPostsLoading(false);
@@ -833,8 +841,6 @@ class MarbsLFDatabase {
         console.log('✓ Synced posts from Firebase Firestore');
       }
 
-      // 2. Fetch live safe pickup places
-      const placesSnap = await window.firestoreDb.collection('safe_pickup_places').get();
       if (!placesSnap.empty) {
         const remotePlaces = [];
         placesSnap.forEach(doc => remotePlaces.push(doc.data()));
