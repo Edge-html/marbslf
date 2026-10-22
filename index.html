@@ -239,6 +239,10 @@
             </button>
           </li>
         </ul>
+        <div class="mobile-nav-account" id="mobileNavAccount" style="display: none;">
+          <span id="mobileNavAccountName">Signed in</span>
+          <button type="button" class="btn btn-outline" onclick="window.signOutUser(); document.getElementById('mobileMenuToggle')?.classList.remove('active'); document.getElementById('sidebarNav')?.classList.remove('active');">Log out</button>
+        </div>
       </div>
     </header>
 

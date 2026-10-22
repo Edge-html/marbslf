@@ -2073,9 +2073,10 @@
         const isFoundPost = activePostForModal.post_type === 'FOUND';
 
         const newMatch = {
-          match_id: 'MAT-' + Date.now().toString().slice(-5),
-          lost_post_id: isFoundPost ? 'CLAIM-' + Date.now() : activePostForModal.post_id,
-          found_post_id: isFoundPost ? activePostForModal.post_id : 'FOUND_MATCH-' + Date.now(),
+          match_id: marbsDB.createId('MAT'),
+          post_id: activePostForModal.post_id,
+          lost_post_id: isFoundPost ? null : activePostForModal.post_id,
+          found_post_id: isFoundPost ? activePostForModal.post_id : null,
           claimant_id: user.user_id,
           status: 'VERIFICATION_IN_PROGRESS',
           match_score: claimPhotoPayload ? 95 : 90,
@@ -2457,9 +2458,13 @@
           );
         selectMessengerConversation(focusPostId, counterpartyId, match?.match_id);
       } else {
-        const firstThread = $('#messengerThreadsList .messenger-thread-item');
-        if (firstThread) firstThread.click();
-        else stopMessengerRealTimeSync();
+        activeChatPost = null;
+        activeChatCounterpartyId = null;
+        stopMessengerRealTimeSync();
+        const title = $('#marketplaceItemTitle');
+        if (title) title.textContent = 'Select a conversation';
+        const container = $('#messengerMessagesContainer');
+        if (container) container.innerHTML = '<div class="messenger-empty-state">Choose “Message” from a verification answer to open its private conversation.</div>';
       }
     } else {
       if (messagesBtn) messagesBtn.classList.remove('active');
@@ -4053,6 +4058,8 @@
     lastRenderedAuthState = isSignedIn ? 'in' : 'out';
     const pill = $('#navUserBtn');
     const signOutBtn = $('#navSignOutBtn');
+    const mobileAccount = $('#mobileNavAccount');
+    const mobileAccountName = $('#mobileNavAccountName');
     const loginBtn = $('#openLoginModalBtn');
     const registerBtn = $('#openRegisterModalBtn');
 
@@ -4127,6 +4134,8 @@
     }
 
     if (user && user.user_id) {
+      if (mobileAccount) mobileAccount.style.display = 'flex';
+      if (mobileAccountName) mobileAccountName.textContent = `Signed in as ${user.first_name || 'Citizen'}`;
       if (pill) {
         pill.style.display = 'flex';
         const userRel = getUserReliability(user.user_id);
@@ -4166,6 +4175,7 @@
         navigateToView(isAdmin ? 'admin' : 'home');
       }
     } else {
+      if (mobileAccount) mobileAccount.style.display = 'none';
       if (pill) pill.style.display = 'none';
       if (signOutBtn) signOutBtn.style.display = 'none';
       if (loginBtn) loginBtn.style.display = 'inline-flex';
@@ -4417,7 +4427,7 @@
     });
 
     if (targetPostId && targetPostId !== 'ALL') {
-      relevantMatches = relevantMatches.filter(m => m.post_id === targetPostId || m.lost_post_id === targetPostId || m.found_post_id === targetPostId);
+      relevantMatches = relevantMatches.filter(m => (m.post_id || m.lost_post_id || m.found_post_id) === targetPostId || m.lost_post_id === targetPostId || m.found_post_id === targetPostId);
     }
 
     if (countLabel) {
@@ -4438,7 +4448,8 @@
 
     list.innerHTML = relevantMatches.map(m => {
       // Find matching post
-      const post = (marbsDB.data.posts || []).find(p => p.post_id === m.post_id || p.post_id === m.lost_post_id || p.post_id === m.found_post_id) || {
+      const post = (marbsDB.data.posts || []).find(p => p.post_id === m.post_id) ||
+        (marbsDB.data.posts || []).find(p => p.post_id === m.lost_post_id || p.post_id === m.found_post_id) || {
         item_name: 'Lost / Found Item',
         post_type: 'POST',
         image: 'assets/images.jpg',
