@@ -962,6 +962,10 @@ class MarbsLFDatabase {
       if (key === 'notifications' && typeof window.updateNotificationBadges === 'function') {
         window.updateNotificationBadges();
       }
+      if (key === 'messages' && typeof window.updateNotificationBadges === 'function') {
+        window.updateNotificationBadges();
+        if (typeof window.renderMessengerThreadsList === 'function') window.renderMessengerThreadsList();
+      }
     };
     const listen = (collection, query, stateKey, idField, listenerKey) => {
       if (this._workflowListenerKeys.has(listenerKey)) return;
@@ -988,6 +992,7 @@ class MarbsLFDatabase {
     listen('meetups', window.firestoreDb.collection('meetups').where('owner_id', '==', uid), 'meetups', 'meetup_id', `meetup-owner:${uid}`);
     listen('meetups', window.firestoreDb.collection('meetups').where('finder_id', '==', uid), 'meetups', 'meetup_id', `meetup-finder:${uid}`);
     listen('notifications', window.firestoreDb.collection('notifications').where('user_id', '==', uid), 'notifications', 'notification_id', `notifications:${uid}`);
+    listen('messages', window.firestoreDb.collection('messages').where('receiver_id', '==', uid), 'messages', 'message_id', `inbox:${uid}`);
     if (this.getCurrentUser()?.role === 'ADMIN') {
       listen('id_verifications', window.firestoreDb.collection('id_verifications'), 'id_verifications', 'verification_id', `id-verifications:admin:${uid}`);
     } else {

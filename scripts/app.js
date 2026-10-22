@@ -2482,6 +2482,9 @@
       if (headerTitle) headerTitle.textContent = 'Private Verification Answers';
       stopMessengerRealTimeSync();
       renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
+      const ownedPosts = new Set((marbsDB.data.posts || [])
+        .filter(p => p.user_id === marbsDB.getCurrentUser()?.user_id).map(p => p.post_id));
+      markVerificationMessagesRead(m => ownedPosts.has(m.post_id) && /^\[System Notice\]/.test(m.message || ''));
     }
   }
   window.switchVerifModalTab = switchVerifModalTab;
@@ -2632,6 +2635,7 @@
     }
 
     renderLiveMessengerMessages(true);
+    markVerificationMessagesRead(m => m.post_id === post.post_id && m.sender_id === activeChatCounterpartyId);
     startMessengerRealTimeSync();
   }
   window.selectMessengerConversation = selectMessengerConversation;
@@ -2646,6 +2650,10 @@
       ((m.sender_id === user.user_id && m.receiver_id === activeChatCounterpartyId) ||
        (m.sender_id === activeChatCounterpartyId && m.receiver_id === user.user_id)))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    if ($('#postVerificationsModal')?.classList.contains('active') &&
+        $('#verifTabContentMessages')?.style.display !== 'none') {
+      markVerificationMessagesRead(m => m.post_id === pid && m.sender_id === activeChatCounterpartyId);
+    }
 
     if (postMessages.length === 0) {
       container.innerHTML = `
@@ -4224,9 +4232,37 @@
         navigateToView('landing');
       }
     }
+    updateVerificationNavIndicator();
   }
 
   window.updateAuthUI = renderUserPill;
+
+  function updateVerificationNavIndicator() {
+    const user = marbsDB.getCurrentUser();
+    const unread = user ? (marbsDB.data.messages || []).filter(m =>
+      m.receiver_id === user.user_id && m.status !== 'READ').length : 0;
+    ['#navVerificationsBadge', '#mobileVerificationsBadge'].forEach(selector => {
+      const badge = $(selector);
+      if (!badge) return;
+      badge.style.display = unread ? 'inline-flex' : 'none';
+      badge.textContent = unread;
+      badge.setAttribute('aria-label', `${unread} unread verification message${unread === 1 ? '' : 's'}`);
+    });
+  }
+
+  function markVerificationMessagesRead(predicate) {
+    const user = marbsDB.getCurrentUser();
+    if (!user) return;
+    const unread = (marbsDB.data.messages || []).filter(m =>
+      m.receiver_id === user.user_id && m.status !== 'READ' && predicate(m));
+    if (!unread.length) return;
+    unread.forEach(m => {
+      m.status = 'READ';
+      marbsDB.syncFieldsToFirestore('messages', m.message_id, { status: 'READ' });
+    });
+    marbsDB.save();
+    updateVerificationNavIndicator();
+  }
 
   function updateNotificationBadges() {
     const user = marbsDB.getCurrentUser();
@@ -4281,6 +4317,7 @@
         verifNavBadge.style.display = 'none';
       }
     }
+    updateVerificationNavIndicator();
   }
 
   function openNotificationsModal() {

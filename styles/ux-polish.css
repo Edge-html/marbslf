@@ -47,10 +47,43 @@
     border-top: 1px solid var(--border);
   }
   .mobile-nav-account span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .messenger-sidebar { width: min(38vw, 190px); min-width: 110px; }
+  #postVerificationsModal .modal-card {
+    width: calc(100vw - 20px) !important;
+    height: min(92dvh, 760px);
+    max-height: min(92dvh, 760px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #postVerificationsModal .modal-header,
+  #postVerificationsModal .verif-tab-nav,
+  #postVerificationsModal .modal-footer { flex-shrink: 0; }
+  #verifTabContentAnswers { overflow-y: auto; min-height: 0; }
+  #verifTabContentMessages {
+    flex: 1;
+    min-height: 0;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+  .messenger-container { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  .messenger-sidebar {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    min-width: 0;
+    height: 78px;
+    flex: 0 0 78px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .messenger-thread-item { width: 175px; min-width: 175px; border-right: 1px solid var(--border); }
   .messenger-main { min-width: 0; }
-  .messenger-input-bar { flex-wrap: wrap; }
-  .messenger-input-bar input { min-width: 0; flex: 1 1 150px; }
+  .messenger-messages { flex: 1; min-height: 0; overflow-y: auto; }
+  .messenger-input-bar { flex-wrap: nowrap; flex-shrink: 0; }
+  .messenger-input-bar input { min-width: 0; flex: 1; }
+  .marketplace-item-banner { flex-wrap: wrap; gap: 8px; }
+  .marketplace-item-info { min-width: 0; flex: 1 1 180px; }
+  .marketplace-item-actions { margin-left: auto; }
 }
 
 .sync-status[data-state="syncing"] .sync-status-dot {
