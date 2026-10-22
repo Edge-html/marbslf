@@ -2973,7 +2973,7 @@
           user_id: user.user_id,
           full_legal_name: legalName || `${user.first_name} ${user.last_name}`,
           id_type: idType,
-          id_image: capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/id_sample.jpg',
+          id_image: capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/images.jpg',
           camera_verified: !!capturedPhotoPayload,
           status: 'PENDING',
           submitted_at: new Date().toISOString(),
@@ -3856,7 +3856,7 @@
           <td><strong style="color: var(--primary-dark);">${escapeHtml(v.full_legal_name)}</strong></td>
           <td>${v.id_type}</td>
           <td>
-            <img src="${v.id_image || 'assets/images.jpg'}" alt="ID Photo" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
+            <img src="${v.id_image || 'assets/images.jpg'}" alt="ID Photo" onerror="this.onerror=null;this.src='assets/images.jpg'" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
           </td>
           <td>${dateStr}</td>
           <td><span class="activity-badge" style="${statusColor}">${v.status}</span></td>
@@ -3876,6 +3876,7 @@
     if (!modal) return;
 
     $('#adminDetailIdImage').src = ver.id_image || 'assets/images.jpg';
+    $('#adminDetailIdImage').onerror = function () { this.onerror = null; this.src = 'assets/images.jpg'; };
     $('#adminDetailVerId').textContent = ver.verification_id;
     $('#adminDetailLegalName').textContent = ver.full_legal_name || 'N/A';
     $('#adminDetailDocType').textContent = ver.id_type || 'National ID';
