@@ -2535,15 +2535,22 @@
     const user = marbsDB.getCurrentUser();
     if (!user) return;
 
-    const threads = (marbsDB.data.matches || []).flatMap(match => {
+    const threadMap = new Map();
+    (marbsDB.data.matches || []).forEach(match => {
       const postId = match.post_id || [match.lost_post_id, match.found_post_id]
         .find(id => (marbsDB.data.posts || []).some(post => post.post_id === id));
       const post = (marbsDB.data.posts || []).find(item => item.post_id === postId);
-      if (!post || !match.claimant_id) return [];
-      if (user.role !== 'ADMIN' && match.claimant_id !== user.user_id && post.user_id !== user.user_id) return [];
+      if (!post || !match.claimant_id) return;
+      if (user.role !== 'ADMIN' && match.claimant_id !== user.user_id && post.user_id !== user.user_id) return;
       const counterpartyId = match.claimant_id === user.user_id ? post.user_id : match.claimant_id;
-      return counterpartyId ? [{ post, match, counterpartyId }] : [];
+      if (!counterpartyId) return;
+      const key = `${post.post_id}:${counterpartyId}`;
+      const current = threadMap.get(key);
+      if (!current || new Date(match.created_at || 0) > new Date(current.match.created_at || 0)) {
+        threadMap.set(key, { post, match, counterpartyId });
+      }
     });
+    const threads = Array.from(threadMap.values());
 
     const badge = $('#verifMessagesTabCount');
     if (badge) badge.textContent = threads.length;
