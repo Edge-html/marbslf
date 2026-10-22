@@ -422,20 +422,7 @@ const DEFAULT_REPORTS = [
   }
 ];
 
-const DEFAULT_ID_VERIFICATIONS = [
-  {
-    verification_id: 'VER-001',
-    user_id: 'USR-103',
-    full_legal_name: 'Arlene Gomez Mendoza',
-    id_type: 'National ID',
-    id_image: 'assets/id_sample.jpg',
-    camera_verified: true,
-    status: 'PENDING', // UNVERIFIED, PENDING, VERIFIED, REJECTED, SUSPENDED
-    submitted_at: '2026-09-20T10:00:00Z',
-    reviewed_by: '',
-    reviewed_at: ''
-  }
-];
+const DEFAULT_ID_VERIFICATIONS = [];
 
 const DEFAULT_NOTIFICATIONS = [
   {
@@ -909,6 +896,12 @@ class MarbsLFDatabase {
     }
 
     const mergeRemote = (key, idField, records) => {
+      if (key === 'id_verifications' && this.getCurrentUser()?.role === 'ADMIN') {
+        this.data.id_verifications = records;
+        this.save();
+        if (typeof window.renderAdminVerifications === 'function') window.renderAdminVerifications();
+        return;
+      }
       const current = new Map((this.data[key] || []).filter(record => record && record[idField]).map(record => [record[idField], record]));
       records.forEach(record => {
         if (record && record[idField]) current.set(record[idField], record);
@@ -950,6 +943,11 @@ class MarbsLFDatabase {
     listen('meetups', window.firestoreDb.collection('meetups').where('owner_id', '==', uid), 'meetups', 'meetup_id', `meetup-owner:${uid}`);
     listen('meetups', window.firestoreDb.collection('meetups').where('finder_id', '==', uid), 'meetups', 'meetup_id', `meetup-finder:${uid}`);
     listen('notifications', window.firestoreDb.collection('notifications').where('user_id', '==', uid), 'notifications', 'notification_id', `notifications:${uid}`);
+    if (this.getCurrentUser()?.role === 'ADMIN') {
+      listen('id_verifications', window.firestoreDb.collection('id_verifications'), 'id_verifications', 'verification_id', `id-verifications:admin:${uid}`);
+    } else {
+      listen('id_verifications', window.firestoreDb.collection('id_verifications').where('user_id', '==', uid), 'id_verifications', 'verification_id', `id-verifications:user:${uid}`);
+    }
   }
 
   async syncPostToFirestore(post) {

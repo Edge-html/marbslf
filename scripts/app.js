@@ -2969,7 +2969,7 @@
         const legalName = $('#idLegalName').value.trim();
 
         const verification = {
-          verification_id: 'VER-' + Date.now().toString().slice(-4),
+          verification_id: marbsDB.createId('VER'),
           user_id: user.user_id,
           full_legal_name: legalName || `${user.first_name} ${user.last_name}`,
           id_type: idType,
@@ -2983,6 +2983,10 @@
 
         user.verification_status = 'PENDING';
         marbsDB.data.id_verifications.unshift(verification);
+        if (window.firestoreDb) {
+          window.firestoreDb.collection('id_verifications').doc(verification.verification_id).set(verification)
+            .catch(error => console.warn('Could not save ID verification to Firestore:', error));
+        }
         marbsDB.logAudit('ID_VERIFICATION_SUBMITTED', `User ${user.user_id} submitted ${idType} for review`);
         marbsDB.save();
 
@@ -3860,6 +3864,7 @@
       `;
     }).join('');
   }
+  window.renderAdminVerifications = renderAdminVerifications;
 
   window.openAdminIdDetailsModal = function (verId) {
     const ver = marbsDB.data.id_verifications.find(v => v.verification_id === verId);
@@ -3967,25 +3972,20 @@
       }
     }
 
-    // Sync to Firestore if online
+    // Persist verification and user status; report failures so an approval is
+    // never silently presented as durable when Firestore rejected the write.
     if (window.firestoreDb) {
-      try {
-        const targetUid = targetUser ? targetUser.user_id : ver.user_id;
-        if (targetUid) {
-          const aliasForFirestore = buildPublicAlias(
-            { user_id: targetUid },
-            newStatus
-          );
-          window.firestoreDb.collection('users').doc(targetUid).set({
-            verification_status: newStatus,
-            public_alias: aliasForFirestore
-          }, { merge: true }).catch(err => console.warn('Firestore user update err:', err));
-        }
-        window.firestoreDb.collection('id_verifications').doc(verId).set(ver, { merge: true })
-          .catch(err => console.warn('Firestore ver update err:', err));
-      } catch (fErr) {
-        console.warn('Firestore sync note:', fErr);
-      }
+      const targetUid = targetUser ? targetUser.user_id : ver.user_id;
+      const aliasForFirestore = buildPublicAlias({ user_id: targetUid }, newStatus);
+      const writes = [window.firestoreDb.collection('id_verifications').doc(verId).set(ver, { merge: true })];
+      if (targetUid) writes.push(window.firestoreDb.collection('users').doc(targetUid).set({
+        verification_status: newStatus,
+        public_alias: aliasForFirestore
+      }, { merge: true }));
+      Promise.all(writes).catch(error => {
+        console.error('Verification status failed to sync:', error);
+        showToast('Status updated on this device, but cloud save failed. Check Firestore permissions and retry.');
+      });
     }
 
     marbsDB.logAudit(`ID_${newStatus}`, `Admin updated identity verification for user ${ver.user_id || ver.full_legal_name} to ${newStatus}`);
