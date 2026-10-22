@@ -2962,9 +2962,16 @@
 
     const form = $('#idVerificationForm');
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = marbsDB.getCurrentUser();
+        if (!user || !window.firestoreDb || !window.firebaseAuth?.currentUser) {
+          showToast('Sign in and reconnect to Firebase before submitting your ID.');
+          return;
+        }
+        const submitButton = form.querySelector('[type="submit"]');
+        if (submitButton?.disabled) return;
+        if (submitButton) submitButton.disabled = true;
         const idType = $('#idTypeSelect').value;
         const legalName = $('#idLegalName').value.trim();
 
@@ -2981,12 +2988,16 @@
           reviewed_at: ''
         };
 
+        try {
+          await window.firestoreDb.collection('id_verifications').doc(verification.verification_id).set(verification);
+        } catch (error) {
+          console.error('ID verification submission failed:', error);
+          showToast(`Submission failed (${error.code || 'network error'}). Your answers remain here; please retry.`);
+          if (submitButton) submitButton.disabled = false;
+          return;
+        }
         user.verification_status = 'PENDING';
         marbsDB.data.id_verifications.unshift(verification);
-        if (window.firestoreDb) {
-          window.firestoreDb.collection('id_verifications').doc(verification.verification_id).set(verification)
-            .catch(error => console.warn('Could not save ID verification to Firestore:', error));
-        }
         marbsDB.logAudit('ID_VERIFICATION_SUBMITTED', `User ${user.user_id} submitted ${idType} for review`);
         marbsDB.save();
 
@@ -2997,6 +3008,7 @@
         renderUserPill();
 
         showToast('ID verification submitted! Administrator review is pending.');
+        if (submitButton) submitButton.disabled = false;
       });
     }
   }
