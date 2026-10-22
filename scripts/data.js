@@ -481,6 +481,8 @@ const DEFAULT_AUDIT_LOGS = [
 // Database Manager
 class MarbsLFDatabase {
   constructor() {
+    this._localStorageImageFallback = false;
+    this._warnedStorageFallback = false;
     this.data = this.load();
     // Repair aliases that were saved with a hardcoded "Verified Citizen"
     // prefix regardless of the citizen's real verification status.
@@ -582,9 +584,46 @@ class MarbsLFDatabase {
 
   save(data = this.data) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (!this._localStorageImageFallback) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        return true;
+      }
     } catch (e) {
-      console.error('Failed to save to localStorage:', e);
+      if (e?.name !== 'QuotaExceededError' && e?.code !== 22 && e?.code !== 1014) {
+        console.error('Failed to save to localStorage:', e);
+        return false;
+      }
+      this._localStorageImageFallback = true;
+    }
+
+    // Keep full-resolution images in memory/Firestore, but do not duplicate
+    // large base64 payloads into the browser's small localStorage quota.
+    try {
+      const cacheCopy = JSON.parse(JSON.stringify(data));
+      let removedImageCount = 0;
+      const trimInlineImages = value => {
+        if (typeof value === 'string' && /^data:image\/[\w.+-]+;base64,/i.test(value)) {
+          removedImageCount++;
+          return 'assets/images.jpg';
+        }
+        if (Array.isArray(value)) return value.map(trimInlineImages);
+        if (!value || typeof value !== 'object') return value;
+        Object.keys(value).forEach(key => {
+          const child = value[key];
+          value[key] = trimInlineImages(child);
+        });
+        return value;
+      };
+      trimInlineImages(cacheCopy);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheCopy));
+      if (!this._warnedStorageFallback) {
+        console.warn(`Browser cache is full; saved a compact copy without ${removedImageCount} embedded photo(s). Full live data remains unchanged in memory.`);
+        this._warnedStorageFallback = true;
+      }
+      return true;
+    } catch (fallbackError) {
+      console.error('Could not save even the compact app cache to localStorage:', fallbackError);
+      return false;
     }
   }
 
