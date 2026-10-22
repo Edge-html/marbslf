@@ -5121,10 +5121,8 @@
             first_name: 'Verified Citizen',
             public_alias: 'Citizen #vOIUJk'
           };
-          const ratingObj = (marbsDB.data.ratings || []).find(r => r.meetup_id === m.meetup_id) || {
-            stars: 5,
-            comment: 'Item safely retrieved and verified at the approved pickup point.'
-          };
+          const ratingObj = (marbsDB.data.ratings || []).find(r =>
+            r.meetup_id === m.meetup_id && r.rater_id === user.user_id);
 
           return `
             <div class="meetup-schedule-card" style="border-left: 4px solid #2F8A53; background: #fbfdfc;">
@@ -5147,11 +5145,12 @@
 
                 <div style="text-align: right; background: #fff; border: 1px solid #E5E1D8; border-radius: 8px; padding: 8px 12px;">
                   <div style="color: #C08A1E; font-size: 14px; font-weight: 800;">
-                    ${'★'.repeat(ratingObj.stars || 5)} (${ratingObj.stars || 5}.0 Stars)
+                    ${ratingObj ? `${'★'.repeat(ratingObj.stars)} (${ratingObj.stars}.0 Stars)` : 'Not rated yet'}
                   </div>
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; max-width: 240px; font-style: italic;">
-                    "${escapeHtml(ratingObj.comment || 'Verified safe handover completed!')}"
+                    ${ratingObj ? `"${escapeHtml(ratingObj.comment || 'No comment provided.')}"` : `Rate ${escapeHtml(getPublicAlias(counterparty))} for this handover.`}
                   </div>
+                  ${!ratingObj && [m.owner_id, m.finder_id].includes(user.user_id) ? `<button type="button" class="btn btn-primary" style="margin-top:10px;font-size:12px" onclick="window.openRatingModal('${counterpartyId}', '${m.meetup_id}', '${m.post_id}')">Rate Citizen</button>` : ''}
                 </div>
               </div>
             </div>
@@ -5175,7 +5174,16 @@
   let selectedRatingStars = 5;
 
   window.openRatingModal = function(targetUserId, meetupId, postId) {
-    activeRatingTargetUserId = targetUserId || 'USR-102';
+    const user = marbsDB.getCurrentUser();
+    const meetup = (marbsDB.data.meetups || []).find(m => m.meetup_id === meetupId);
+    if (!user || !meetup || meetup.status !== 'COMPLETED' ||
+        ![meetup.owner_id, meetup.finder_id].includes(user.user_id) ||
+        targetUserId !== (user.user_id === meetup.owner_id ? meetup.finder_id : meetup.owner_id) ||
+        (marbsDB.data.ratings || []).some(r => r.meetup_id === meetupId && r.rater_id === user.user_id)) {
+      showToast('Ratings are available once per completed handover.');
+      return;
+    }
+    activeRatingTargetUserId = targetUserId;
     activeRatingMeetupId = meetupId;
     activeRatingPostId = postId;
     selectedRatingStars = 5;
@@ -5231,16 +5239,26 @@
     btn.classList.toggle('active');
   };
 
-  window.submitCitizenRating = function(e) {
+  window.submitCitizenRating = async function(e) {
     if (e) e.preventDefault();
     const user = marbsDB.getCurrentUser();
-    if (!user) return;
+    const meetup = (marbsDB.data.meetups || []).find(m => m.meetup_id === activeRatingMeetupId);
+    if (!user || !meetup || meetup.status !== 'COMPLETED' ||
+        activeRatingTargetUserId !== (user.user_id === meetup.owner_id ? meetup.finder_id : meetup.owner_id)) return;
+    if ((marbsDB.data.ratings || []).some(r => r.meetup_id === meetup.meetup_id && r.rater_id === user.user_id)) return;
+    if (!window.firestoreDb || !window.firebaseAuth?.currentUser) {
+      showToast('Sign in to Firebase before submitting a rating.');
+      return;
+    }
+    const submitButton = $('#citizenRatingForm button[type="submit"]');
+    if (submitButton?.disabled) return;
+    if (submitButton) submitButton.disabled = true;
 
     const comment = ($('#ratingCommentText')?.value || '').trim() || 'Very honest citizen! Safely returned the item.';
     const selectedTags = Array.from($$('.feedback-chip.active')).map(c => c.textContent.trim());
 
     const ratingRecord = {
-      rating_id: 'RAT-' + Date.now().toString().slice(-4),
+      rating_id: `RAT-${activeRatingMeetupId}-${user.user_id}`,
       meetup_id: activeRatingMeetupId,
       post_id: activeRatingPostId,
       rater_id: user.user_id,
@@ -5251,6 +5269,20 @@
       created_at: new Date().toISOString()
     };
 
+    try {
+      const doc = window.firestoreDb.collection('ratings').doc(ratingRecord.rating_id);
+      if ((await doc.get()).exists) {
+        showToast('You already rated this handover.');
+        if (submitButton) submitButton.disabled = false;
+        return;
+      }
+      await doc.set(ratingRecord);
+    } catch (error) {
+      console.error('Rating save failed:', error);
+      showToast(`Could not save rating (${error.code || 'network error'}). Please retry.`);
+      if (submitButton) submitButton.disabled = false;
+      return;
+    }
     if (!Array.isArray(marbsDB.data.ratings)) {
       marbsDB.data.ratings = [];
     }
@@ -5266,9 +5298,10 @@
 
     marbsDB.logAudit('RATING_SUBMITTED', `User ${user.user_id} rated ${activeRatingTargetUserId} with ${selectedRatingStars} stars`);
     marbsDB.save();
+    if (submitButton) submitButton.disabled = false;
 
     $('#ratingModal').classList.remove('active');
-    showToast(`Thank you! Rated ${selectedRatingStars} stars. Reliability score updated on their profile!`);
+    showToast(`Thank you! Your ${selectedRatingStars}-star rating was saved.`);
 
     renderMeetupsView();
     renderUserDashboard();
