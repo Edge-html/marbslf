@@ -249,13 +249,6 @@
           if (window.marbsDB && typeof window.marbsDB.startPrivateWorkflowListeners === 'function') {
             window.marbsDB.startPrivateWorkflowListeners();
           }
-          // Top up demo reports for any citizen registered in a previous session.
-          if (window.marbsDB && typeof window.marbsDB.seedDemoPosts === 'function') {
-            if (window.marbsDB.seedDemoPosts() > 0) {
-              renderFeed();
-              renderRecentActivity();
-            }
-          }
         });
     }
   }
@@ -3179,8 +3172,6 @@
 
           $('#registerModal').classList.remove('active');
           regForm.reset();
-          // Give the new citizen demo reports so the feed is not empty for them.
-          if (typeof marbsDB.seedDemoPosts === 'function') marbsDB.seedDemoPosts();
           renderUserPill();
           renderFeed();
 
@@ -3437,8 +3428,6 @@
           }
 
           lpRegForm.reset();
-          // Give the new citizen demo reports so the feed is not empty for them.
-          if (typeof marbsDB.seedDemoPosts === 'function') marbsDB.seedDemoPosts();
           renderUserPill();
           navigateToView('home');
 

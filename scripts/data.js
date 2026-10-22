@@ -498,8 +498,8 @@ class MarbsLFDatabase {
     // Repair aliases that were saved with a hardcoded "Verified Citizen"
     // prefix regardless of the citizen's real verification status.
     this.syncPublicAliases();
-    // Give every non-admin citizen demo reports in the database on first run.
-    ensureSeedPosts(this);
+    // Keep the feed free of generated sample reports. Real citizen posts remain.
+    this.purgeDemoPosts();
   }
 
   createId(prefix) {
@@ -604,7 +604,7 @@ class MarbsLFDatabase {
   resetToDefaults() {
     localStorage.removeItem(STORAGE_KEY);
     this.data = this.load();
-    ensureSeedPosts(this);
+    this.purgeDemoPosts();
     return this.data;
   }
 
@@ -613,7 +613,7 @@ class MarbsLFDatabase {
    * registers, without duplicating seeding logic in the UI layer.
    */
   seedDemoPosts() {
-    return ensureSeedPosts(this);
+    return 0;
   }
 
   /**
@@ -640,6 +640,15 @@ class MarbsLFDatabase {
     const before = (this.data.posts || []).length;
     this.data.posts = (this.data.posts || []).filter(p => !p.is_seed);
     this.save();
+    if (window.firestoreDb) {
+      window.firestoreDb.collection('posts').where('is_seed', '==', true).get()
+        .then(snapshot => {
+          const batch = window.firestoreDb.batch();
+          snapshot.forEach(doc => batch.delete(doc.ref));
+          return snapshot.empty ? null : batch.commit();
+        })
+        .catch(error => console.warn('Could not purge marked sample posts from Firestore:', error));
+    }
     return before - this.data.posts.length;
   }
 
@@ -797,7 +806,9 @@ class MarbsLFDatabase {
           const isMock = mockIds.includes(docId) || mockIds.includes(p.post_id) || name.includes('mochi') || name.includes('toyota car key') || name.includes('redmi note') || name.includes('black leather bifold') || name.includes('brown aspin');
           const isSpam = name.includes('black wallet') || loc.includes('dwadawda') || desc.includes('dawawdawdawdaw');
           
-          if (isMock || isSpam) {
+          if (p.is_seed) {
+            doc.ref.delete().catch(() => {});
+          } else if (isMock || isSpam) {
             // Delete mock or spam from Firestore directly
             doc.ref.delete().catch(() => {});
           } else {
@@ -855,7 +866,7 @@ class MarbsLFDatabase {
       const remotePosts = [];
       snapshot.forEach((doc) => {
         const post = doc.data();
-        if (post && !isHiddenDemoRecord(post)) remotePosts.push(post);
+        if (post && !post.is_seed && !isHiddenDemoRecord(post)) remotePosts.push(post);
       });
       const remoteIds = new Set(remotePosts.map(p => p.post_id));
       const localOnly = (this.data.posts || []).filter(p => !p.is_seed && !remoteIds.has(p.post_id));
