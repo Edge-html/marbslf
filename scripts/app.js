@@ -2462,7 +2462,17 @@
         activeChatCounterpartyId = null;
         stopMessengerRealTimeSync();
         const title = $('#marketplaceItemTitle');
+        const type = $('#marketplaceItemType');
+        const location = $('#marketplaceItemLocation');
+        const status = $('#marketplaceItemStatusBadge');
+        const counterparty = $('#marketplaceItemCounterparty');
         if (title) title.textContent = 'Select a conversation';
+        if (type) type.textContent = '';
+        if (location) location.textContent = '';
+        if (status) { status.textContent = ''; status.className = 'post-badge'; }
+        if (counterparty) counterparty.textContent = '';
+        const img = $('#marketplaceItemImg');
+        if (img) img.src = 'assets/images.jpg';
         const container = $('#messengerMessagesContainer');
         if (container) container.innerHTML = '<div class="messenger-empty-state">Choose “Message” from a verification answer to open its private conversation.</div>';
       }
@@ -2569,7 +2579,7 @@
   }
 
   function selectMessengerConversation(postId, counterpartyId = null, matchId = null) {
-    const post = (marbsDB.data.posts || []).find(p => p.post_id === postId) || (marbsDB.data.posts || [])[0];
+    const post = (marbsDB.data.posts || []).find(p => p.post_id === postId);
     if (!post) return;
     const user = marbsDB.getCurrentUser();
 
@@ -4418,6 +4428,24 @@
       (user.user_id === 'USR-ADMIN' && (p.user_id === 'USR-ADMIN' || p.user_id === 'USR-GUEST'))
     );
     const userPostIds = new Set(userPosts.map(p => p.post_id));
+
+    // Repair legacy submissions that used placeholder lost/found IDs and therefore
+    // cannot be joined to the poster's real post. The private system message
+    // created with the claim retains both the claimant and the real post ID.
+    (marbsDB.data.matches || []).forEach(match => {
+      if (match.post_id || !match.claimant_id) return;
+      const candidates = (marbsDB.data.messages || []).filter(message =>
+        message.sender_id === match.claimant_id && message.post_id &&
+        (userPostIds.has(message.post_id) || user.role === 'ADMIN') &&
+        /^\[System Notice\]/.test(message.message || '') &&
+        /submitted|reported/i.test(message.message || '')
+      ).sort((a, b) => Math.abs(new Date(a.timestamp) - new Date(match.created_at)) - Math.abs(new Date(b.timestamp) - new Date(match.created_at)));
+      const candidate = candidates[0];
+      if (!candidate || Math.abs(new Date(candidate.timestamp) - new Date(match.created_at)) > 10 * 60 * 1000) return;
+      match.post_id = candidate.post_id;
+      match[candidate.message?.includes('ownership claim') ? 'found_post_id' : 'lost_post_id'] = candidate.post_id;
+      marbsDB.syncRecordToFirestore('matches', match);
+    });
 
     let relevantMatches = (marbsDB.data.matches || []).filter(m => {
       // Must pertain to one of user's posts
