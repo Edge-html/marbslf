@@ -3932,13 +3932,10 @@
     });
   }
 
-  window.adminSetVerificationStatus = function (verId, newStatus) {
+  window.adminSetVerificationStatus = async function (verId, newStatus) {
     const ver = marbsDB.data.id_verifications.find(v => v.verification_id === verId);
     if (!ver) return;
-
-    ver.status = newStatus;
-    ver.reviewed_by = 'USR-ADMIN (Central Admin)';
-    ver.reviewed_at = new Date().toISOString();
+    const wasVerified = ver.status === 'VERIFIED';
 
     // Match target user by user_id OR full legal name / alias
     let targetUser = marbsDB.data.users.find(u => u.user_id === ver.user_id);
@@ -3950,11 +3947,35 @@
       });
     }
 
+    const updatedVerification = {
+      ...ver,
+      status: newStatus,
+      reviewed_by: 'USR-ADMIN (Central Admin)',
+      reviewed_at: new Date().toISOString()
+    };
+    const targetUid = targetUser?.user_id || ver.user_id;
+    if (window.firestoreDb) {
+      try {
+        const batch = window.firestoreDb.batch();
+        batch.set(window.firestoreDb.collection('id_verifications').doc(verId), updatedVerification, { merge: true });
+        if (targetUid) batch.set(window.firestoreDb.collection('users').doc(targetUid), {
+          verification_status: newStatus,
+          public_alias: buildPublicAlias({ user_id: targetUid }, newStatus)
+        }, { merge: true });
+        await batch.commit();
+      } catch (error) {
+        console.error('Verification status failed to sync:', error);
+        showToast(`Could not save to Firebase (${error.code || 'write failed'}). Status was not changed.`);
+        return;
+      }
+    }
+    Object.assign(ver, updatedVerification);
+
     if (targetUser) {
       targetUser.verification_status = newStatus;
       // Alias must follow the new status so the public label stays truthful.
       targetUser.public_alias = buildPublicAlias(targetUser, newStatus);
-      if (newStatus === 'VERIFIED') {
+      if (newStatus === 'VERIFIED' && !wasVerified) {
         targetUser.points_balance = (targetUser.points_balance || 0) + 50; // Verification bonus
       }
     }
@@ -3970,22 +3991,6 @@
           curUser.points_balance = (curUser.points_balance || 0) + 50;
         }
       }
-    }
-
-    // Persist verification and user status; report failures so an approval is
-    // never silently presented as durable when Firestore rejected the write.
-    if (window.firestoreDb) {
-      const targetUid = targetUser ? targetUser.user_id : ver.user_id;
-      const aliasForFirestore = buildPublicAlias({ user_id: targetUid }, newStatus);
-      const writes = [window.firestoreDb.collection('id_verifications').doc(verId).set(ver, { merge: true })];
-      if (targetUid) writes.push(window.firestoreDb.collection('users').doc(targetUid).set({
-        verification_status: newStatus,
-        public_alias: aliasForFirestore
-      }, { merge: true }));
-      Promise.all(writes).catch(error => {
-        console.error('Verification status failed to sync:', error);
-        showToast('Status updated on this device, but cloud save failed. Check Firestore permissions and retry.');
-      });
     }
 
     marbsDB.logAudit(`ID_${newStatus}`, `Admin updated identity verification for user ${ver.user_id || ver.full_legal_name} to ${newStatus}`);
