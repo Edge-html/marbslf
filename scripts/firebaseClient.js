@@ -125,29 +125,11 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
 
 // 3. Real Email or Username Login
 async function signInWithEmailOrUsername(identifier, password) {
-  // Built-in Admin bypass & local admin support
-  const trimmed = identifier.trim().toLowerCase();
-  if ((trimmed === 'admin' || trimmed === 'admin@marbslf.gov.ph') && password === 'admin123') {
-    const adminUser = window.marbsDB ? window.marbsDB.data.users.find(u => u.role === 'ADMIN') : null;
-    const profile = adminUser || {
-      user_id: 'USR-ADMIN',
-      first_name: 'MarbsLF',
-      last_name: 'Administrator',
-      public_alias: 'System Admin #01',
-      email: 'admin@marbslf.gov.ph',
-      username: 'admin',
-      role: 'ADMIN',
-      points_balance: 9999,
-      verification_status: 'VERIFIED',
-      account_status: 'ACTIVE'
-    };
-    return { user: { id: profile.user_id, email: profile.email }, profile };
-  }
-
   if (!firebaseAuth) return null;
 
   try {
-    let emailToUse = identifier.trim();
+    let emailToUse = identifier.trim().toLowerCase() === 'admin'
+      ? 'admin@marbslf.gov.ph' : identifier.trim();
 
     // If identifier is not an email, lookup email by username:
     // First try local registered users
@@ -210,7 +192,7 @@ async function signInWithEmailOrUsername(identifier, password) {
       };
     }
 
-    return { user: { id: user.uid, email: user.email }, profile };
+    return { user: { id: user.uid, email: user.email }, profile: { ...profile, user_id: user.uid } };
   } catch (err) {
     console.error('Firebase Login Error:', err);
     throw err;
@@ -390,7 +372,7 @@ if (firebaseAuth) {
       }
     } else {
       console.log('Firebase Auth State: Logged Out');
-      if (window.marbsDB && window.marbsDB.data.current_user_id !== 'USR-ADMIN') {
+      if (window.marbsDB) {
         window.marbsDB.setCurrentUser(null);
       }
       if (typeof window.renderUserPill === 'function') {

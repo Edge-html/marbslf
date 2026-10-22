@@ -970,7 +970,13 @@ class MarbsLFDatabase {
         const records = [];
         snapshot.forEach(doc => records.push(doc.data()));
         mergeRemote(stateKey, idField, records);
-      }, error => console.warn(`Firestore ${collection} live listener:`, error)));
+      }, error => {
+        console.warn(`Firestore ${collection} live listener:`, error);
+        if (collection === 'id_verifications' && this.getCurrentUser()?.role === 'ADMIN') {
+          const table = document.getElementById('adminVerificationsTbody');
+          if (table) table.innerHTML = '<tr><td colspan="7">Could not load ID submissions. Check Firebase admin access and Firestore permissions.</td></tr>';
+        }
+      }));
     };
 
     const uid = authUser.uid;
