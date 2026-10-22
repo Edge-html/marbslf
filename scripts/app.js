@@ -3843,6 +3843,10 @@
   function renderAdminVerifications() {
     const tbody = $('#adminVerificationsTbody');
     if (!tbody) return;
+    if (!window.firebaseAuth?.currentUser) {
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center">Local admin sign-in is active. Sign in with a Firebase admin account to load citizen ID submissions.</td></tr>';
+      return;
+    }
 
     if (!marbsDB.data.id_verifications || marbsDB.data.id_verifications.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No ID verification submissions yet.</td></tr>`;
