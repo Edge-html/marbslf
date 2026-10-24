@@ -212,6 +212,7 @@
   function initApp() {
     setupEvaluatorBar();
     setupNavigation();
+    setupPublicHistory();
     setupRouter();
     setupCategoryAndAreaFilters();
     setupSearch();
@@ -430,6 +431,60 @@
     }
   }
 
+  function setupPublicHistory() {
+    const filter = $('#publicHistoryFilter');
+    if (filter) filter.addEventListener('change', renderPublicTransactionHistory);
+  }
+
+  function formatPublicCompletionMonth(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Date unavailable';
+    return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  }
+
+  function renderPublicTransactionHistory() {
+    const list = $('#publicTransactionsList');
+    if (!list) return;
+    const records = (marbsDB.data.public_transactions || [])
+      .filter(record => record && ['ITEM_RETURN', 'PET_REUNION'].includes(record.kind))
+      .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
+    const filter = $('#publicHistoryFilter')?.value || 'ALL';
+    const visible = filter === 'ALL' ? records : records.filter(record => record.kind === filter);
+    const count = $('#publicReturnCount');
+    if (count) count.textContent = records.length.toLocaleString();
+    const status = $('#publicHistoryStatus');
+
+    if (!visible.length) {
+      const hasAny = records.length > 0;
+      if (status) status.textContent = hasAny ? 'No returns match this filter.' : 'New confirmed returns will appear here after both participants confirm the handover.';
+      list.innerHTML = `
+        <div class="public-history-empty">
+          <span class="public-history-empty-icon" aria-hidden="true">${hasAny ? '⌕' : '↗'}</span>
+          <strong>${hasAny ? 'No matching returns' : 'No public returns yet'}</strong>
+          <p>${hasAny ? 'Try another history filter.' : 'When a handover is confirmed by both people, its privacy-safe summary will be added to this archive.'}</p>
+        </div>`;
+      return;
+    }
+
+    if (status) status.textContent = `Showing ${visible.length} of ${records.length} confirmed return${records.length === 1 ? '' : 's'}.`;
+    list.innerHTML = visible.map(record => {
+      const isPet = record.kind === 'PET_REUNION';
+      const month = formatPublicCompletionMonth(record.completed_at);
+      const category = escapeHtml(record.category || (isPet ? 'Pets' : 'Personal item'));
+      return `
+        <article class="public-return-card">
+          <div class="public-return-icon ${isPet ? 'is-pet' : ''}" aria-hidden="true">${isPet ? '♡' : '✓'}</div>
+          <div class="public-return-copy">
+            <div class="public-return-meta"><span>Two-party confirmed</span><time>${escapeHtml(month)}</time></div>
+            <h3>${isPet ? 'Pet reunited' : 'Item safely returned'}</h3>
+            <p>${category} · Koronadal City</p>
+          </div>
+          <span class="public-return-status">Completed</span>
+        </article>`;
+    }).join('');
+  }
+  window.renderPublicTransactionHistory = renderPublicTransactionHistory;
+
   /**
    * Apply the shared chrome (navbar links + auth controls) for a given surface.
    * 'landing' = public marketing site, 'app' = authenticated main application.
@@ -461,7 +516,7 @@
       b.classList.toggle('active', !isLanding && b.dataset.view === activeView);
     });
     $$('#landingNavLinks .nav-link-btn, #mobileLandingNavLinks .nav-link-btn').forEach(b => {
-      b.classList.remove('active');
+      b.classList.toggle('active', activeView === 'public-history' && b.dataset.view === activeView);
     });
   }
 
@@ -491,7 +546,9 @@
       target = 'landing';
     }
 
-    const surface = target === 'landing' ? 'landing' : 'app';
+    const surface = target === 'public-history'
+      ? (currentUser ? 'app' : 'landing')
+      : (target === 'landing' ? 'landing' : 'app');
     applySurfaceChrome(surface, target);
 
     // --- Hide all primary views --------------------------------------------
@@ -507,6 +564,8 @@
     $('#howItWorksView').style.display = 'none';
     const meetupsView = $('#meetupsView');
     if (meetupsView) meetupsView.style.display = 'none';
+    const publicHistoryView = $('#publicHistoryView');
+    if (publicHistoryView) publicHistoryView.style.display = 'none';
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -539,6 +598,9 @@
     } else if (target === 'landing') {
       activeViewEl = landingPageView;
       if (typeof setLandingNavActive === 'function') setLandingNavActive(1);
+    } else if (target === 'public-history') {
+      activeViewEl = publicHistoryView;
+      renderPublicTransactionHistory();
     } else if (target === 'lost-items') {
       currentFilter = 'LOST_ITEMS';
       currentCategory = 'ALL';
@@ -640,7 +702,7 @@
    * routing (pushState to /home) would 404 on reload or direct link.
    */
   const VALID_VIEWS = ['landing', 'home', 'lost-items', 'found-items', 'lost-pets',
-    'found-pets', 'how-it-works', 'dashboard', 'verifications', 'meetups', 'admin'];
+    'found-pets', 'how-it-works', 'public-history', 'dashboard', 'verifications', 'meetups', 'admin'];
 
   function hashForView(viewName) {
     return viewName === 'landing' ? '#/' : '#/' + viewName;
@@ -2344,7 +2406,61 @@
   }
 
   // 14. 2-Way Handshake Return Confirmation (Section 17, 19, 20, 23, 29)
-  window.confirmReturnStep = function (meetupId, actionRole) {
+  async function ensurePublicReturnRecord(meetup) {
+    if (!meetup || meetup.status !== 'COMPLETED' ||
+        meetup.owner_confirmed_return !== true || meetup.finder_confirmed_return !== true) return false;
+
+    const completedAt = meetup.completed_at || new Date().toISOString();
+    meetup.completed_at = completedAt;
+    marbsDB.save();
+    await marbsDB.syncRecordToFirestore('meetups', meetup);
+
+    const publicId = meetup.meetup_id;
+    if (window.firestoreDb) {
+      try {
+        const existing = await window.firestoreDb.collection('public_transactions').doc(publicId).get();
+        if (existing.exists) {
+          const current = marbsDB.data.public_transactions || [];
+          if (!current.some(record => record.public_transaction_id === publicId)) current.unshift(existing.data());
+          marbsDB.data.public_transactions = current;
+          marbsDB.save();
+          window.renderPublicTransactionHistory?.();
+          return true;
+        }
+      } catch (error) {
+        console.warn('Could not check public return history:', error);
+        return false;
+      }
+    }
+
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === meetup.post_id);
+    const allowedCategories = ['Pets', 'Electronics', 'Personal Items', 'IDs & Documents', 'Keys', 'Clothing', 'School Items', 'Others', 'Bags'];
+    const category = allowedCategories.includes(post?.category) ? post.category : (post?.category === 'Pets' ? 'Pets' : 'Other');
+    const record = {
+      public_transaction_id: publicId,
+      kind: category === 'Pets' ? 'PET_REUNION' : 'ITEM_RETURN',
+      category,
+      city: 'Koronadal City',
+      completed_month: completedAt.slice(0, 7),
+      completed_at: completedAt,
+      confirmation: 'Confirmed by both participants'
+    };
+
+    if (window.firestoreDb) {
+      const written = await marbsDB.syncRecordToFirestore('public_transactions', record);
+      if (!written) return false;
+    }
+    marbsDB.data.public_transactions = marbsDB.data.public_transactions || [];
+    if (!marbsDB.data.public_transactions.some(item => item.public_transaction_id === publicId)) {
+      marbsDB.data.public_transactions.unshift(record);
+    }
+    marbsDB.save();
+    window.renderPublicTransactionHistory?.();
+    return true;
+  }
+  window.ensurePublicReturnRecord = ensurePublicReturnRecord;
+
+  window.confirmReturnStep = async function (meetupId, actionRole) {
     const meetup = marbsDB.data.meetups.find(m => m.meetup_id === meetupId);
     if (!meetup) return;
     const user = marbsDB.getCurrentUser();
@@ -2353,7 +2469,10 @@
       showToast('Only the matching meetup participant can confirm this step.');
       return;
     }
-    if (meetup.status === 'COMPLETED') return;
+    if (meetup.status === 'COMPLETED') {
+      await ensurePublicReturnRecord(meetup);
+      return;
+    }
 
     if (actionRole === 'OWNER') {
       if (meetup.owner_confirmed_return) return;
@@ -2412,7 +2531,8 @@
     }
 
     marbsDB.save();
-    marbsDB.syncRecordToFirestore('meetups', meetup);
+    await marbsDB.syncRecordToFirestore('meetups', meetup);
+    if (meetup.status === 'COMPLETED') await ensurePublicReturnRecord(meetup);
     renderUserDashboard();
     renderMeetupsView();
   };

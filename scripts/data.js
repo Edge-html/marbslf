@@ -500,7 +500,7 @@ class MarbsLFDatabase {
 
   async syncRecordToFirestore(collectionName, record) {
     if (!window.firestoreDb || !record) return false;
-    const key = record.message_id || record.match_id || record.meetup_id || record.notification_id || record.transaction_id;
+    const key = record.message_id || record.match_id || record.meetup_id || record.public_transaction_id || record.notification_id || record.transaction_id;
     if (!key) return false;
     try {
       await window.firestoreDb.collection(collectionName).doc(key).set(record, { merge: true });
@@ -552,6 +552,7 @@ class MarbsLFDatabase {
         } else {
           parsed.meetups = parsed.meetups.filter(m => m.meetup_id !== 'MT-501');
         }
+        if (!Array.isArray(parsed.public_transactions)) parsed.public_transactions = [];
         if (Array.isArray(parsed.messages)) {
           parsed.messages = parsed.messages.filter(m => m.message_id !== 'MSG-001' && m.message_id !== 'MSG-002');
         }
@@ -567,6 +568,7 @@ class MarbsLFDatabase {
       safe_places: DEFAULT_SAFE_PICKUP_PLACES,
       matches: DEFAULT_MATCHES,
       meetups: DEFAULT_MEETUPS,
+      public_transactions: [],
       messages: DEFAULT_MESSAGES,
       ratings: DEFAULT_RATINGS,
       points_transactions: DEFAULT_MARBS_POINTS_TRANSACTIONS,
@@ -939,6 +941,18 @@ class MarbsLFDatabase {
         this.save();
       }
     }, (error) => console.warn('Firestore live pickup-place listener:', error));
+
+    window.firestoreDb.collection('public_transactions')
+      .orderBy('completed_at', 'desc')
+      .onSnapshot(snapshot => {
+        this.data.public_transactions = snapshot.docs.map(doc => doc.data());
+        this.save();
+        if (typeof window.renderPublicTransactionHistory === 'function') window.renderPublicTransactionHistory();
+      }, error => {
+        console.warn('Public return history listener:', error);
+        const status = document.getElementById('publicHistoryStatus');
+        if (status) status.textContent = 'Return history is temporarily unavailable. Please try again later.';
+      });
   }
 
   startPrivateWorkflowListeners() {
@@ -975,6 +989,11 @@ class MarbsLFDatabase {
       if (key === 'meetups') {
         if (typeof window.renderUserDashboard === 'function') window.renderUserDashboard();
         if (typeof window.renderMeetupsView === 'function') window.renderMeetupsView();
+        records.forEach(meetup => {
+          if (meetup?.status === 'COMPLETED' && meetup.owner_confirmed_return === true && meetup.finder_confirmed_return === true) {
+            window.ensurePublicReturnRecord?.(meetup);
+          }
+        });
       }
       if (key === 'notifications' && typeof window.updateNotificationBadges === 'function') {
         window.updateNotificationBadges();

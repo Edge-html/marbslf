@@ -9,6 +9,10 @@ service cloud.firestore {
       return signedIn() && request.auth.token.admin == true;
     }
 
+    function isMeetupParticipant(data) {
+      return signedIn() && (data.owner_id == request.auth.uid || data.finder_id == request.auth.uid);
+    }
+
     function ownsPost(postId) {
       return signedIn()
         && exists(/databases/$(database)/documents/posts/$(postId))
@@ -53,6 +57,63 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Private schedules remain participant-only. The public archive receives
+    // a separate, deliberately sanitized projection after both confirmations.
+    match /meetups/{meetupId} {
+      allow get, list: if isAdmin() || isMeetupParticipant(resource.data);
+      allow create: if isMeetupParticipant(request.resource.data)
+        && request.resource.data.meetup_id == meetupId
+        && request.resource.data.status == 'CONFIRMED'
+        && request.resource.data.owner_id != request.resource.data.finder_id
+        && request.resource.data.owner_confirmed_return == false
+        && request.resource.data.finder_confirmed_return == false
+        && request.resource.data.keys().hasOnly([
+          'meetup_id', 'match_id', 'post_id', 'owner_id', 'finder_id',
+          'place_id', 'place_name', 'date', 'time', 'status',
+          'owner_confirmed_return', 'finder_confirmed_return',
+          'safety_acknowledged', 'created_at'
+        ]);
+      allow update: if isMeetupParticipant(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'owner_confirmed_return', 'finder_confirmed_return', 'status', 'completed_at'
+        ])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['owner_confirmed_return'])
+          || (request.auth.uid == resource.data.owner_id && request.resource.data.owner_confirmed_return == true))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['finder_confirmed_return'])
+          || (request.auth.uid == resource.data.finder_id && request.resource.data.finder_confirmed_return == true))
+        && request.resource.data.status in ['CONFIRMED', 'COMPLETED']
+        && (request.resource.data.status != 'COMPLETED'
+          || (request.resource.data.owner_confirmed_return == true
+            && request.resource.data.finder_confirmed_return == true));
+      allow delete: if isAdmin();
+    }
+
+    match /public_transactions/{transactionId} {
+      allow get, list: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'public_transaction_id', 'kind', 'category', 'city',
+          'completed_month', 'completed_at', 'confirmation'
+        ])
+        && request.resource.data.public_transaction_id == transactionId
+        && exists(/databases/$(database)/documents/meetups/$(transactionId))
+        && get(/databases/$(database)/documents/meetups/$(transactionId)).data.status == 'COMPLETED'
+        && get(/databases/$(database)/documents/meetups/$(transactionId)).data.owner_confirmed_return == true
+        && get(/databases/$(database)/documents/meetups/$(transactionId)).data.finder_confirmed_return == true
+        && isMeetupParticipant(get(/databases/$(database)/documents/meetups/$(transactionId)).data)
+        && request.resource.data.category in [
+          'Pets', 'Electronics', 'Personal Items', 'IDs & Documents',
+          'Keys', 'Clothing', 'School Items', 'Others', 'Bags', 'Other'
+        ]
+        && request.resource.data.kind == (request.resource.data.category == 'Pets' ? 'PET_REUNION' : 'ITEM_RETURN')
+        && request.resource.data.city == 'Koronadal City'
+        && request.resource.data.completed_month is string
+        && request.resource.data.completed_month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.completed_at is string
+        && request.resource.data.confirmation == 'Confirmed by both participants';
+      allow update, delete: if false;
+    }
+
     match /users/{userId} {
       allow get: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow list: if isAdmin();
@@ -87,7 +148,10 @@ service cloud.firestore {
     // Other collections should be migrated to least-privilege rules before
     // treating their contents as private.
     match /{collection}/{document=**} {
-      allow read, write: if collection != 'id_verifications' && collection != 'users';
+      allow read, write: if collection != 'id_verifications'
+        && collection != 'users'
+        && collection != 'meetups'
+        && collection != 'public_transactions';
     }
   }
 }

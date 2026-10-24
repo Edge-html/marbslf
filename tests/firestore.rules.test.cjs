@@ -11,6 +11,7 @@ const { deleteDoc, doc, getDoc, setDoc, updateDoc } = require('firebase/firestor
 
 const projectId = 'marbslf-rules-test';
 const verificationId = 'VER-test-1';
+const completedMeetupId = 'MT-private-1';
 let testEnv;
 
 const image = 'data:image/jpeg;base64,ZmFrZS1pbWFnZS1mb3ItdGVzdA==';
@@ -45,6 +46,16 @@ beforeEach(async () => {
       user_id: 'owner-1', role: 'USER', verification_status: 'UNVERIFIED', points_balance: 50
     });
     await setDoc(doc(context.firestore(), 'id_verifications', verificationId), pendingVerification('owner-1'));
+    await setDoc(doc(context.firestore(), 'meetups', completedMeetupId), {
+      meetup_id: completedMeetupId,
+      owner_id: 'owner-1',
+      finder_id: 'finder-2',
+      status: 'COMPLETED',
+      owner_confirmed_return: true,
+      finder_confirmed_return: true,
+      place_name: 'Private pickup location',
+      time: '9:30 PM'
+    });
   });
 });
 
@@ -94,4 +105,35 @@ test('citizen cannot change their Firebase profile verification status or role',
 test('admin claim can update verification status on a user profile', async () => {
   const adminDb = testEnv.authenticatedContext('admin-1', { admin: true }).firestore();
   await assertSucceeds(updateDoc(doc(adminDb, 'users', 'owner-1'), { verification_status: 'VERIFIED' }));
+});
+
+test('meetup schedules are private to participants', async () => {
+  const ownerDb = testEnv.authenticatedContext('owner-1').firestore();
+  const strangerDb = testEnv.authenticatedContext('stranger-2').firestore();
+  await assertSucceeds(getDoc(doc(ownerDb, 'meetups', completedMeetupId)));
+  await assertFails(getDoc(doc(strangerDb, 'meetups', completedMeetupId)));
+});
+
+test('public history exposes only a sanitized completed-return summary', async () => {
+  const ownerDb = testEnv.authenticatedContext('owner-1').firestore();
+  const strangerDb = testEnv.authenticatedContext('stranger-2').firestore();
+  const publicRecord = {
+    public_transaction_id: completedMeetupId,
+    kind: 'ITEM_RETURN',
+    category: 'Electronics',
+    city: 'Koronadal City',
+    completed_month: '2026-10',
+    completed_at: new Date().toISOString(),
+    confirmation: 'Confirmed by both participants'
+  };
+  await assertSucceeds(setDoc(doc(ownerDb, 'public_transactions', completedMeetupId), publicRecord));
+  await assertSucceeds(getDoc(doc(strangerDb, 'public_transactions', completedMeetupId)));
+  await assertFails(setDoc(doc(strangerDb, 'public_transactions', 'forged-return'), {
+    ...publicRecord, public_transaction_id: 'forged-return'
+  }));
+  await assertFails(setDoc(doc(ownerDb, 'public_transactions', 'leaky-return'), {
+    ...publicRecord,
+    public_transaction_id: 'leaky-return',
+    owner_id: 'owner-1'
+  }));
 });

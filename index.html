@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=57">
+  <link rel="stylesheet" href="styles/main.css?v=58">
   <link rel="stylesheet" href="styles/ux-polish.css?v=2">
 </head>
 <body>
@@ -51,6 +51,11 @@
             <li class="nav-item">
               <button type="button" class="nav-link-btn" data-lp-target="2" title="2nd Page • What is MarbsLF?">
                 <span>What is MarbsLF?</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-link-btn" data-view="public-history" title="Public history of confirmed returns">
+                <span>Return History</span>
               </button>
             </li>
             <li class="nav-item">
@@ -95,6 +100,11 @@
             <li class="nav-item">
               <button type="button" class="nav-link-btn" data-view="how-it-works">
                 <span>How It Works</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-link-btn" data-view="public-history">
+                <span>Return History</span>
               </button>
             </li>
             <li class="nav-item">
@@ -169,6 +179,12 @@
             </button>
           </li>
           <li>
+            <button type="button" class="nav-link-btn" data-view="public-history">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+              <span>Return History</span>
+            </button>
+          </li>
+          <li>
             <button type="button" class="nav-link-btn" data-lp-target="3" data-lp-tab="login">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               <span>Sign In</span>
@@ -218,6 +234,12 @@
             <button type="button" class="nav-link-btn" data-view="how-it-works">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               <span>How It Works</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="nav-link-btn" data-view="public-history">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+              <span>Return History</span>
             </button>
           </li>
           <li>
@@ -654,6 +676,42 @@
           </div>
         </div>
       </footer>
+    </section>
+
+    <section id="publicHistoryView" class="public-history-view" style="display:none;">
+      <div class="public-history-shell">
+        <header class="public-history-hero">
+          <div>
+            <span class="public-history-eyebrow">Koronadal community transparency</span>
+            <h1>Confirmed Return History</h1>
+            <p>Every entry represents a handover confirmed by both participants. This public archive shares outcomes—not people’s private details.</p>
+          </div>
+          <div class="public-history-total" aria-live="polite">
+            <strong id="publicReturnCount">0</strong>
+            <span>confirmed returns</span>
+          </div>
+        </header>
+
+        <div class="public-history-notice" role="note">
+          <span aria-hidden="true">🔒</span>
+          <p>For privacy, this history does not show names, aliases, item descriptions or photos, exact meetup locations, contact details, or messages. Only broad outcome details are public.</p>
+        </div>
+
+        <div class="public-history-toolbar">
+          <div>
+            <h2>Community handovers</h2>
+            <p id="publicHistoryStatus" role="status" aria-live="polite">Loading verified returns…</p>
+          </div>
+          <label class="public-history-filter-label" for="publicHistoryFilter">Show
+            <select id="publicHistoryFilter" class="form-select">
+              <option value="ALL">All returns</option>
+              <option value="ITEM_RETURN">Item returns</option>
+              <option value="PET_REUNION">Pet reunions</option>
+            </select>
+          </label>
+        </div>
+        <div id="publicTransactionsList" class="public-transactions-list" aria-live="polite"></div>
+      </div>
     </section>
 
     <!-- Main Content Layout (Active When Logged In) -->
@@ -2802,6 +2860,7 @@
       <div class="modal-body" style="font-size: 13px; line-height: 1.65;">
         <p>MarbsLF processes account details, contact information, lost/found reports, private verification answers, messages, ratings, and (when submitted) identity-document and selfie images to operate the community service and support safe item returns.</p>
         <p>Public posts use a citizen alias. Do not include phone numbers, passwords, exact home addresses, or sensitive identifying details in public descriptions or private answers unless they are necessary to verify ownership.</p>
+        <p>When both participants confirm a return, a privacy-safe summary may appear in the public return history. It shows only a broad outcome category, Koronadal City, and the completion month; it does not show participant identities, item details or photos, exact meetup place/time, contact information, or messages.</p>
         <p>Identity documents and selfies are intended for the submitting citizen and authorized administrators only. This depends on the Firebase project’s deployed access rules. Contact the site administrator about access, correction, deletion, and retention requests.</p>
         <p>An administrator visually compares the selfie with the ID portrait. MarbsLF does not automatically identify or match faces and does not create a face template.</p>
       </div>
@@ -2818,8 +2877,8 @@
   <script src="scripts/firebaseClient.js?v=21"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=34"></script>
+  <script src="scripts/data.js?v=35"></script>
   <script src="scripts/camera.js?v=18"></script>
-  <script src="scripts/app.js?v=61"></script>
+  <script src="scripts/app.js?v=62"></script>
 </body>
 </html>
