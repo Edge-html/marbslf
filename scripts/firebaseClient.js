@@ -107,7 +107,8 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
       created_at: new Date().toISOString()
     };
 
-    // Save profile to Firestore
+    // Save profile before sending verification so a failed email delivery can
+    // be retried later without leaving an orphaned auth account.
     if (firestoreDb) {
       try {
         await firestoreDb.collection('users').doc(user.uid).set(profile);
@@ -116,7 +117,15 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
       }
     }
 
-    return { user: { id: user.uid, email: user.email }, profile };
+    let verificationEmailSent = true;
+    try {
+      await user.sendEmailVerification();
+    } catch (verificationError) {
+      verificationEmailSent = false;
+      console.warn('Verification email could not be sent:', verificationError.message);
+    }
+    await firebaseAuth.signOut();
+    return { user: { id: user.uid, email: user.email }, profile, verificationRequired: true, verificationEmailSent };
   } catch (err) {
     console.error('Firebase Registration Error:', err);
     throw err;
@@ -162,6 +171,14 @@ async function signInWithEmailOrUsername(identifier, password) {
     const userCredential = await firebaseAuth.signInWithEmailAndPassword(emailToUse, password);
     const user = userCredential.user;
 
+    if (user.providerData.some(provider => provider.providerId === 'password') && !user.emailVerified) {
+      try { await user.sendEmailVerification(); } catch (verificationError) {
+        console.warn('Could not resend email verification:', verificationError.message);
+      }
+      await firebaseAuth.signOut();
+      throw new Error('This email is not verified yet. We sent a fresh confirmation link; open it before signing in.');
+    }
+
     // Fetch user profile from Firestore or local marbsDB
     let profile = null;
     if (window.marbsDB) {
@@ -203,6 +220,17 @@ async function signInWithEmailOrUsername(identifier, password) {
     throw err;
   }
 }
+
+async function sendPasswordReset(email) {
+  if (!firebaseAuth) throw new Error('Firebase Authentication is unavailable.');
+  const normalizedEmail = String(email || '').trim();
+  if (!normalizedEmail || !normalizedEmail.includes('@')) {
+    throw new Error('Enter the email address on your account first.');
+  }
+  await firebaseAuth.sendPasswordResetEmail(normalizedEmail);
+}
+
+window.sendPasswordReset = sendPasswordReset;
 
 // 4. Sign Out
 async function signOutUser() {

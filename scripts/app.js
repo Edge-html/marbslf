@@ -134,6 +134,39 @@
   let capturedPhotoPayload = null;
   let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
+
+  function compressPostImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type || !file.type.startsWith('image/')) {
+        reject(new Error('Choose a valid image file.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Could not read the selected image.'));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error('The selected image could not be decoded.'));
+        image.onload = () => {
+          const scale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          let dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          if (dataUrl.length > 360000) {
+            canvas.width = Math.max(1, Math.round(canvas.width * 0.75));
+            canvas.height = Math.max(1, Math.round(canvas.height * 0.75));
+            const resizedContext = canvas.getContext('2d');
+            resizedContext.drawImage(image, 0, 0, canvas.width, canvas.height);
+            dataUrl = canvas.toDataURL('image/jpeg', 0.62);
+          }
+          resolve(dataUrl);
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
   let currentView = 'landing'; // Currently painted view ('landing' | 'home' | 'admin' | ...)
   let isRouterReady = false; // Guards against redirects before initApp finishes
 
@@ -832,7 +865,8 @@
       const initials = (author && author.first_name ? author.first_name[0] : 'C').toUpperCase();
 
       // Every photo the poster uploaded, for the carousel
-      const photos = (Array.isArray(post.images) && post.images.length) ? post.images : [post.image];
+      const photos = ((Array.isArray(post.images) && post.images.length) ? post.images : [post.image])
+        .filter(src => src && src !== 'assets/images.jpg');
       const isMulti = photos.length > 1;
 
       const timeAgo = (() => {
@@ -868,7 +902,7 @@
             ` : ''}
           </header>
 
-          <div class="ig-post-media" onclick="event.stopPropagation()">
+          ${photos.length ? `<div class="ig-post-media" onclick="event.stopPropagation()">
             <div class="ig-post-track" data-track="${post.post_id}" onscroll="window.marbsApp.feedTrackScrolled(this)">
               ${photos.map((src, i) => `
                 <div class="ig-post-slide">
@@ -888,7 +922,7 @@
               <div class="ig-post-dots">${photos.map((_, i) => `<button type="button" class="ig-dot${i === 0 ? ' is-active' : ''}" data-post="${post.post_id}" data-idx="${i}" onclick="window.marbsApp.feedCarouselTo('${post.post_id}', ${i})" aria-label="Photo ${i + 1}"></button>`).join('')}</div>
               <span class="ig-post-count" data-count="${post.post_id}">1 / ${photos.length}</span>
             ` : ''}
-          </div>
+          </div>` : ''}
 
           <div class="ig-post-actions">
             <button type="button" class="ig-like-btn${isLiked ? ' is-liked' : ''}" data-like="${post.post_id}"
@@ -1122,14 +1156,16 @@
     $('#modalPostTitle').textContent = post.item_name;
 
     // Instagram-style carousel over every photo the poster uploaded.
-    const postPhotos = (Array.isArray(post.images) && post.images.length > 0)
+    const postPhotos = ((Array.isArray(post.images) && post.images.length > 0)
       ? post.images
-      : (post.image ? [post.image] : []);
+      : (post.image ? [post.image] : []))
+      .filter(src => src && src !== 'assets/images.jpg');
 
     const track = $('#modalCarouselTrack');
     const dots = $('#modalCarouselDots');
     const countBadge = $('#modalPhotoIndexBadge');
     const carousel = $('#modalCarousel');
+    if (carousel) carousel.style.display = postPhotos.length ? '' : 'none';
 
     if (track) {
       track.innerHTML = postPhotos.map((src, i) => `
@@ -1373,28 +1409,28 @@
 
     if (lostUploadBtn && lostFileInput) {
       lostUploadBtn.addEventListener('click', () => lostFileInput.click());
-      lostFileInput.addEventListener('change', (e) => {
+      lostFileInput.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
-
-        let loadedCount = 0;
-        files.forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function (evt) {
-            lostUploadedPhotos.push({
-              image_data: evt.target.result,
-              image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-              timestamp: new Date().toISOString()
-            });
-            loadedCount++;
-            if (loadedCount === files.length) {
-              renderLostPhotosPreview();
-              showToast(`${files.length} photo${files.length > 1 ? 's' : ''} added!`);
-              lostFileInput.value = ''; // reset so same files can be re-selected if needed
-            }
-          };
-          reader.readAsDataURL(file);
-        });
+        if (lostUploadedPhotos.length + files.length > 3) {
+          alert('You can attach up to 3 optimized photos per lost-item report.');
+          lostFileInput.value = '';
+          return;
+        }
+        try {
+          const compressed = await Promise.all(files.map(compressPostImage));
+          compressed.forEach(imageData => lostUploadedPhotos.push({
+            image_data: imageData,
+            image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            timestamp: new Date().toISOString()
+          }));
+          renderLostPhotosPreview();
+          showToast(`${files.length} optimized photo${files.length > 1 ? 's' : ''} added`);
+        } catch (error) {
+          alert(error.message || 'Could not process the selected photo.');
+        } finally {
+          lostFileInput.value = '';
+        }
       });
     }
 
@@ -1811,7 +1847,7 @@
         reward_offered: hasReward,
         reward_amount: rewardAmount,
         reward_amount_private: hideReward,
-        image: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos[0].image_data : (capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/images.jpg'),
+        image: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos[0].image_data : (capturedPhotoPayload ? capturedPhotoPayload.image_data : null),
         images: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos.map(p => p.image_data) : (capturedPhotoPayload ? [capturedPhotoPayload.image_data] : []),
         camera_verified: lostUploadedPhotos.some(p => p.image_hash && !p.image_hash.startsWith('UPLOAD-')) || !!(capturedPhotoPayload && !capturedPhotoPayload.image_hash.startsWith('UPLOAD-')),
         photo_hash: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos.map(p => p.image_hash).join(', ') : (capturedPhotoPayload ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH'),
@@ -1875,17 +1911,9 @@
       const brand = $('#foundBrand').value.trim();
       const location = $('#foundLocation').value.trim();
 
-      // Strict enforcement: Found items MUST use the device camera
-      if (!capturedPhotoPayload || activeCameraContext !== 'found' || !capturedPhotoPayload.image_data) {
-        alert('Device Camera Required:\n\nTo prevent fake claims and verify authenticity in Koronadal City, Found Items MUST be photographed right now using your device camera.\n\nPlease click "Open Device Camera & Snap Found Item".');
-        marbsCamera.open({
-          category: 'found_item',
-          onCapture: handlePhotoCaptured
-        });
-        return;
-      }
-
       const newPostId = marbsDB.createId('POST');
+      const foundPhoto = capturedPhotoPayload && activeCameraContext === 'found'
+        ? capturedPhotoPayload.image_data : null;
       const post = {
         post_id: newPostId,
         user_id: user.user_id,
@@ -1906,9 +1934,10 @@
         reward_offered: false,
         reward_amount: 0,
         reward_amount_private: true,
-        image: capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/images.jpg',
-        camera_verified: !!capturedPhotoPayload,
-        photo_hash: capturedPhotoPayload ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH',
+        image: foundPhoto,
+        images: foundPhoto ? [foundPhoto] : [],
+        camera_verified: !!foundPhoto,
+        photo_hash: foundPhoto ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH',
         likes_count: 0,
         created_at: new Date().toISOString()
       };
@@ -3059,6 +3088,8 @@
     });
 
     const loginForm = $('#loginForm');
+    const forgotPasswordBtn = $('#forgotPasswordBtn');
+    if (forgotPasswordBtn) forgotPasswordBtn.addEventListener('click', () => requestPasswordReset($('#loginIdentifier')?.value));
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -3153,6 +3184,18 @@
               email, password, firstName, middleName, lastName, dob, phone, username, barangay
             });
 
+            if (res && res.verificationRequired) {
+              $('#registerModal').classList.remove('active');
+              showNotificationModal({
+                title: 'Check your email to activate your account',
+                message: res.verificationEmailSent
+                  ? `We sent a confirmation link to ${email}. Open that link, then return here to sign in. Check your spam folder if it does not arrive.`
+                  : `We could not send the confirmation email to ${email}. Use Forgot Password/sign-in again later to request a fresh link, or contact the site administrator.`,
+                btnText: 'Understood'
+              });
+              return;
+            }
+
             if (res && res.user) {
               const u = res.profile || {
                 user_id: res.user.id,
@@ -3237,6 +3280,21 @@
     $('#registerModal').classList.add('active');
   }
 
+  async function requestPasswordReset(value) {
+    let email = String(value || '').trim();
+    if (email && !email.includes('@')) {
+      const match = (marbsDB.data.users || []).find(user => String(user.username || '').toLowerCase() === email.toLowerCase());
+      email = match?.email || '';
+    }
+    try {
+      if (!window.sendPasswordReset) throw new Error('Password recovery is unavailable right now.');
+      await window.sendPasswordReset(email);
+      showToast('If that account exists, a password reset link has been sent to its email.');
+    } catch (error) {
+      alert(error.message || 'Could not send the password reset email.');
+    }
+  }
+
   // 19b. Landing Page Navigation & Auth Controls
   function scrollToLandingPage(pageNum, authTab = null) {
     const user = marbsDB.getCurrentUser();
@@ -3319,6 +3377,8 @@
   // Wire Landing Page Login & Signup Form Submissions
   function setupLandingPageForms() {
     setupLandingScrollSpy();
+    const lpForgotPasswordBtn = $('#lpForgotPasswordBtn');
+    if (lpForgotPasswordBtn) lpForgotPasswordBtn.addEventListener('click', () => requestPasswordReset($('#lpLoginIdentifier')?.value));
     const lpLoginForm = $('#lpLoginForm');
     if (lpLoginForm) {
       lpLoginForm.addEventListener('submit', async (e) => {
@@ -3411,6 +3471,17 @@
             const res = await window.signUpWithEmailPassword({
               email, password, firstName, middleName: '', lastName, dob, phone, username, barangay
             });
+            if (res && res.verificationRequired) {
+              lpRegForm.reset();
+              showNotificationModal({
+                title: 'Check your email to activate your account',
+              message: res.verificationEmailSent
+                ? `We sent a confirmation link to ${email}. Open that link, then return here to sign in. Check your spam folder if it does not arrive.`
+                : `We could not send the confirmation email to ${email}. Use Forgot Password/sign-in again later to request a fresh link, or contact the site administrator.`,
+                btnText: 'Understood'
+              });
+              return;
+            }
             if (res && res.user) {
               const u = res.profile || {
                 user_id: res.user.id,
