@@ -172,7 +172,10 @@ async function signInWithEmailOrUsername(identifier, password) {
     const tokenResult = await user.getIdTokenResult();
     window.firebaseAdminClaim = tokenResult.claims.admin === true;
 
-    if (user.providerData.some(provider => provider.providerId === 'password') && !user.emailVerified) {
+    // Trusted Firebase admins must be able to access the moderation portal even
+    // when their legacy/admin mailbox cannot receive email. This exception is
+    // based only on the server-issued custom claim, never a local profile role.
+    if (!window.firebaseAdminClaim && user.providerData.some(provider => provider.providerId === 'password') && !user.emailVerified) {
       try { await user.sendEmailVerification(); } catch (verificationError) {
         console.warn('Could not resend email verification:', verificationError.message);
       }
