@@ -66,8 +66,13 @@ service cloud.firestore {
           'user_id', 'first_name', 'middle_name', 'last_name', 'public_alias',
           'date_of_birth', 'email', 'phone', 'username', 'barangay', 'province',
           'city', 'account_status', 'verification_status', 'points_balance',
-          'role', 'created_at', 'avatar_url', 'rating_avg', 'rating_count'
-        ]));
+          'role', 'created_at', 'avatar_url', 'rating_avg', 'rating_count',
+          'registration_selfie_image'
+        ])
+        && (!('registration_selfie_image' in request.resource.data)
+          || (request.resource.data.registration_selfie_image is string
+            && request.resource.data.registration_selfie_image.matches('data:image/.*;base64,.*')
+            && request.resource.data.registration_selfie_image.size() < 450000)));
       allow update: if isAdmin() || (signedIn()
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([

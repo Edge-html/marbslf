@@ -588,6 +588,9 @@ class MarbsLFDatabase {
     let cacheCopy;
     try {
       cacheCopy = JSON.parse(JSON.stringify(data));
+      (cacheCopy.users || []).forEach(user => {
+        if (user && typeof user === 'object') delete user.registration_selfie_image;
+      });
       (cacheCopy.id_verifications || []).forEach(verification => {
         if (!verification || typeof verification !== 'object') return;
         delete verification.id_image;
@@ -949,7 +952,7 @@ class MarbsLFDatabase {
     }
 
     const mergeRemote = (key, idField, records) => {
-      if (key === 'id_verifications' && window.firebaseAdminClaim === true) {
+      if (key === 'id_verifications' && this.getCurrentUser()?.role === 'ADMIN') {
         this.data.id_verifications = records;
         this.save();
         if (typeof window.renderAdminVerifications === 'function') window.renderAdminVerifications();
@@ -994,9 +997,9 @@ class MarbsLFDatabase {
         mergeRemote(stateKey, idField, records);
       }, error => {
         console.warn(`Firestore ${collection} live listener:`, error);
-        if (collection === 'id_verifications' && window.firebaseAdminClaim === true) {
+        if (collection === 'id_verifications' && this.getCurrentUser()?.role === 'ADMIN') {
           const table = document.getElementById('adminVerificationsTbody');
-          if (table) table.innerHTML = '<tr><td colspan="8">Could not load ID submissions. Check the Firebase admin claim and Firestore permissions.</td></tr>';
+          if (table) table.innerHTML = '<tr><td colspan="8">Could not load ID submissions. Check the administrator sign-in and Firestore access.</td></tr>';
         }
       }));
     };
@@ -1013,7 +1016,7 @@ class MarbsLFDatabase {
     listen('messages', window.firestoreDb.collection('messages').where('receiver_id', '==', uid), 'messages', 'message_id', `inbox:${uid}`);
     listen('ratings', window.firestoreDb.collection('ratings').where('rater_id', '==', uid), 'ratings', 'rating_id', `ratings-by:${uid}`);
     listen('ratings', window.firestoreDb.collection('ratings').where('target_user_id', '==', uid), 'ratings', 'rating_id', `ratings-for:${uid}`);
-    if (window.firebaseAdminClaim === true) {
+    if (this.getCurrentUser()?.role === 'ADMIN') {
       listen('id_verifications', window.firestoreDb.collection('id_verifications'), 'id_verifications', 'verification_id', `id-verifications:admin:${uid}`);
     } else {
       listen('id_verifications', window.firestoreDb.collection('id_verifications').where('user_id', '==', uid), 'id_verifications', 'verification_id', `id-verifications:user:${uid}`);

@@ -1133,7 +1133,7 @@
               </button>
             </li>
             <li class="dash-menu-item">
-              <button onclick="$('#idVerificationModal').classList.add('active')">
+              <button onclick="window.openIdVerificationModal()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                 ID Verification
               </button>
@@ -2490,6 +2490,14 @@
             <div>
               <strong>Profile privacy:</strong> Your posts show a public alias instead of your legal name. <a href="javascript:void(0)" onclick="document.getElementById('privacyNoticeModal').classList.add('active')">Read the data privacy notice</a> before submitting personal information.
             </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="registrationSelfieTrigger">Registration Selfie *</label>
+            <button type="button" class="photo-capture-box" id="registrationSelfieTrigger" style="width:100%;cursor:pointer;color:inherit;font:inherit;">
+              <img id="registrationSelfiePreview" class="captured-thumb-preview" style="display:none;max-height:180px;object-fit:contain;" alt="Registration selfie preview">
+              <span id="registrationSelfiePrompt"><strong>Tap to take a selfie</strong><br><small>An administrator will manually compare this with your ID photo when you submit identity verification.</small></span>
+            </button>
           </div>
 
           <div class="form-grid">

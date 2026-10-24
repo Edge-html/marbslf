@@ -133,6 +133,7 @@
   let activeCameraContext = null; // 'lost', 'found', 'id', or 'claim_proof'
   let capturedPhotoPayload = null;
   let capturedIdSelfiePayload = null;
+  let capturedRegistrationSelfiePayload = null;
   let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
 
@@ -1477,6 +1478,11 @@
     if ($('#verifyIdCameraTrigger')) $('#verifyIdCameraTrigger').addEventListener('click', openIdCamera);
     if ($('#verifyIdCameraBtn')) $('#verifyIdCameraBtn').addEventListener('click', openIdCamera);
     if ($('#verifySelfieCameraTrigger')) $('#verifySelfieCameraTrigger').addEventListener('click', openSelfieCamera);
+    const registrationSelfieTrigger = $('#registrationSelfieTrigger');
+    if (registrationSelfieTrigger) registrationSelfieTrigger.addEventListener('click', () => {
+      activeCameraContext = 'registration_selfie';
+      marbsCamera.open({ category: 'identity_selfie', onCapture: handlePhotoCaptured });
+    });
 
     // ID File Upload option
     const idFileInput = $('#idFileInput');
@@ -1505,6 +1511,15 @@
   }
 
   function handlePhotoCaptured(payload) {
+    if (activeCameraContext === 'registration_selfie') {
+      capturedRegistrationSelfiePayload = payload;
+      const preview = $('#registrationSelfiePreview');
+      if (preview) { preview.src = payload.image_data; preview.style.display = 'block'; }
+      const prompt = $('#registrationSelfiePrompt');
+      if (prompt) prompt.style.display = 'none';
+      showToast('Registration selfie captured. An admin will compare it manually with your ID.');
+      return;
+    }
     if (activeCameraContext === 'id_selfie') {
       capturedIdSelfiePayload = payload;
       const preview = $('#selfiePhotoPreview');
@@ -1650,7 +1665,7 @@
       message: `Verify first before you can ${actionDesc}. Under Section 4 security rules, users must complete identity verification (PhilSys, School ID, Driver's License, or Passport) to prevent fraud and protect citizens.`,
       btnText: 'Verify Identity Now',
       onAction: () => {
-        $('#idVerificationModal').classList.add('active');
+        openIdVerificationModal();
       }
     });
     return false;
@@ -3056,31 +3071,22 @@
           showToast('Sign in and reconnect to Firebase before submitting your ID.');
           return;
         }
-        if (!capturedPhotoPayload?.image_data || !capturedIdSelfiePayload?.image_data ||
+        const savedRegistrationSelfie = user.registration_selfie_image
+          ? { image_data: user.registration_selfie_image, image_hash: 'REGISTRATION-SELFIE' }
+          : null;
+        const selfieForReview = capturedIdSelfiePayload || savedRegistrationSelfie;
+        if (!capturedPhotoPayload?.image_data || !selfieForReview?.image_data ||
             !$('#verificationPrivacyConsent')?.checked) {
-          showToast('Add your ID photo and take a selfie, then agree to the identity-review notice.');
+          showToast('Add your ID photo and registration selfie, then agree to the identity-review notice.');
           return;
         }
-        if (capturedPhotoPayload.image_data.length + capturedIdSelfiePayload.image_data.length > 850000) {
+        if (capturedPhotoPayload.image_data.length + selfieForReview.image_data.length > 850000) {
           showToast('These images are too large to submit safely. Upload a smaller ID image and retake the selfie.');
           return;
         }
         if (window.firebaseAdminClaim) {
           showToast('Administrator accounts do not submit citizen identity verifications.');
           return;
-        }
-        try {
-          const probeId = `privacy_probe_${authUser.uid}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-          const probe = await window.firestoreDb.collection('id_verifications').doc(probeId).get();
-          if (!probe.exists) {
-            showToast('Identity uploads are paused until private Firebase access rules are deployed.');
-            return;
-          }
-        } catch (rulesCheckError) {
-          if (rulesCheckError.code !== 'permission-denied') {
-            showToast('Could not verify private Firebase access. Please retry when connected.');
-            return;
-          }
         }
         const submitButton = form.querySelector('[type="submit"]');
         if (submitButton?.disabled) return;
@@ -3094,7 +3100,7 @@
           full_legal_name: legalName || `${user.first_name} ${user.last_name}`,
           id_type: idType,
           id_image: capturedPhotoPayload.image_data,
-          selfie_image: capturedIdSelfiePayload.image_data,
+          selfie_image: selfieForReview.image_data,
           camera_verified: !!capturedPhotoPayload && !String(capturedPhotoPayload.image_hash || '').startsWith('UPLOAD-'),
           selfie_camera_verified: true,
           consented_to_visual_comparison: true,
@@ -3130,6 +3136,25 @@
       });
     }
   }
+
+  function openIdVerificationModal() {
+    const user = marbsDB.getCurrentUser();
+    if (user?.registration_selfie_image && !capturedIdSelfiePayload) {
+      capturedIdSelfiePayload = {
+        image_data: user.registration_selfie_image,
+        image_hash: 'REGISTRATION-SELFIE'
+      };
+      const preview = $('#selfiePhotoPreview');
+      if (preview) { preview.src = user.registration_selfie_image; preview.style.display = 'block'; }
+      const prompt = $('#selfieCameraPrompt');
+      if (prompt) prompt.style.display = 'none';
+      const hash = $('#selfiePhotoHashTag');
+      if (hash) { hash.textContent = 'Selfie captured during registration'; hash.style.display = 'block'; }
+    }
+    $('#idVerificationModal')?.classList.add('active');
+  }
+
+  window.openIdVerificationModal = openIdVerificationModal;
 
   // 19. User Registration & Login (Section 3 & 5)
   function setupAuthModals() {
@@ -3238,6 +3263,14 @@
     if (regForm) {
       regForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!capturedRegistrationSelfiePayload?.image_data) {
+          showToast('Take your selfie before creating the account.');
+          return;
+        }
+        if (capturedRegistrationSelfiePayload.image_data.length >= 450000) {
+          showToast('The selfie file is too large. Retake it with the camera and try again.');
+          return;
+        }
         const firstName = $('#regFirstName').value.trim();
         const middleName = $('#regMiddleName') ? $('#regMiddleName').value.trim() : '';
         const lastName = $('#regLastName').value.trim();
@@ -3262,11 +3295,16 @@
         try {
           if (window.signUpWithEmailPassword) {
             const res = await window.signUpWithEmailPassword({
-              email, password, firstName, middleName, lastName, dob, phone, username, barangay
+              email, password, firstName, middleName, lastName, dob, phone, username, barangay,
+              registrationSelfieImage: capturedRegistrationSelfiePayload.image_data
             });
 
             if (res && res.verificationRequired) {
               $('#registerModal').classList.remove('active');
+              regForm.reset();
+              capturedRegistrationSelfiePayload = null;
+              if ($('#registrationSelfiePreview')) { $('#registrationSelfiePreview').removeAttribute('src'); $('#registrationSelfiePreview').style.display = 'none'; }
+              if ($('#registrationSelfiePrompt')) $('#registrationSelfiePrompt').style.display = 'block';
               showNotificationModal({
                 title: 'Check your email to activate your account',
                 message: res.verificationEmailSent
@@ -3315,6 +3353,7 @@
               barangay: barangay,
               account_status: 'ACTIVE',
               verification_status: 'UNVERIFIED',
+              registration_selfie_image: capturedRegistrationSelfiePayload.image_data,
               points_balance: 50,
               created_at: new Date().toISOString()
             };
@@ -3325,6 +3364,9 @@
 
           $('#registerModal').classList.remove('active');
           regForm.reset();
+          capturedRegistrationSelfiePayload = null;
+          if ($('#registrationSelfiePreview')) { $('#registrationSelfiePreview').removeAttribute('src'); $('#registrationSelfiePreview').style.display = 'none'; }
+          if ($('#registrationSelfiePrompt')) $('#registrationSelfiePrompt').style.display = 'block';
           renderUserPill();
           renderFeed();
 
@@ -3332,7 +3374,7 @@
             title: 'Account Created Successfully!',
             message: `Welcome to MarbsLF, ${firstName}! Your account has been registered with Supabase. Please complete your ID verification to earn your verified badge.`,
             btnText: 'Verify Identity Now',
-            onAction: () => $('#idVerificationModal').classList.add('active')
+            onAction: openIdVerificationModal
           });
         } catch (err) {
           alert('Registration Error: ' + (err.message || 'Please check your inputs and try again.'));
@@ -3616,7 +3658,7 @@
             title: 'Account Created Successfully!',
             message: `Welcome to MarbsLF, ${firstName}! Your account has been registered. Please complete your ID verification to earn your verified badge.`,
             btnText: 'Verify Identity Now',
-            onAction: () => $('#idVerificationModal').classList.add('active')
+            onAction: openIdVerificationModal
           });
         } catch (err) {
           alert('Registration Error: ' + (err.message || 'Please check your inputs and try again.'));
@@ -4003,8 +4045,8 @@
   function renderAdminVerifications() {
     const tbody = $('#adminVerificationsTbody');
     if (!tbody) return;
-    if (!window.firebaseAuth?.currentUser || !window.firebaseAdminClaim) {
-      tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center">A Firebase account with an administrator security claim is required to review identity documents.</td></tr>';
+    if (!window.firebaseAuth?.currentUser || marbsDB.getCurrentUser()?.role !== 'ADMIN') {
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center">Sign in with the administrator account to review identity documents.</td></tr>';
       return;
     }
 
@@ -4116,8 +4158,8 @@
   }
 
   window.adminSetVerificationStatus = async function (verId, newStatus) {
-    if (!window.firebaseAdminClaim || !window.firebaseAuth?.currentUser) {
-      showToast('Only an authenticated Firebase administrator can review identity submissions.');
+    if (marbsDB.getCurrentUser()?.role !== 'ADMIN' || !window.firebaseAuth?.currentUser) {
+      showToast('Sign in with the administrator account to review identity submissions.');
       return;
     }
     const ver = marbsDB.data.id_verifications.find(v => v.verification_id === verId);

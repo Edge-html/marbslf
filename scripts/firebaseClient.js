@@ -75,7 +75,7 @@ async function signInWithGoogle() {
 }
 
 // 2. Real Email & Password Registration
-async function signUpWithEmailPassword({ email, password, firstName, middleName, lastName, dob, phone, username, barangay }) {
+async function signUpWithEmailPassword({ email, password, firstName, middleName, lastName, dob, phone, username, barangay, registrationSelfieImage }) {
   if (!firebaseAuth) return null;
 
   try {
@@ -103,6 +103,7 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
       city: 'Koronadal City',
       account_status: 'ACTIVE',
       verification_status: 'UNVERIFIED',
+      registration_selfie_image: registrationSelfieImage,
       points_balance: 50,
       role: 'USER',
       created_at: new Date().toISOString()
@@ -209,7 +210,7 @@ async function signInWithEmailOrUsername(identifier, password) {
       };
     }
 
-    return { user: { id: user.uid, email: user.email }, profile: { ...profile, user_id: user.uid, role: window.firebaseAdminClaim ? 'ADMIN' : 'USER' } };
+    return { user: { id: user.uid, email: user.email }, profile: { ...profile, user_id: user.uid, role: window.firebaseAdminClaim ? 'ADMIN' : (profile.role || 'USER') } };
   } catch (err) {
     console.error('Firebase Login Error:', err);
     throw err;
@@ -338,7 +339,7 @@ async function syncFirebaseUserProfile(user) {
     account_status: 'ACTIVE',
     verification_status: finalVerStatus,
     points_balance: (profile && profile.points_balance !== undefined) ? profile.points_balance : (existingLocalUser ? existingLocalUser.points_balance : 50),
-    role: window.firebaseAdminClaim ? 'ADMIN' : 'USER'
+    role: window.firebaseAdminClaim ? 'ADMIN' : ((profile && profile.role) || (existingLocalUser && existingLocalUser.role) || 'USER')
   };
 
   if (firestoreDb) {
