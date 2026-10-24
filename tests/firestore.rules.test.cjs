@@ -93,7 +93,9 @@ test('admin claim can review status, but cannot replace submitted images', async
   await assertSucceeds(updateDoc(doc(adminDb, 'id_verifications', verificationId), {
     status: 'VERIFIED', reviewed_by: 'admin-1', reviewed_at: new Date().toISOString()
   }));
-  await assertFails(updateDoc(doc(adminDb, 'id_verifications', verificationId), { selfie_image: image }));
+  await assertFails(updateDoc(doc(adminDb, 'id_verifications', verificationId), {
+    selfie_image: 'data:image/jpeg;base64,bmV3LXNlbGZpZQ=='
+  }));
 });
 
 test('citizen cannot change their Firebase profile verification status or role', async () => {
