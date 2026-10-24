@@ -18,6 +18,7 @@ let firebaseApp = null;
 let firebaseAuth = null;
 let firestoreDb = null;
 let googleAuthProvider = null;
+window.firebaseAdminClaim = false;
 
 try {
   if (typeof firebase !== 'undefined') {
@@ -155,21 +156,15 @@ async function signInWithEmailOrUsername(identifier, password) {
         }
       }
 
-      // If still not resolved and firestoreDb is present, try Firestore (wrapped so permission errors don't crash)
-      if (!emailToUse.includes('@') && firestoreDb) {
-        try {
-          const snap = await firestoreDb.collection('users').where('username', '==', identifier).limit(1).get();
-          if (!snap.empty) {
-            emailToUse = snap.docs[0].data().email;
-          }
-        } catch (queryErr) {
-          console.warn('Firestore username query skipped (permissions/rules):', queryErr.message);
-        }
+      if (!emailToUse.includes('@')) {
+        throw new Error('For privacy, use your email to sign in on this device. A saved username may work only on a device that already knows your account.');
       }
     }
 
     const userCredential = await firebaseAuth.signInWithEmailAndPassword(emailToUse, password);
     const user = userCredential.user;
+    const tokenResult = await user.getIdTokenResult();
+    window.firebaseAdminClaim = tokenResult.claims.admin === true;
 
     if (user.providerData.some(provider => provider.providerId === 'password') && !user.emailVerified) {
       try { await user.sendEmailVerification(); } catch (verificationError) {
@@ -214,7 +209,7 @@ async function signInWithEmailOrUsername(identifier, password) {
       };
     }
 
-    return { user: { id: user.uid, email: user.email }, profile: { ...profile, user_id: user.uid } };
+    return { user: { id: user.uid, email: user.email }, profile: { ...profile, user_id: user.uid, role: window.firebaseAdminClaim ? 'ADMIN' : 'USER' } };
   } catch (err) {
     console.error('Firebase Login Error:', err);
     throw err;
@@ -272,6 +267,13 @@ async function signOutUser() {
 async function syncFirebaseUserProfile(user) {
   if (!user) return null;
 
+  try {
+    const tokenResult = await user.getIdTokenResult();
+    window.firebaseAdminClaim = tokenResult.claims.admin === true;
+  } catch (error) {
+    window.firebaseAdminClaim = false;
+  }
+
   let profile = null;
   if (firestoreDb) {
     try {
@@ -297,7 +299,7 @@ async function syncFirebaseUserProfile(user) {
   }
 
   // Preserve VERIFIED status if local user or local id_verifications says VERIFIED
-  let finalVerStatus = (profile && profile.verification_status) || 'VERIFIED';
+  let finalVerStatus = (profile && profile.verification_status) || 'UNVERIFIED';
   if (existingLocalUser && existingLocalUser.verification_status === 'VERIFIED') {
     finalVerStatus = 'VERIFIED';
   } else if (window.marbsDB && Array.isArray(window.marbsDB.data.id_verifications)) {
@@ -335,8 +337,8 @@ async function syncFirebaseUserProfile(user) {
     city: 'Koronadal City',
     account_status: 'ACTIVE',
     verification_status: finalVerStatus,
-    points_balance: (profile && profile.points_balance !== undefined) ? profile.points_balance : (existingLocalUser ? existingLocalUser.points_balance : 100),
-    role: (profile && profile.role) || (existingLocalUser && existingLocalUser.role) || (user.email === 'admin@marbslf.gov.ph' ? 'ADMIN' : 'USER')
+    points_balance: (profile && profile.points_balance !== undefined) ? profile.points_balance : (existingLocalUser ? existingLocalUser.points_balance : 50),
+    role: window.firebaseAdminClaim ? 'ADMIN' : 'USER'
   };
 
   if (firestoreDb) {
@@ -392,6 +394,13 @@ if (firebaseAuth) {
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user) {
       console.log('✓ Firebase Auth State: Logged In as', user.email);
+      try {
+        const tokenResult = await user.getIdTokenResult();
+        window.firebaseAdminClaim = tokenResult.claims.admin === true;
+      } catch (error) {
+        window.firebaseAdminClaim = false;
+        console.warn('Could not verify Firebase admin claim:', error.message);
+      }
       await syncFirebaseUserProfile(user);
       if (window.marbsDB && typeof window.marbsDB.startPrivateWorkflowListeners === 'function') {
         window.marbsDB.startPrivateWorkflowListeners();
@@ -405,6 +414,7 @@ if (firebaseAuth) {
       }
     } else {
       console.log('Firebase Auth State: Logged Out');
+      window.firebaseAdminClaim = false;
       if (window.marbsDB) {
         window.marbsDB.setCurrentUser(null);
       }

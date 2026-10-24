@@ -198,8 +198,11 @@ class MarbsCamera {
     const reviewControls = document.getElementById('cameraReviewControls');
     const banner = document.getElementById('cameraStatusBanner');
 
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    const sourceWidth = video.videoWidth || 640;
+    const sourceHeight = video.videoHeight || 480;
+    const captureScale = Math.min(1, 1280 / Math.max(sourceWidth, sourceHeight));
+    canvas.width = Math.max(1, Math.round(sourceWidth * captureScale));
+    canvas.height = Math.max(1, Math.round(sourceHeight * captureScale));
     const ctx = canvas.getContext('2d');
 
     // Draw video frame
@@ -226,7 +229,7 @@ class MarbsCamera {
     ctx.font = '11px sans-serif';
     ctx.fillText(`${timeStr} | User: ${user.public_alias || user.user_id}`, 190, canvas.height - 22);
 
-    this.capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    this.capturedDataUrl = canvas.toDataURL('image/jpeg', 0.74);
 
     // Switch UI to Review Mode: RETAKE / USE PHOTO
     video.style.display = 'none';

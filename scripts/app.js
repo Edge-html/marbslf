@@ -132,6 +132,7 @@
   let activeChatPost = null;
   let activeCameraContext = null; // 'lost', 'found', 'id', or 'claim_proof'
   let capturedPhotoPayload = null;
+  let capturedIdSelfiePayload = null;
   let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
 
@@ -1465,35 +1466,62 @@
       });
     };
 
+    const openSelfieCamera = () => {
+      activeCameraContext = 'id_selfie';
+      marbsCamera.open({
+        category: 'identity_selfie',
+        onCapture: handlePhotoCaptured
+      });
+    };
+
     if ($('#verifyIdCameraTrigger')) $('#verifyIdCameraTrigger').addEventListener('click', openIdCamera);
     if ($('#verifyIdCameraBtn')) $('#verifyIdCameraBtn').addEventListener('click', openIdCamera);
+    if ($('#verifySelfieCameraTrigger')) $('#verifySelfieCameraTrigger').addEventListener('click', openSelfieCamera);
 
     // ID File Upload option
     const idFileInput = $('#idFileInput');
     const verifyIdUploadBtn = $('#verifyIdUploadBtn');
     if (verifyIdUploadBtn && idFileInput) {
       verifyIdUploadBtn.addEventListener('click', () => idFileInput.click());
-      idFileInput.addEventListener('change', (e) => {
+      idFileInput.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function (evt) {
-          const base64Data = evt.target.result;
+        try {
+          const base64Data = await compressPostImage(file);
           activeCameraContext = 'id';
           handlePhotoCaptured({
             image_data: base64Data,
             image_hash: 'UPLOAD-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
             timestamp: new Date().toISOString()
           });
-          showToast('ID image uploaded successfully!');
-        };
-        reader.readAsDataURL(file);
+          showToast('Optimized ID image added.');
+        } catch (error) {
+          alert(error.message || 'Could not process the selected ID image.');
+        } finally {
+          idFileInput.value = '';
+        }
       });
     }
   }
 
   function handlePhotoCaptured(payload) {
+    if (activeCameraContext === 'id_selfie') {
+      capturedIdSelfiePayload = payload;
+      const preview = $('#selfiePhotoPreview');
+      if (preview) {
+        preview.src = payload.image_data;
+        preview.style.display = 'block';
+      }
+      const prompt = $('#selfieCameraPrompt');
+      if (prompt) prompt.style.display = 'none';
+      const hash = $('#selfiePhotoHashTag');
+      if (hash) {
+        hash.textContent = 'Selfie captured for manual visual review';
+        hash.style.display = 'block';
+      }
+      showToast('Selfie captured. An administrator will compare it with your ID photo.');
+      return;
+    }
     capturedPhotoPayload = payload;
 
     if (activeCameraContext === 'lost') {
@@ -2992,19 +3020,67 @@
   }
 
   // 18. Identity Verification Submission (Section 4)
+  function resetIdVerificationPhotos() {
+    capturedPhotoPayload = null;
+    capturedIdSelfiePayload = null;
+    if (activeCameraContext === 'id' || activeCameraContext === 'id_selfie') activeCameraContext = null;
+    const elements = [
+      ['idPhotoPreview', 'idCameraPrompt', 'idPhotoHashTag'],
+      ['selfiePhotoPreview', 'selfieCameraPrompt', 'selfiePhotoHashTag']
+    ];
+    elements.forEach(([previewId, promptId, hashId]) => {
+      const preview = document.getElementById(previewId);
+      const prompt = document.getElementById(promptId);
+      const hash = document.getElementById(hashId);
+      if (preview) { preview.removeAttribute('src'); preview.style.display = 'none'; }
+      if (prompt) prompt.style.display = 'block';
+      if (hash) { hash.textContent = ''; hash.style.display = 'none'; }
+    });
+  }
+
   function setupVerificationModal() {
     $('#idModalClose').addEventListener('click', () => {
       $('#idVerificationModal').classList.remove('active');
+      resetIdVerificationPhotos();
     });
+    const cancelButton = $('#cancelIdVerificationBtn');
+    if (cancelButton) cancelButton.addEventListener('click', resetIdVerificationPhotos);
 
     const form = $('#idVerificationForm');
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = marbsDB.getCurrentUser();
-        if (!user || !window.firestoreDb || !window.firebaseAuth?.currentUser) {
+        const authUser = window.firebaseAuth?.currentUser;
+        if (!user || !window.firestoreDb || !authUser || authUser.uid !== user.user_id) {
           showToast('Sign in and reconnect to Firebase before submitting your ID.');
           return;
+        }
+        if (!capturedPhotoPayload?.image_data || !capturedIdSelfiePayload?.image_data ||
+            !$('#verificationPrivacyConsent')?.checked) {
+          showToast('Add your ID photo and take a selfie, then agree to the identity-review notice.');
+          return;
+        }
+        if (capturedPhotoPayload.image_data.length + capturedIdSelfiePayload.image_data.length > 850000) {
+          showToast('These images are too large to submit safely. Upload a smaller ID image and retake the selfie.');
+          return;
+        }
+        if (window.firebaseAdminClaim) {
+          showToast('Administrator accounts do not submit citizen identity verifications.');
+          return;
+        }
+        try {
+          const probeId = `privacy_probe_${authUser.uid}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          const probe = await window.firestoreDb.collection('id_verifications').doc(probeId).get();
+          if (!probe.exists) {
+            showToast('Identity uploads are paused until private Firebase access rules are deployed.');
+            return;
+          }
+        } catch (rulesCheckError) {
+          if (rulesCheckError.code !== 'permission-denied') {
+            showToast('Could not verify private Firebase access. Please retry when connected.');
+            return;
+          }
         }
         const submitButton = form.querySelector('[type="submit"]');
         if (submitButton?.disabled) return;
@@ -3017,8 +3093,12 @@
           user_id: user.user_id,
           full_legal_name: legalName || `${user.first_name} ${user.last_name}`,
           id_type: idType,
-          id_image: capturedPhotoPayload ? capturedPhotoPayload.image_data : 'assets/images.jpg',
-          camera_verified: !!capturedPhotoPayload,
+          id_image: capturedPhotoPayload.image_data,
+          selfie_image: capturedIdSelfiePayload.image_data,
+          camera_verified: !!capturedPhotoPayload && !String(capturedPhotoPayload.image_hash || '').startsWith('UPLOAD-'),
+          selfie_camera_verified: true,
+          consented_to_visual_comparison: true,
+          consented_at: new Date().toISOString(),
           status: 'PENDING',
           submitted_at: new Date().toISOString(),
           reviewed_by: '',
@@ -3040,6 +3120,7 @@
 
         $('#idVerificationModal').classList.remove('active');
         form.reset();
+        resetIdVerificationPhotos();
         capturedPhotoPayload = null;
         renderUserDashboard();
         renderUserPill();
@@ -3922,13 +4003,13 @@
   function renderAdminVerifications() {
     const tbody = $('#adminVerificationsTbody');
     if (!tbody) return;
-    if (!window.firebaseAuth?.currentUser) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center">Local admin sign-in is active. Sign in with a Firebase admin account to load citizen ID submissions.</td></tr>';
+    if (!window.firebaseAuth?.currentUser || !window.firebaseAdminClaim) {
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center">A Firebase account with an administrator security claim is required to review identity documents.</td></tr>';
       return;
     }
 
     if (!marbsDB.data.id_verifications || marbsDB.data.id_verifications.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">No ID verification submissions yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">No ID verification submissions yet.</td></tr>`;
       return;
     }
 
@@ -3951,8 +4032,9 @@
           <td><strong style="color: var(--primary-dark);">${escapeHtml(v.full_legal_name)}</strong></td>
           <td>${v.id_type}</td>
           <td>
-            <img src="${v.id_image || 'assets/images.jpg'}" alt="ID Photo" onerror="this.onerror=null;this.src='assets/images.jpg'" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
+            <img src="${escapeHtml(v.id_image || 'assets/images.jpg')}" alt="ID Photo" onerror="this.onerror=null;this.src='assets/images.jpg'" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
           </td>
+          <td>${v.selfie_image ? `<img src="${escapeHtml(v.selfie_image)}" alt="Selfie" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">` : '<span style="color:var(--text-muted)">Not supplied</span>'}</td>
           <td>${dateStr}</td>
           <td><span class="activity-badge" style="${statusColor}">${v.status}</span></td>
         </tr>
@@ -3970,8 +4052,13 @@
     const modal = $('#adminIdDetailsModal');
     if (!modal) return;
 
-    $('#adminDetailIdImage').src = ver.id_image || 'assets/images.jpg';
-    $('#adminDetailIdImage').onerror = function () { this.onerror = null; this.src = 'assets/images.jpg'; };
+    $('#adminDetailIdImage').src = ver.id_image || '';
+    $('#adminDetailIdImage').onerror = function () { this.removeAttribute('src'); };
+    const selfieImage = $('#adminDetailSelfieImage');
+    if (selfieImage) {
+      selfieImage.src = ver.selfie_image || '';
+      selfieImage.onerror = function () { this.removeAttribute('src'); };
+    }
     $('#adminDetailVerId').textContent = ver.verification_id;
     $('#adminDetailLegalName').textContent = ver.full_legal_name || 'N/A';
     $('#adminDetailDocType').textContent = ver.id_type || 'National ID';
@@ -4029,6 +4116,10 @@
   }
 
   window.adminSetVerificationStatus = async function (verId, newStatus) {
+    if (!window.firebaseAdminClaim || !window.firebaseAuth?.currentUser) {
+      showToast('Only an authenticated Firebase administrator can review identity submissions.');
+      return;
+    }
     const ver = marbsDB.data.id_verifications.find(v => v.verification_id === verId);
     if (!ver) return;
     const wasVerified = ver.status === 'VERIFIED';

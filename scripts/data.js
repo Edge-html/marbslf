@@ -583,9 +583,24 @@ class MarbsLFDatabase {
   }
 
   save(data = this.data) {
+    // Identity photos are sensitive and large; keep them in live memory and
+    // Firestore only, never in the persistent browser cache.
+    let cacheCopy;
+    try {
+      cacheCopy = JSON.parse(JSON.stringify(data));
+      (cacheCopy.id_verifications || []).forEach(verification => {
+        if (!verification || typeof verification !== 'object') return;
+        delete verification.id_image;
+        delete verification.selfie_image;
+      });
+    } catch (copyError) {
+      console.error('Could not prepare a private browser cache:', copyError);
+      return false;
+    }
+
     try {
       if (!this._localStorageImageFallback) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheCopy));
         return true;
       }
     } catch (e) {
@@ -599,7 +614,6 @@ class MarbsLFDatabase {
     // Keep full-resolution images in memory/Firestore, but do not duplicate
     // large base64 payloads into the browser's small localStorage quota.
     try {
-      const cacheCopy = JSON.parse(JSON.stringify(data));
       let removedImageCount = 0;
       const trimInlineImages = value => {
         if (typeof value === 'string' && /^data:image\/[\w.+-]+;base64,/i.test(value)) {
@@ -935,7 +949,7 @@ class MarbsLFDatabase {
     }
 
     const mergeRemote = (key, idField, records) => {
-      if (key === 'id_verifications' && this.getCurrentUser()?.role === 'ADMIN') {
+      if (key === 'id_verifications' && window.firebaseAdminClaim === true) {
         this.data.id_verifications = records;
         this.save();
         if (typeof window.renderAdminVerifications === 'function') window.renderAdminVerifications();
@@ -980,9 +994,9 @@ class MarbsLFDatabase {
         mergeRemote(stateKey, idField, records);
       }, error => {
         console.warn(`Firestore ${collection} live listener:`, error);
-        if (collection === 'id_verifications' && this.getCurrentUser()?.role === 'ADMIN') {
+        if (collection === 'id_verifications' && window.firebaseAdminClaim === true) {
           const table = document.getElementById('adminVerificationsTbody');
-          if (table) table.innerHTML = '<tr><td colspan="7">Could not load ID submissions. Check Firebase admin access and Firestore permissions.</td></tr>';
+          if (table) table.innerHTML = '<tr><td colspan="8">Could not load ID submissions. Check the Firebase admin claim and Firestore permissions.</td></tr>';
         }
       }));
     };
@@ -999,7 +1013,7 @@ class MarbsLFDatabase {
     listen('messages', window.firestoreDb.collection('messages').where('receiver_id', '==', uid), 'messages', 'message_id', `inbox:${uid}`);
     listen('ratings', window.firestoreDb.collection('ratings').where('rater_id', '==', uid), 'ratings', 'rating_id', `ratings-by:${uid}`);
     listen('ratings', window.firestoreDb.collection('ratings').where('target_user_id', '==', uid), 'ratings', 'rating_id', `ratings-for:${uid}`);
-    if (this.getCurrentUser()?.role === 'ADMIN') {
+    if (window.firebaseAdminClaim === true) {
       listen('id_verifications', window.firestoreDb.collection('id_verifications'), 'id_verifications', 'verification_id', `id-verifications:admin:${uid}`);
     } else {
       listen('id_verifications', window.firestoreDb.collection('id_verifications').where('user_id', '==', uid), 'id_verifications', 'verification_id', `id-verifications:user:${uid}`);

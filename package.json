@@ -1,0 +1,12 @@
+{
+  "name": "marbslf-security-tests",
+  "private": true,
+  "scripts": {
+    "test:rules": "firebase emulators:exec --only firestore --project marbslf-rules-test \"node --test tests/firestore.rules.test.cjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0",
+    "firebase-tools": "^15.33.0"
+  }
+}

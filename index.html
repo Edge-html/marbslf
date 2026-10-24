@@ -1368,7 +1368,8 @@
                   <th>User ID</th>
                   <th>Legal Name</th>
                   <th>Document Type</th>
-                  <th>Camera Photo</th>
+                  <th>ID Photo</th>
+                  <th>Selfie</th>
                   <th>Verification Date</th>
                   <th>Status</th>
                 </tr>
@@ -2338,7 +2339,7 @@
           <div class="privacy-alert">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <div>
-              <strong>Strict Privacy Standard:</strong> Sensitive ID details are reviewed strictly by authorized city administrators and are NEVER revealed to other users or the public.
+              <strong>Private identity review:</strong> Your ID and selfie are submitted for human review and should only be visible to you and an authorized administrator. They are not used for automated face recognition.
             </div>
           </div>
 
@@ -2359,7 +2360,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">ID Document Verification Photo *</label>
+            <label class="form-label">ID Document Photo *</label>
             <!-- Preview / Prompt Box -->
             <div class="photo-capture-box" id="verifyIdCameraTrigger" style="cursor: pointer;">
               <img id="idPhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Captured ID">
@@ -2373,9 +2374,29 @@
               <div id="idPhotoHashTag" style="display: none; font-size: 11px; color: #155630; font-weight: 700; margin-top: 6px;"></div>
             </div>
           </div>
+
+          <div class="form-group">
+            <label class="form-label">Selfie for Manual ID Photo Comparison *</label>
+            <div class="photo-capture-box" id="verifySelfieCameraTrigger" style="cursor: pointer;">
+              <img id="selfiePhotoPreview" class="captured-thumb-preview" style="display: none;" alt="Selfie for identity review">
+              <div id="selfieCameraPrompt">
+                <div style="margin-bottom: 8px; color: var(--primary-dark); display: flex; justify-content: center;">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                </div>
+                <strong style="color: var(--text-main);">Tap to take your selfie</strong>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">An administrator will visually compare it with the ID photo. No automated face matching.</p>
+              </div>
+              <div id="selfiePhotoHashTag" style="display: none; font-size: 11px; color: #155630; font-weight: 700; margin-top: 6px;"></div>
+            </div>
+          </div>
+
+          <label class="privacy-alert" style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+            <input id="verificationPrivacyConsent" type="checkbox" required style="margin-top: 3px; flex: 0 0 auto;">
+            <span>I consent to collecting my ID image and selfie for this submission and manual identity review. I understand authorized administrators can view them and I can contact the site administrator about access, retention, or deletion.</span>
+          </label>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline" onclick="$('#idVerificationModal').classList.remove('active')">Cancel</button>
+          <button type="button" class="btn btn-outline" id="cancelIdVerificationBtn" onclick="$('#idVerificationModal').classList.remove('active')">Cancel</button>
           <button type="submit" class="btn btn-primary">Submit for Admin Review</button>
         </div>
       </form>
@@ -2672,12 +2693,19 @@
       </div>
       <div class="modal-body">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
-          <!-- Left Column: Captured Photo -->
+          <!-- Left Column: Side-by-side identity photos -->
           <div>
-            <label class="form-label" style="margin-bottom: 8px; font-weight: 700;">Captured Document Image</label>
+            <label class="form-label" style="margin-bottom: 8px; font-weight: 700;">Compare ID portrait with selfie</label>
             <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0B0B0B; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative;">
               <img id="adminDetailIdImage" src="" alt="Captured Document" style="width: 100%; max-height: 280px; object-fit: contain; display: block;">
               <div id="adminDetailHashBadge" style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #86efac; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-family: monospace; text-align: center;"></div>
+            </div>
+            <div style="margin-top: 12px;">
+              <label class="form-label" style="margin-bottom: 8px; font-weight: 700;">Citizen selfie</label>
+              <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0B0B0B; min-height: 180px; display: flex; align-items: center; justify-content: center;">
+                <img id="adminDetailSelfieImage" src="" alt="Citizen selfie for manual comparison" style="width: 100%; max-height: 240px; object-fit: contain; display: block;">
+              </div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Human visual comparison only. This does not automatically identify a face or prove liveness.</p>
             </div>
             <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 4px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -2764,10 +2792,10 @@
         <button class="modal-close-btn" type="button" onclick="document.getElementById('privacyNoticeModal').classList.remove('active')" aria-label="Close">×</button>
       </div>
       <div class="modal-body" style="font-size: 13px; line-height: 1.65;">
-        <p>MarbsLF processes account details, contact information, lost/found reports, private verification answers, messages, ratings, and (when submitted) identity-document images to operate the community service and support safe item returns.</p>
+        <p>MarbsLF processes account details, contact information, lost/found reports, private verification answers, messages, ratings, and (when submitted) identity-document and selfie images to operate the community service and support safe item returns.</p>
         <p>Public posts use a citizen alias. Do not include phone numbers, passwords, exact home addresses, or sensitive identifying details in public descriptions or private answers unless they are necessary to verify ownership.</p>
-        <p>Identity documents and private conversations should only be accessible to authorized reviewers and conversation participants. This depends on the Firebase project’s deployed access rules; confirm those rules are restricted before collecting real IDs. Ask the site administrator about access, correction, or deletion requests and retention periods.</p>
-        <p>MarbsLF does not perform automated face recognition. Any future biometric check would require a separate provider, explicit consent, and a clear deletion policy.</p>
+        <p>Identity documents and selfies are intended for the submitting citizen and authorized administrators only. This depends on the Firebase project’s deployed access rules. Contact the site administrator about access, correction, deletion, and retention requests.</p>
+        <p>An administrator visually compares the selfie with the ID portrait. MarbsLF does not automatically identify or match faces and does not create a face template.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" onclick="document.getElementById('privacyNoticeModal').classList.remove('active')">Close</button>
@@ -2779,11 +2807,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="scripts/firebaseClient.js?v=20"></script>
+  <script src="scripts/firebaseClient.js?v=21"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=33"></script>
-  <script src="scripts/camera.js?v=17"></script>
-  <script src="scripts/app.js?v=60"></script>
+  <script src="scripts/data.js?v=34"></script>
+  <script src="scripts/camera.js?v=18"></script>
+  <script src="scripts/app.js?v=61"></script>
 </body>
 </html>

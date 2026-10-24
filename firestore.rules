@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function ownsPost(postId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/posts/$(postId))
+        && get(/databases/$(database)/documents/posts/$(postId)).data.user_id == request.auth.uid;
+    }
+
+    match /id_verifications/{verificationId} {
+      function validSubmission() {
+        return request.resource.data.keys().hasOnly([
+            'verification_id', 'user_id', 'full_legal_name', 'id_type',
+            'id_image', 'selfie_image', 'camera_verified',
+            'selfie_camera_verified', 'consented_to_visual_comparison',
+            'consented_at', 'status', 'submitted_at', 'reviewed_by', 'reviewed_at'
+          ])
+          && request.resource.data.verification_id == verificationId
+          && request.resource.data.user_id == request.auth.uid
+          && request.resource.data.full_legal_name is string
+          && request.resource.data.full_legal_name.size() > 1
+          && request.resource.data.id_type is string
+          && request.resource.data.id_image is string
+          && request.resource.data.id_image.matches('data:image/.*;base64,.*')
+          && request.resource.data.selfie_image is string
+          && request.resource.data.selfie_image.matches('data:image/.*;base64,.*')
+          && request.resource.data.id_image.size() < 450000
+          && request.resource.data.selfie_image.size() < 450000
+          && request.resource.data.id_image.size() + request.resource.data.selfie_image.size() < 850000
+          && request.resource.data.selfie_camera_verified == true
+          && request.resource.data.consented_to_visual_comparison == true
+          && request.resource.data.status == 'PENDING'
+          && request.resource.data.reviewed_by == ''
+          && request.resource.data.reviewed_at == '';
+      }
+
+      allow create: if signedIn() && validSubmission();
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.user_id == request.auth.uid);
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'reviewed_by', 'reviewed_at'
+        ])
+        && request.resource.data.status in ['VERIFIED', 'REJECTED', 'SUSPENDED'];
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      allow list: if isAdmin();
+      allow create: if isAdmin() || (signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.role == 'USER'
+        && request.resource.data.verification_status == 'UNVERIFIED'
+        && request.resource.data.points_balance == 50
+        && request.resource.data.keys().hasOnly([
+          'user_id', 'first_name', 'middle_name', 'last_name', 'public_alias',
+          'date_of_birth', 'email', 'phone', 'username', 'barangay', 'province',
+          'city', 'account_status', 'verification_status', 'points_balance',
+          'role', 'created_at', 'avatar_url', 'rating_avg', 'rating_count'
+        ]));
+      allow update: if isAdmin() || (signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'first_name', 'middle_name', 'last_name', 'phone', 'username',
+          'date_of_birth', 'barangay', 'avatar_url'
+        ]));
+      allow delete: if isAdmin();
+    }
+
+    // This compatibility rule keeps existing non-identity collections working.
+    // Identity submissions and user profiles are explicitly excluded above.
+    // Other collections should be migrated to least-privilege rules before
+    // treating their contents as private.
+    match /{collection}/{document=**} {
+      allow read, write: if collection != 'id_verifications' && collection != 'users';
+    }
+  }
+}
