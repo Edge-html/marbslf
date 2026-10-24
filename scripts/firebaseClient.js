@@ -136,11 +136,17 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
 // 3. Real Email or Username Login
 async function signInWithEmailOrUsername(identifier, password) {
   const trimmed = identifier.trim().toLowerCase();
-  if ((trimmed === 'admin' || trimmed === 'admin@marbslf.gov.ph') && password === 'admin123') {
-    const adminUser = window.marbsDB?.data.users.find(u => u.user_id === 'USR-ADMIN');
-    return { user: { id: 'USR-ADMIN', email: 'admin@marbslf.gov.ph' }, profile: adminUser };
+  const isDemoAdminLogin = (trimmed === 'admin' || trimmed === 'admin@marbslf.gov.ph') && password === 'admin123';
+  // The demo profile is only for an offline build. When Firebase is configured,
+  // always authenticate against Firebase so a local ADMIN profile cannot be
+  // mistaken for a real Firebase administrator with an admin custom claim.
+  if (!firebaseAuth) {
+    if (isDemoAdminLogin) {
+      const adminUser = window.marbsDB?.data.users.find(u => u.user_id === 'USR-ADMIN');
+      return { user: { id: 'USR-ADMIN', email: 'admin@marbslf.gov.ph' }, profile: adminUser };
+    }
+    throw new Error('Firebase Authentication is unavailable. Refresh the page and try again.');
   }
-  if (!firebaseAuth) return null;
 
   try {
     let emailToUse = identifier.trim().toLowerCase() === 'admin'
