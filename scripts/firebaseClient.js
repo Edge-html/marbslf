@@ -75,7 +75,7 @@ async function signInWithGoogle() {
 }
 
 // 2. Real Email & Password Registration
-async function signUpWithEmailPassword({ email, password, firstName, middleName, lastName, dob, phone, username, barangay, registrationSelfieImage }) {
+async function signUpWithEmailPassword({ email, password, firstName, middleName, lastName, dob, phone, username, barangay }) {
   if (!firebaseAuth) return null;
 
   try {
@@ -103,7 +103,6 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
       city: 'Koronadal City',
       account_status: 'ACTIVE',
       verification_status: 'UNVERIFIED',
-      registration_selfie_image: registrationSelfieImage,
       points_balance: 50,
       role: 'USER',
       created_at: new Date().toISOString()

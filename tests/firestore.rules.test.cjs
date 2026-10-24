@@ -102,6 +102,36 @@ test('citizen cannot change their Firebase profile verification status or role',
   await assertFails(updateDoc(doc(ownerDb, 'users', 'owner-1'), { role: 'ADMIN' }));
 });
 
+test('new citizen profiles do not accept registration selfie images', async () => {
+  const userDb = testEnv.authenticatedContext('new-user-1').firestore();
+  const profile = {
+    user_id: 'new-user-1',
+    first_name: 'Test',
+    middle_name: '',
+    last_name: 'Citizen',
+    public_alias: 'Citizen #000001',
+    date_of_birth: '2000-01-01',
+    email: 'citizen@example.com',
+    phone: '09123456789',
+    username: 'test-citizen',
+    barangay: 'Zone I',
+    province: 'South Cotabato',
+    city: 'Koronadal City',
+    account_status: 'ACTIVE',
+    verification_status: 'UNVERIFIED',
+    points_balance: 50,
+    role: 'USER',
+    created_at: new Date().toISOString()
+  };
+  await assertSucceeds(setDoc(doc(userDb, 'users', 'new-user-1'), profile));
+  const secondUserDb = testEnv.authenticatedContext('new-user-2').firestore();
+  await assertFails(setDoc(doc(secondUserDb, 'users', 'new-user-2'), {
+    ...profile,
+    user_id: 'new-user-2',
+    registration_selfie_image: image
+  }));
+});
+
 test('admin claim can update verification status on a user profile', async () => {
   const adminDb = testEnv.authenticatedContext('admin-1', { admin: true }).firestore();
   await assertSucceeds(updateDoc(doc(adminDb, 'users', 'owner-1'), { verification_status: 'VERIFIED' }));

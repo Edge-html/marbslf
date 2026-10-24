@@ -133,7 +133,6 @@
   let activeCameraContext = null; // 'lost', 'found', 'id', or 'claim_proof'
   let capturedPhotoPayload = null;
   let capturedIdSelfiePayload = null;
-  let capturedRegistrationSelfiePayload = null;
   let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
 
@@ -1540,12 +1539,6 @@
     if ($('#verifyIdCameraTrigger')) $('#verifyIdCameraTrigger').addEventListener('click', openIdCamera);
     if ($('#verifyIdCameraBtn')) $('#verifyIdCameraBtn').addEventListener('click', openIdCamera);
     if ($('#verifySelfieCameraTrigger')) $('#verifySelfieCameraTrigger').addEventListener('click', openSelfieCamera);
-    const registrationSelfieTrigger = $('#registrationSelfieTrigger');
-    if (registrationSelfieTrigger) registrationSelfieTrigger.addEventListener('click', () => {
-      activeCameraContext = 'registration_selfie';
-      marbsCamera.open({ category: 'identity_selfie', onCapture: handlePhotoCaptured });
-    });
-
     // ID File Upload option
     const idFileInput = $('#idFileInput');
     const verifyIdUploadBtn = $('#verifyIdUploadBtn');
@@ -1573,15 +1566,6 @@
   }
 
   function handlePhotoCaptured(payload) {
-    if (activeCameraContext === 'registration_selfie') {
-      capturedRegistrationSelfiePayload = payload;
-      const preview = $('#registrationSelfiePreview');
-      if (preview) { preview.src = payload.image_data; preview.style.display = 'block'; }
-      const prompt = $('#registrationSelfiePrompt');
-      if (prompt) prompt.style.display = 'none';
-      showToast('Registration selfie captured. An admin will compare it manually with your ID.');
-      return;
-    }
     if (activeCameraContext === 'id_selfie') {
       capturedIdSelfiePayload = payload;
       const preview = $('#selfiePhotoPreview');
@@ -3191,13 +3175,10 @@
           showToast('Sign in and reconnect to Firebase before submitting your ID.');
           return;
         }
-        const savedRegistrationSelfie = user.registration_selfie_image
-          ? { image_data: user.registration_selfie_image, image_hash: 'REGISTRATION-SELFIE' }
-          : null;
-        const selfieForReview = capturedIdSelfiePayload || savedRegistrationSelfie;
+        const selfieForReview = capturedIdSelfiePayload;
         if (!capturedPhotoPayload?.image_data || !selfieForReview?.image_data ||
             !$('#verificationPrivacyConsent')?.checked) {
-          showToast('Add your ID photo and registration selfie, then agree to the identity-review notice.');
+          showToast('Add your ID photo and take a selfie in this verification form, then agree to the identity-review notice.');
           return;
         }
         if (capturedPhotoPayload.image_data.length + selfieForReview.image_data.length > 850000) {
@@ -3258,19 +3239,6 @@
   }
 
   function openIdVerificationModal() {
-    const user = marbsDB.getCurrentUser();
-    if (user?.registration_selfie_image && !capturedIdSelfiePayload) {
-      capturedIdSelfiePayload = {
-        image_data: user.registration_selfie_image,
-        image_hash: 'REGISTRATION-SELFIE'
-      };
-      const preview = $('#selfiePhotoPreview');
-      if (preview) { preview.src = user.registration_selfie_image; preview.style.display = 'block'; }
-      const prompt = $('#selfieCameraPrompt');
-      if (prompt) prompt.style.display = 'none';
-      const hash = $('#selfiePhotoHashTag');
-      if (hash) { hash.textContent = 'Selfie captured during registration'; hash.style.display = 'block'; }
-    }
     $('#idVerificationModal')?.classList.add('active');
   }
 
@@ -3383,14 +3351,6 @@
     if (regForm) {
       regForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!capturedRegistrationSelfiePayload?.image_data) {
-          showToast('Take your selfie before creating the account.');
-          return;
-        }
-        if (capturedRegistrationSelfiePayload.image_data.length >= 450000) {
-          showToast('The selfie file is too large. Retake it with the camera and try again.');
-          return;
-        }
         const firstName = $('#regFirstName').value.trim();
         const middleName = $('#regMiddleName') ? $('#regMiddleName').value.trim() : '';
         const lastName = $('#regLastName').value.trim();
@@ -3415,16 +3375,12 @@
         try {
           if (window.signUpWithEmailPassword) {
             const res = await window.signUpWithEmailPassword({
-              email, password, firstName, middleName, lastName, dob, phone, username, barangay,
-              registrationSelfieImage: capturedRegistrationSelfiePayload.image_data
+              email, password, firstName, middleName, lastName, dob, phone, username, barangay
             });
 
             if (res && res.verificationRequired) {
               $('#registerModal').classList.remove('active');
               regForm.reset();
-              capturedRegistrationSelfiePayload = null;
-              if ($('#registrationSelfiePreview')) { $('#registrationSelfiePreview').removeAttribute('src'); $('#registrationSelfiePreview').style.display = 'none'; }
-              if ($('#registrationSelfiePrompt')) $('#registrationSelfiePrompt').style.display = 'block';
               showNotificationModal({
                 title: 'Check your email to activate your account',
                 message: res.verificationEmailSent
@@ -3473,7 +3429,6 @@
               barangay: barangay,
               account_status: 'ACTIVE',
               verification_status: 'UNVERIFIED',
-              registration_selfie_image: capturedRegistrationSelfiePayload.image_data,
               points_balance: 50,
               created_at: new Date().toISOString()
             };
@@ -3484,9 +3439,6 @@
 
           $('#registerModal').classList.remove('active');
           regForm.reset();
-          capturedRegistrationSelfiePayload = null;
-          if ($('#registrationSelfiePreview')) { $('#registrationSelfiePreview').removeAttribute('src'); $('#registrationSelfiePreview').style.display = 'none'; }
-          if ($('#registrationSelfiePrompt')) $('#registrationSelfiePrompt').style.display = 'block';
           renderUserPill();
           renderFeed();
 
