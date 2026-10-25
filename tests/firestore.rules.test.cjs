@@ -56,6 +56,15 @@ beforeEach(async () => {
       place_name: 'Private pickup location',
       time: '9:30 PM'
     });
+    await setDoc(doc(context.firestore(), 'messages', 'MSG-test-123456'), {
+      message_id: 'MSG-test-123456',
+      sender_id: 'finder-2',
+      receiver_id: 'owner-1',
+      post_id: 'POST-test-1',
+      message: 'This is the test message being reported.',
+      timestamp: new Date().toISOString(),
+      status: 'SENT'
+    });
   });
 });
 
@@ -96,6 +105,83 @@ test('admin claim can review status, but cannot replace submitted images', async
   await assertFails(updateDoc(doc(adminDb, 'id_verifications', verificationId), {
     selfie_image: 'data:image/jpeg;base64,bmV3LXNlbGZpZQ=='
   }));
+});
+
+test('only an admin can redact ID and selfie images after a final review', async () => {
+  const adminDb = testEnv.authenticatedContext('admin-1', { admin: true }).firestore();
+  const ownerDb = testEnv.authenticatedContext('owner-1').firestore();
+  await assertFails(updateDoc(doc(adminDb, 'id_verifications', verificationId), {
+    id_image: '', selfie_image: '', images_deleted_at: new Date().toISOString()
+  }));
+  await updateDoc(doc(adminDb, 'id_verifications', verificationId), {
+    status: 'VERIFIED', reviewed_by: 'admin-1', reviewed_at: new Date().toISOString()
+  });
+  await assertSucceeds(updateDoc(doc(adminDb, 'id_verifications', verificationId), {
+    id_image: '', selfie_image: '', images_deleted_at: new Date().toISOString()
+  }));
+  await assertFails(updateDoc(doc(ownerDb, 'id_verifications', verificationId), {
+    id_image: '', selfie_image: '', images_deleted_at: new Date().toISOString()
+  }));
+});
+
+test('abuse reports are private to the reporter and admins, and only admins resolve them', async () => {
+  const reporterDb = testEnv.authenticatedContext('owner-1').firestore();
+  const strangerDb = testEnv.authenticatedContext('stranger-2').firestore();
+  const adminDb = testEnv.authenticatedContext('admin-1', { admin: true }).firestore();
+  const report = {
+    report_id: 'REP-test-1234567',
+    reporter_id: 'owner-1',
+    reported_user_id: 'finder-2',
+    reported_post_id: 'POST-test-1',
+    reported_message_id: '',
+    target_type: 'POST',
+    target_id: 'POST-test-1',
+    reason: 'Scam',
+    details: 'This post asks people to pay an advance fee.',
+    status: 'UNDER_REVIEW',
+    admin_action: 'Pending administrator inspection',
+    created_at: new Date().toISOString()
+  };
+  await assertSucceeds(setDoc(doc(reporterDb, 'reports', report.report_id), report));
+  await assertSucceeds(getDoc(doc(reporterDb, 'reports', report.report_id)));
+  await assertFails(getDoc(doc(strangerDb, 'reports', report.report_id)));
+  await assertFails(updateDoc(doc(reporterDb, 'reports', report.report_id), { status: 'RESOLVED' }));
+  await assertSucceeds(updateDoc(doc(adminDb, 'reports', report.report_id), {
+    status: 'RESOLVED',
+    admin_action: 'Investigated and resolved by moderator',
+    resolved_at: new Date().toISOString()
+  }));
+  const messageReport = {
+    ...report,
+    report_id: 'REP-message-1234567',
+    reported_user_id: 'finder-2',
+    reported_post_id: 'POST-test-1',
+    reported_message_id: 'MSG-test-123456',
+    target_type: 'MESSAGE',
+    target_id: 'MSG-test-123456'
+  };
+  await assertSucceeds(setDoc(doc(reporterDb, 'reports', messageReport.report_id), messageReport));
+  await assertFails(setDoc(doc(reporterDb, 'reports', 'REP-message-self-123456'), {
+    ...messageReport,
+    report_id: 'REP-message-self-123456',
+    reported_user_id: 'owner-1'
+  }));
+});
+
+test('audit logs are private, admin-authored, and append-only', async () => {
+  const citizenDb = testEnv.authenticatedContext('owner-1').firestore();
+  const adminDb = testEnv.authenticatedContext('admin-1', { admin: true }).firestore();
+  const log = {
+    log_id: 'LOG-test-123456789',
+    admin_id: 'admin-1',
+    action_type: 'REPORT_RESOLVED',
+    description: 'Resolved a test abuse report.',
+    timestamp: new Date().toISOString()
+  };
+  await assertFails(setDoc(doc(citizenDb, 'audit_logs', log.log_id), log));
+  await assertSucceeds(setDoc(doc(adminDb, 'audit_logs', log.log_id), log));
+  await assertFails(getDoc(doc(citizenDb, 'audit_logs', log.log_id)));
+  await assertFails(updateDoc(doc(adminDb, 'audit_logs', log.log_id), { description: 'Changed later' }));
 });
 
 test('citizen cannot change their Firebase profile verification status or role', async () => {
@@ -144,6 +230,30 @@ test('meetup schedules are private to participants', async () => {
   const strangerDb = testEnv.authenticatedContext('stranger-2').firestore();
   await assertSucceeds(getDoc(doc(ownerDb, 'meetups', completedMeetupId)));
   await assertFails(getDoc(doc(strangerDb, 'meetups', completedMeetupId)));
+});
+
+test('a return is completed only after each meetup participant confirms their own side', async () => {
+  const ownerDb = testEnv.authenticatedContext('owner-1').firestore();
+  const finderDb = testEnv.authenticatedContext('finder-2').firestore();
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'meetups', 'MT-active-1'), {
+      meetup_id: 'MT-active-1',
+      owner_id: 'owner-1',
+      finder_id: 'finder-2',
+      status: 'CONFIRMED',
+      owner_confirmed_return: false,
+      finder_confirmed_return: false
+    });
+  });
+  const meetupRef = doc(ownerDb, 'meetups', 'MT-active-1');
+  await assertSucceeds(updateDoc(meetupRef, { owner_confirmed_return: true }));
+  await assertFails(updateDoc(meetupRef, { status: 'COMPLETED' }));
+  await assertFails(updateDoc(meetupRef, { finder_confirmed_return: true }));
+  await assertSucceeds(updateDoc(doc(finderDb, 'meetups', 'MT-active-1'), {
+    finder_confirmed_return: true,
+    status: 'COMPLETED',
+    completed_at: new Date().toISOString()
+  }));
 });
 
 test('public history exposes only a sanitized completed-return summary', async () => {

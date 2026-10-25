@@ -4067,6 +4067,17 @@ body[data-surface="landing"] #homeHero {
   text-align: right;
 }
 
+.messenger-report-message {
+  display: block;
+  margin: 5px 0 0 auto;
+  padding: 2px 0;
+  color: #756e62;
+  background: transparent;
+  border: 0;
+  font-size: 10px;
+  text-decoration: underline;
+}
+
 .messenger-bubble.mine .messenger-bubble-time {
   color: #EDE9E0;
 }
@@ -6215,6 +6226,23 @@ select.cs-native {
 .public-history-empty strong { margin-top: 9px; color: #302c25; font-size: 16px; }
 .public-history-empty p { max-width: 410px; margin: 6px 0 0; color: #756e62; font-size: 13px; line-height: 1.55; }
 
+.meetup-confirmation-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  color: #514a3e;
+  background: #f7f4ec;
+  border: 1px solid #e8e1d4;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.meetup-confirmation-progress span { color: #70695e; font-size: 11px; }
+
 @media (max-width: 600px) {
   .public-history-view { padding: 18px 12px 44px; }
   .public-history-hero { align-items: flex-start; flex-direction: column; gap: 18px; border-radius: 16px; }
@@ -6226,4 +6254,5 @@ select.cs-native {
   .public-return-card { align-items: flex-start; padding: 14px; gap: 11px; }
   .public-return-icon { flex-basis: 36px; width: 36px; height: 36px; border-radius: 11px; }
   .public-return-status { font-size: 9px; padding: 4px 7px; }
+  .meetup-confirmation-progress { flex-direction: column; align-items: flex-start; }
 }

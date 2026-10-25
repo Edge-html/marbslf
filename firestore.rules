@@ -50,11 +50,99 @@ service cloud.firestore {
       allow get, list: if isAdmin()
         || (signedIn() && resource.data.user_id == request.auth.uid);
       allow update: if isAdmin()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status', 'reviewed_by', 'reviewed_at'
-        ])
-        && request.resource.data.status in ['VERIFIED', 'REJECTED', 'SUSPENDED'];
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'reviewed_by', 'reviewed_at'
+          ])
+          && request.resource.data.status in ['VERIFIED', 'REJECTED', 'SUSPENDED'])
+          ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'id_image', 'selfie_image', 'images_deleted_at'
+          ])
+          && resource.data.status in ['VERIFIED', 'REJECTED']
+          && request.resource.data.id_image == ''
+          && request.resource.data.selfie_image == ''
+          && request.resource.data.images_deleted_at is string)
+        );
       allow delete: if isAdmin();
+    }
+
+    // Abuse reports are private to their author and trusted moderators.
+    match /reports/{reportId} {
+      function validReport() {
+        return request.resource.data.keys().hasOnly([
+            'report_id', 'reporter_id', 'reported_user_id', 'reported_post_id', 'reported_message_id',
+            'target_type', 'target_id', 'reason', 'details', 'status',
+            'admin_action', 'created_at'
+          ])
+          && reportId.matches('^REP-[A-Za-z0-9-]{12,80}$')
+          && request.resource.data.report_id == reportId
+          && request.resource.data.reporter_id == request.auth.uid
+          && request.resource.data.target_type in ['GENERAL', 'POST', 'USER', 'MESSAGE']
+          && request.resource.data.target_id is string
+          && request.resource.data.target_id.matches('^[A-Za-z0-9_-]{1,160}$')
+          && request.resource.data.target_id.size() <= 160
+          && request.resource.data.reported_user_id is string
+          && request.resource.data.reported_user_id.size() <= 128
+          && request.resource.data.reported_post_id is string
+          && request.resource.data.reported_post_id.size() <= 160
+          && request.resource.data.reported_message_id is string
+          && request.resource.data.reported_message_id.size() <= 160
+          && (request.resource.data.target_type != 'POST'
+            || request.resource.data.reported_post_id == request.resource.data.target_id)
+          && (request.resource.data.target_type != 'USER'
+            || (request.resource.data.reported_user_id == request.resource.data.target_id
+              && request.resource.data.reported_user_id != request.auth.uid))
+          && (request.resource.data.target_type != 'MESSAGE'
+            || (request.resource.data.reported_message_id == request.resource.data.target_id
+              && request.resource.data.reported_user_id != request.auth.uid
+              && exists(/databases/$(database)/documents/messages/$(request.resource.data.target_id))
+              && get(/databases/$(database)/documents/messages/$(request.resource.data.target_id)).data.sender_id == request.resource.data.reported_user_id
+              && get(/databases/$(database)/documents/messages/$(request.resource.data.target_id)).data.receiver_id == request.auth.uid
+              && get(/databases/$(database)/documents/messages/$(request.resource.data.target_id)).data.post_id == request.resource.data.reported_post_id))
+          && request.resource.data.reason is string
+          && request.resource.data.reason in [
+            'Suspicious Reward Request', 'Fake Post', 'Fake Claim', 'Scam',
+            'Harassment', 'Incorrect Information', 'Other'
+          ]
+          && request.resource.data.details is string
+          && request.resource.data.details.size() >= 10
+          && request.resource.data.details.size() <= 1000
+          && request.resource.data.status == 'UNDER_REVIEW'
+          && request.resource.data.admin_action == 'Pending administrator inspection'
+          && request.resource.data.created_at is string;
+      }
+
+      allow create: if signedIn() && validReport();
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.reporter_id == request.auth.uid);
+      allow update: if isAdmin()
+        && resource.data.status == 'UNDER_REVIEW'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'admin_action', 'resolved_at'
+        ])
+        && request.resource.data.status in ['RESOLVED', 'DISMISSED']
+        && request.resource.data.admin_action is string
+        && request.resource.data.admin_action.size() <= 200
+        && request.resource.data.resolved_at is string;
+      allow delete: if isAdmin();
+    }
+
+    // Audit entries are append-only and visible only to Firebase admins.
+    match /audit_logs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'log_id', 'admin_id', 'action_type', 'description', 'timestamp'
+        ])
+        && request.resource.data.log_id == logId
+        && request.resource.data.admin_id == request.auth.uid
+        && request.resource.data.action_type is string
+        && request.resource.data.action_type.size() <= 100
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 1000
+        && request.resource.data.timestamp is string;
+      allow update, delete: if false;
     }
 
     // Private schedules remain participant-only. The public archive receives
@@ -144,6 +232,8 @@ service cloud.firestore {
     // treating their contents as private.
     match /{collection}/{document=**} {
       allow read, write: if collection != 'id_verifications'
+        && collection != 'reports'
+        && collection != 'audit_logs'
         && collection != 'users'
         && collection != 'meetups'
         && collection != 'public_transactions';

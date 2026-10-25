@@ -500,7 +500,7 @@ class MarbsLFDatabase {
 
   async syncRecordToFirestore(collectionName, record) {
     if (!window.firestoreDb || !record) return false;
-    const key = record.message_id || record.match_id || record.meetup_id || record.public_transaction_id || record.notification_id || record.transaction_id;
+    const key = record.message_id || record.match_id || record.meetup_id || record.public_transaction_id || record.notification_id || record.report_id || record.log_id || record.transaction_id;
     if (!key) return false;
     try {
       await window.firestoreDb.collection(collectionName).doc(key).set(record, { merge: true });
@@ -553,6 +553,9 @@ class MarbsLFDatabase {
           parsed.meetups = parsed.meetups.filter(m => m.meetup_id !== 'MT-501');
         }
         if (!Array.isArray(parsed.public_transactions)) parsed.public_transactions = [];
+        if (!Array.isArray(parsed.reports)) parsed.reports = [...DEFAULT_REPORTS];
+        if (!Array.isArray(parsed.audit_logs)) parsed.audit_logs = [...DEFAULT_AUDIT_LOGS];
+        if (!Array.isArray(parsed.notifications)) parsed.notifications = [...DEFAULT_NOTIFICATIONS];
         if (Array.isArray(parsed.messages)) {
           parsed.messages = parsed.messages.filter(m => m.message_id !== 'MSG-001' && m.message_id !== 'MSG-002');
         }
@@ -799,16 +802,19 @@ class MarbsLFDatabase {
   }
 
   // Audit Log helper per Section 34 & 36
-  logAudit(actionType, description, adminId = 'USR-ADMIN') {
+  logAudit(actionType, description, adminId = null) {
+    const authUser = window.firebaseAuth?.currentUser;
+    const trustedAdmin = window.firebaseAdminClaim === true && !!authUser;
     const newLog = {
-      log_id: 'LOG-' + Date.now().toString().slice(-6),
-      admin_id: adminId,
+      log_id: this.createId('LOG'),
+      admin_id: adminId || (trustedAdmin ? authUser.uid : 'USR-ADMIN'),
       action_type: actionType,
       description: description,
       timestamp: new Date().toISOString()
     };
     this.data.audit_logs.unshift(newLog);
     this.save();
+    if (trustedAdmin) this.syncRecordToFirestore('audit_logs', newLog);
     return newLog;
   }
 
@@ -980,6 +986,9 @@ class MarbsLFDatabase {
       if (key === 'notifications') {
         this.data.notifications.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
       }
+      if (key === 'audit_logs') {
+        this.data.audit_logs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      }
       this.save();
       if (key === 'matches') {
         if (typeof window.renderUserDashboard === 'function') window.renderUserDashboard();
@@ -1005,6 +1014,12 @@ class MarbsLFDatabase {
       if (key === 'ratings') {
         if (typeof window.renderMeetupsView === 'function') window.renderMeetupsView();
         if (typeof window.renderUserPill === 'function') window.renderUserPill();
+      }
+      if (key === 'reports' && this.getCurrentUser()?.role === 'ADMIN' && typeof window.renderAdminReports === 'function') {
+        window.renderAdminReports();
+      }
+      if (key === 'audit_logs' && this.getCurrentUser()?.role === 'ADMIN' && typeof window.renderAdminAuditLogs === 'function') {
+        window.renderAdminAuditLogs();
       }
     };
     const listen = (collection, query, stateKey, idField, listenerKey) => {
@@ -1032,6 +1047,12 @@ class MarbsLFDatabase {
     listen('meetups', window.firestoreDb.collection('meetups').where('owner_id', '==', uid), 'meetups', 'meetup_id', `meetup-owner:${uid}`);
     listen('meetups', window.firestoreDb.collection('meetups').where('finder_id', '==', uid), 'meetups', 'meetup_id', `meetup-finder:${uid}`);
     listen('notifications', window.firestoreDb.collection('notifications').where('user_id', '==', uid), 'notifications', 'notification_id', `notifications:${uid}`);
+    if (this.getCurrentUser()?.role === 'ADMIN') {
+      listen('reports', window.firestoreDb.collection('reports'), 'reports', 'report_id', `reports:admin:${uid}`);
+      listen('audit_logs', window.firestoreDb.collection('audit_logs').orderBy('timestamp', 'desc').limit(100), 'audit_logs', 'log_id', `audit-logs:admin:${uid}`);
+    } else {
+      listen('reports', window.firestoreDb.collection('reports').where('reporter_id', '==', uid), 'reports', 'report_id', `reports:user:${uid}`);
+    }
     listen('messages', window.firestoreDb.collection('messages').where('receiver_id', '==', uid), 'messages', 'message_id', `inbox:${uid}`);
     listen('ratings', window.firestoreDb.collection('ratings').where('rater_id', '==', uid), 'ratings', 'rating_id', `ratings-by:${uid}`);
     listen('ratings', window.firestoreDb.collection('ratings').where('target_user_id', '==', uid), 'ratings', 'rating_id', `ratings-for:${uid}`);

@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=58">
+  <link rel="stylesheet" href="styles/main.css?v=59">
   <link rel="stylesheet" href="styles/ux-polish.css?v=2">
 </head>
 <body>
@@ -138,7 +138,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
 
-          <button type="button" class="icon-btn" id="navNotifBtn" title="Notifications">
+          <button type="button" class="icon-btn" id="navNotifBtn" title="Notifications" aria-label="Open notifications">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
           </button>
@@ -2469,7 +2469,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--lost-color);"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           Scam & Abuse Report
         </h3>
-        <button class="modal-close-btn" id="reportModalClose">×</button>
+        <button type="button" class="modal-close-btn" id="reportModalClose" aria-label="Close abuse report">×</button>
       </div>
       <form id="scamReportForm">
         <div class="modal-body">
@@ -2488,7 +2488,8 @@
 
           <div class="form-group">
             <label class="form-label" for="reportDetailsInput">Explanation & Details *</label>
-            <textarea id="reportDetailsInput" class="form-textarea" placeholder="Describe the incident to help moderators investigate..." required></textarea>
+            <textarea id="reportDetailsInput" class="form-textarea" placeholder="Describe the incident to help moderators investigate..." minlength="10" maxlength="1000" required aria-describedby="reportDetailsHelp"></textarea>
+            <small id="reportDetailsHelp">10–1,000 characters. Your report is visible only to you and authorized moderators.</small>
           </div>
         </div>
         <div class="modal-footer">
@@ -2624,14 +2625,14 @@
   </div>
 
   <!-- 13. System Notifications Drawer Modal (Section 30) -->
-  <div class="modal-overlay" id="notificationsModal" role="dialog" aria-modal="true">
+  <div class="modal-overlay" id="notificationsModal" role="dialog" aria-modal="true" aria-labelledby="notificationsTitle">
     <div class="modal-card modal-sm">
       <div class="modal-header">
-        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+        <h3 class="modal-title" id="notificationsTitle" style="display: flex; align-items: center; gap: 8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           Notifications
         </h3>
-        <button class="modal-close-btn" onclick="$('#notificationsModal').classList.remove('active')">×</button>
+        <button type="button" class="modal-close-btn" onclick="$('#notificationsModal').classList.remove('active')" aria-label="Close notifications">×</button>
       </div>
       <div class="modal-body" id="notifModalList">
         <!-- Rendered dynamically -->
@@ -2756,12 +2757,14 @@
             <label class="form-label" style="margin-bottom: 8px; font-weight: 700;">Compare ID portrait with selfie</label>
             <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0B0B0B; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative;">
               <img id="adminDetailIdImage" src="" alt="Captured Document" style="width: 100%; max-height: 280px; object-fit: contain; display: block;">
+              <span id="adminDetailIdRemoved" style="display:none;color:#d6d0c5;font-size:13px;padding:20px;">Image deleted after review</span>
               <div id="adminDetailHashBadge" style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #86efac; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-family: monospace; text-align: center;"></div>
             </div>
             <div style="margin-top: 12px;">
               <label class="form-label" style="margin-bottom: 8px; font-weight: 700;">Citizen selfie</label>
               <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0B0B0B; min-height: 180px; display: flex; align-items: center; justify-content: center;">
                 <img id="adminDetailSelfieImage" src="" alt="Citizen selfie for manual comparison" style="width: 100%; max-height: 240px; object-fit: contain; display: block;">
+                <span id="adminDetailSelfieRemoved" style="display:none;color:#d6d0c5;font-size:13px;padding:20px;">Image deleted after review</span>
               </div>
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Human visual comparison only. This does not automatically identify a face or prove liveness.</p>
             </div>
@@ -2813,6 +2816,8 @@
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn btn-outline" id="adminDetailRedactBtn" style="display:none;color:#9b2922;border-color:#e8bdb8;" aria-describedby="adminDetailRedactHelp">Delete ID &amp; selfie images</button>
+        <small id="adminDetailRedactHelp" style="max-width:220px;color:var(--text-muted);">Available after verification is approved or rejected.</small>
         <button type="button" class="btn btn-outline" onclick="$('#adminIdDetailsModal').classList.remove('active')">Close</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" class="btn btn-outline" id="adminDetailSuspendBtn" style="color: #7e22ce; border-color: #d8b4fe; font-weight: 700;">Suspend</button>
@@ -2853,7 +2858,7 @@
         <p>MarbsLF processes account details, contact information, lost/found reports, private verification answers, messages, ratings, and (when submitted) identity-document and selfie images to operate the community service and support safe item returns.</p>
         <p>Public posts use a citizen alias. Do not include phone numbers, passwords, exact home addresses, or sensitive identifying details in public descriptions or private answers unless they are necessary to verify ownership.</p>
         <p>When both participants confirm a return, a privacy-safe summary may appear in the public return history. It shows only a broad outcome category, Koronadal City, and the completion month; it does not show participant identities, item details or photos, exact meetup place/time, contact information, or messages.</p>
-        <p>Identity documents and selfies are intended for the submitting citizen and authorized administrators only. This depends on the Firebase project’s deployed access rules. Contact the site administrator about access, correction, deletion, and retention requests.</p>
+        <p>Identity documents and selfies are intended for the submitting citizen and authorized administrators only. This depends on the Firebase project’s deployed access rules. After a verification is approved or rejected, an authorized administrator can delete the image files while retaining the review decision. Ask the site administrator about access, correction, deletion, or retention requests.</p>
         <p>An administrator visually compares the selfie with the ID portrait. MarbsLF does not automatically identify or match faces and does not create a face template.</p>
       </div>
       <div class="modal-footer">
@@ -2869,8 +2874,8 @@
   <script src="scripts/firebaseClient.js?v=23"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=35"></script>
+  <script src="scripts/data.js?v=36"></script>
   <script src="scripts/camera.js?v=18"></script>
-  <script src="scripts/app.js?v=62"></script>
+  <script src="scripts/app.js?v=63"></script>
 </body>
 </html>

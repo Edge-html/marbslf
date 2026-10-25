@@ -129,6 +129,7 @@
   let currentArea = 'ALL';
   let currentSearchQuery = '';
   let activePostForModal = null;
+  let activeReportTarget = { type: 'GENERAL', id: '' };
   let activeChatPost = null;
   let activeCameraContext = null; // 'lost', 'found', 'id', or 'claim_proof'
   let capturedPhotoPayload = null;
@@ -2850,9 +2851,14 @@
         <div class="messenger-bubble ${isMine ? 'mine' : 'other'}">
           <div>${escapeHtml(msg.message)}</div>
           <div class="messenger-bubble-time">${timeStr} ${isMine ? 'Sent' : ''}</div>
+          ${!isMine ? `<button type="button" class="messenger-report-message" data-report-message="${escapeHtml(msg.message_id)}" aria-label="Report this message">Report</button>` : ''}
         </div>
       `;
     }).join('');
+
+    container.querySelectorAll('[data-report-message]').forEach(button => {
+      button.addEventListener('click', () => openScamReportModal('MESSAGE', button.dataset.reportMessage));
+    });
 
     if (scrollBottom || isAtBottom) {
       container.scrollTop = container.scrollHeight;
@@ -3105,17 +3111,56 @@
 
     const form = $('#scamReportForm');
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = marbsDB.getCurrentUser();
+        const authUser = window.firebaseAuth?.currentUser;
         const reason = $('#reportReasonSelect').value;
         const details = $('#reportDetailsInput').value.trim();
+        if (!user || !authUser || authUser.uid !== user.user_id || !window.firestoreDb) {
+          showToast('Sign in to a connected account before sending a report.');
+          return;
+        }
+        if (details.length < 10 || details.length > 1000) {
+          showToast('Please describe the incident in 10–1,000 characters.');
+          return;
+        }
+
+        const targetType = activeReportTarget.type || 'GENERAL';
+        const targetId = activeReportTarget.id || 'GENERAL';
+        const recentDuplicate = (marbsDB.data.reports || []).some(existing =>
+          existing.reporter_id === authUser.uid &&
+          existing.target_type === targetType &&
+          existing.target_id === targetId &&
+          Date.now() - new Date(existing.created_at || 0).getTime() < 10 * 60 * 1000
+        );
+        if (recentDuplicate) {
+          showToast('You recently reported this. Please wait before sending another report about the same target.');
+          return;
+        }
+
+        const reportedPost = targetType === 'POST'
+          ? (marbsDB.data.posts || []).find(post => post.post_id === targetId)
+          : null;
+        const reportedMessage = targetType === 'MESSAGE'
+          ? (marbsDB.data.messages || []).find(message => message.message_id === targetId)
+          : null;
+        if (targetType === 'MESSAGE' && (!reportedMessage || reportedMessage.sender_id === authUser.uid)) {
+          showToast('Only a message from another participant can be reported.');
+          return;
+        }
+        const reportedUserId = targetType === 'USER'
+          ? targetId
+          : targetType === 'MESSAGE' ? reportedMessage.sender_id : (reportedPost?.user_id || '');
 
         const report = {
-          report_id: 'REP-' + Date.now().toString().slice(-4),
-          reporter_id: user.user_id,
-          reported_user_id: 'SUSPECT',
-          reported_post_id: activePostForModal ? activePostForModal.post_id : 'GENERAL',
+          report_id: marbsDB.createId('REP'),
+          reporter_id: authUser.uid,
+          reported_user_id: reportedUserId,
+          reported_post_id: targetType === 'POST' ? targetId : (reportedMessage?.post_id || ''),
+          reported_message_id: targetType === 'MESSAGE' ? targetId : '',
+          target_type: targetType,
+          target_id: targetId,
           reason: reason,
           details: details,
           status: 'UNDER_REVIEW',
@@ -3123,18 +3168,30 @@
           created_at: new Date().toISOString()
         };
 
-        marbsDB.data.reports.unshift(report);
-        marbsDB.logAudit('SCAM_REPORT_FILED', `Report ${report.report_id} filed by ${user.user_id} regarding reason: ${reason}`);
+        const saved = await marbsDB.syncRecordToFirestore('reports', report);
+        if (!saved) {
+          showToast('Your report could not be securely submitted. Please try again.');
+          return;
+        }
+        if (!(marbsDB.data.reports || []).some(existing => existing.report_id === report.report_id)) {
+          marbsDB.data.reports.unshift(report);
+        }
+        marbsDB.logAudit('SCAM_REPORT_FILED', `Report ${report.report_id} filed by ${authUser.uid} regarding reason: ${reason}`);
         marbsDB.save();
 
         $('#scamReportModal').classList.remove('active');
         form.reset();
-        showToast('Report submitted! Koronadal City moderators will investigate promptly.');
+        activeReportTarget = { type: 'GENERAL', id: '' };
+        showToast('Report submitted privately to the moderation team.');
       });
     }
   }
 
   function openScamReportModal(type, targetId) {
+    const resolvedType = ['POST', 'USER', 'MESSAGE'].includes(type) ? type : 'GENERAL';
+    const resolvedId = targetId || (resolvedType === 'POST' ? activePostForModal?.post_id :
+      resolvedType === 'USER' ? activeChatCounterpartyId : '') || '';
+    activeReportTarget = { type: resolvedType, id: resolvedId };
     $('#scamReportModal').classList.add('active');
   }
 
@@ -4146,9 +4203,9 @@
           <td><strong style="color: var(--primary-dark);">${escapeHtml(v.full_legal_name)}</strong></td>
           <td>${v.id_type}</td>
           <td>
-            <img src="${escapeHtml(v.id_image || 'assets/images.jpg')}" alt="ID Photo" onerror="this.onerror=null;this.src='assets/images.jpg'" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
+            ${v.id_image ? `<img src="${escapeHtml(v.id_image)}" alt="ID Photo" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">` : '<span style="color:var(--text-muted)">Deleted</span>'}
           </td>
-          <td>${v.selfie_image ? `<img src="${escapeHtml(v.selfie_image)}" alt="Selfie" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">` : '<span style="color:var(--text-muted)">Not supplied</span>'}</td>
+          <td>${v.selfie_image ? `<img src="${escapeHtml(v.selfie_image)}" alt="Selfie" style="width: 44px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">` : `<span style="color:var(--text-muted)">${v.images_deleted_at ? 'Deleted' : 'Not supplied'}</span>`}</td>
           <td>${dateStr}</td>
           <td><span class="activity-badge" style="${statusColor}">${v.status}</span></td>
         </tr>
@@ -4167,10 +4224,14 @@
     if (!modal) return;
 
     $('#adminDetailIdImage').src = ver.id_image || '';
+    $('#adminDetailIdImage').style.display = ver.id_image ? 'block' : 'none';
+    $('#adminDetailIdRemoved').style.display = ver.id_image ? 'none' : 'block';
     $('#adminDetailIdImage').onerror = function () { this.removeAttribute('src'); };
     const selfieImage = $('#adminDetailSelfieImage');
     if (selfieImage) {
       selfieImage.src = ver.selfie_image || '';
+      selfieImage.style.display = ver.selfie_image ? 'block' : 'none';
+      $('#adminDetailSelfieRemoved').style.display = ver.selfie_image ? 'none' : 'block';
       selfieImage.onerror = function () { this.removeAttribute('src'); };
     }
     $('#adminDetailVerId').textContent = ver.verification_id;
@@ -4194,8 +4255,38 @@
     };
     const statusColor = badgeColors[ver.status] || 'background: #F4F1EA; color: #4E483E;';
     $('#adminDetailStatus').innerHTML = `<span class="activity-badge" style="${statusColor}">${ver.status}</span>`;
+    const redactButton = $('#adminDetailRedactBtn');
+    if (redactButton) {
+      redactButton.style.display = ['VERIFIED', 'REJECTED'].includes(ver.status) && (ver.id_image || ver.selfie_image) ? 'inline-flex' : 'none';
+      redactButton.disabled = !window.firebaseAdminClaim;
+    }
 
     modal.classList.add('active');
+  };
+
+  window.adminRedactVerificationImages = async function (verId) {
+    if (!window.firebaseAdminClaim || marbsDB.getCurrentUser()?.role !== 'ADMIN' || !window.firebaseAuth?.currentUser) {
+      showToast('Only an authenticated administrator can delete verification images.');
+      return;
+    }
+    const verification = marbsDB.data.id_verifications.find(record => record.verification_id === verId);
+    if (!verification || !['VERIFIED', 'REJECTED'].includes(verification.status) || (!verification.id_image && !verification.selfie_image)) {
+      showToast('Images can only be deleted after a verification has been approved or rejected.');
+      return;
+    }
+    if (!window.confirm('Permanently delete this citizen’s ID photo and selfie from the verification record? This cannot be undone.')) return;
+
+    const redaction = { id_image: '', selfie_image: '', images_deleted_at: new Date().toISOString() };
+    if (!await marbsDB.syncFieldsToFirestore('id_verifications', verId, redaction)) {
+      showToast('Images were not deleted. Check administrator access and try again.');
+      return;
+    }
+    Object.assign(verification, redaction);
+    marbsDB.logAudit('ID_IMAGES_DELETED', `Deleted ID and selfie images for verification ${verId}`);
+    marbsDB.save();
+    window.openAdminIdDetailsModal(verId);
+    renderAdminVerifications();
+    showToast('ID and selfie images deleted; the verification decision was retained.');
   };
 
   // Wire decision buttons inside adminIdDetailsModal
@@ -4228,6 +4319,11 @@
       }
     });
   }
+
+  const redactVerificationImagesBtn = $('#adminDetailRedactBtn');
+  if (redactVerificationImagesBtn) redactVerificationImagesBtn.addEventListener('click', () => {
+    if (activeAdminVerId) window.adminRedactVerificationImages(activeAdminVerId);
+  });
 
   window.adminSetVerificationStatus = async function (verId, newStatus) {
     if (marbsDB.getCurrentUser()?.role !== 'ADMIN' || !window.firebaseAuth?.currentUser) {
@@ -4323,30 +4419,53 @@
     const tbody = $('#adminReportsTbody');
     if (!tbody) return;
 
-    tbody.innerHTML = marbsDB.data.reports.map(r => `
+    if (!window.firebaseAdminClaim || marbsDB.getCurrentUser()?.role !== 'ADMIN') {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center">Sign in with the administrator account to review private reports.</td></tr>';
+      return;
+    }
+
+    if (!marbsDB.data.reports.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text-muted)">No abuse reports have been submitted.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = marbsDB.data.reports.slice().sort((a, b) =>
+      new Date(b.created_at || 0) - new Date(a.created_at || 0)).map(r => `
       <tr>
-        <td><strong>${r.report_id}</strong></td>
-        <td>${r.reason}</td>
+        <td><strong>${escapeHtml(r.report_id)}</strong><br><small>${escapeHtml(r.target_type || 'GENERAL')} · ${escapeHtml(r.target_id || '—')}</small></td>
+        <td>${escapeHtml(r.reason)}</td>
         <td>${escapeHtml(r.details)}</td>
-        <td><span class="activity-badge" style="background: #F7E7E4; color: #7E2A22;">${r.status}</span></td>
+        <td><span class="activity-badge" style="background: ${r.status === 'UNDER_REVIEW' ? '#F7E7E4' : '#E4F0E6'}; color: ${r.status === 'UNDER_REVIEW' ? '#7E2A22' : '#14512F'};">${escapeHtml(r.status)}</span></td>
         <td>
-          <button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminResolveReport('${r.report_id}')">Resolve Report</button>
+          ${r.status === 'UNDER_REVIEW' ? `<button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.adminResolveReport('${escapeHtml(r.report_id)}')">Resolve</button><button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; margin-left:4px;" onclick="window.adminDismissReport('${escapeHtml(r.report_id)}')">Dismiss</button>` : escapeHtml(r.admin_action || 'Reviewed')}
         </td>
       </tr>
     `).join('');
   }
+  window.renderAdminReports = renderAdminReports;
 
-  window.adminResolveReport = function (reportId) {
+  async function updateAbuseReport(reportId, status, adminAction) {
+    if (!window.firebaseAdminClaim || marbsDB.getCurrentUser()?.role !== 'ADMIN') {
+      showToast('Only an authenticated administrator can review reports.');
+      return;
+    }
     const report = marbsDB.data.reports.find(r => r.report_id === reportId);
-    if (!report) return;
+    if (!report || report.status !== 'UNDER_REVIEW') return;
 
-    report.status = 'RESOLVED';
-    report.admin_action = 'Investigated and resolved by moderator';
-    marbsDB.logAudit('REPORT_RESOLVED', `Resolved report ${reportId}`);
+    const fields = { status, admin_action: adminAction, resolved_at: new Date().toISOString() };
+    if (!await marbsDB.syncFieldsToFirestore('reports', reportId, fields)) {
+      showToast('Could not save the moderation decision. Please retry.');
+      return;
+    }
+
+    Object.assign(report, fields);
+    marbsDB.logAudit(`REPORT_${status}`, `${status === 'RESOLVED' ? 'Resolved' : 'Dismissed'} report ${reportId}`);
     marbsDB.save();
-    renderAdminPortal();
-    showToast(`Report ${reportId} marked as resolved.`);
-  };
+    renderAdminReports();
+    showToast(`Report ${reportId} ${status === 'RESOLVED' ? 'resolved' : 'dismissed'}.`);
+  }
+  window.adminResolveReport = reportId => updateAbuseReport(reportId, 'RESOLVED', 'Investigated and resolved by moderator');
+  window.adminDismissReport = reportId => updateAbuseReport(reportId, 'DISMISSED', 'Reviewed and dismissed by moderator');
 
   function renderAdminAuditLogs() {
     const tbody = $('#adminAuditLogsTbody');
@@ -4361,6 +4480,7 @@
       </tr>
     `).join('');
   }
+  window.renderAdminAuditLogs = renderAdminAuditLogs;
 
   // Helper UI Utilities
   let lastRenderedAuthState = null;
@@ -4626,6 +4746,9 @@
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'marbsToast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      toast.setAttribute('aria-atomic', 'true');
       toast.style.cssText = `
         position: fixed;
         bottom: 24px;
@@ -5302,12 +5425,15 @@
           const reliability = getUserReliability(counterpartyId);
           const isOwner = user.user_id === m.owner_id;
           const isFinder = user.user_id === m.finder_id;
+          const bothConfirmed = m.owner_confirmed_return === true && m.finder_confirmed_return === true;
+          const myReturnConfirmation = isOwner ? m.owner_confirmed_return === true : m.finder_confirmed_return === true;
+          const otherReturnConfirmation = isOwner ? m.finder_confirmed_return === true : m.owner_confirmed_return === true;
 
           return `
             <div class="meetup-schedule-card">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 14px; align-items: center;">
-                  <img src="${post.image || 'assets/images.jpg'}" style="width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
+                  <img src="${post.image || 'assets/images.jpg'}" alt="${escapeHtml(post.item_name)}" style="width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
                   <div>
                     <div style="display: flex; align-items: center; gap: 6px;">
                       <span class="post-badge ${post.post_type === 'LOST' ? 'badge-lost' : 'badge-found'}" style="font-size: 10px; padding: 2px 7px;">${post.post_type || 'POST'}</span>
@@ -5335,7 +5461,7 @@
                 <div style="text-align: right; min-width: 180px;">
                   <span style="background: #E3EFE6; color: #186A3A; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
                     <span style="width: 6px; height: 6px; border-radius: 50%; background: #1E7A46;"></span>
-                    CONFIRMED SCHEDULE
+                    ${bothConfirmed ? 'RETURN CONFIRMED' : 'CONFIRMED SCHEDULE'}
                   </span>
                   
                   <div style="margin-top: 8px; font-size: 12px;">
@@ -5348,6 +5474,11 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div class="meetup-confirmation-progress" role="status" aria-live="polite">
+                <strong>${myReturnConfirmation ? (otherReturnConfirmation ? 'Both participants confirmed the return.' : 'Your confirmation is recorded; waiting for the other participant.') : (otherReturnConfirmation ? 'The other participant confirmed; please confirm your side after the handover.' : 'After the handover, each participant confirms their side here.')}</strong>
+                <span>Owner: ${m.owner_confirmed_return ? 'confirmed' : 'waiting'} · Finder: ${m.finder_confirmed_return ? 'confirmed' : 'waiting'}</span>
               </div>
 
               <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #F4F1EA; flex-wrap: wrap;">
@@ -5404,7 +5535,7 @@
             <div class="meetup-schedule-card" style="border-left: 4px solid #2F8A53; background: #fbfdfc;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 14px; align-items: center;">
-                  <img src="${post.image || 'assets/images.jpg'}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
+                  <img src="${post.image || 'assets/images.jpg'}" alt="${escapeHtml(post.item_name)}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                       <span class="activity-badge" style="background: #E3EFE6; color: #155630; font-weight: 800; font-size: 10px;">COMPLETED & RETRIEVED</span>
