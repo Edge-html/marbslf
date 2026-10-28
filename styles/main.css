@@ -1524,7 +1524,8 @@ body[data-surface="landing"] #homeHero {
 .ig-post-media {
   position: relative;
   background: #000;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
+  max-height: 480px;
   overflow: hidden;
 }
 
