@@ -118,6 +118,20 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
       }
     }
 
+    // Cache the account's own profile locally so username sign-in works on
+    // this device without publishing a username-to-email directory.
+    if (window.marbsDB?.data?.users) {
+      const cachedIndex = window.marbsDB.data.users.findIndex(existing =>
+        existing.user_id === user.uid || String(existing.email || '').toLowerCase() === String(user.email || '').toLowerCase()
+      );
+      if (cachedIndex >= 0) {
+        window.marbsDB.data.users[cachedIndex] = { ...window.marbsDB.data.users[cachedIndex], ...profile };
+      } else {
+        window.marbsDB.data.users.push(profile);
+      }
+      window.marbsDB.save();
+    }
+
     let verificationEmailSent = true;
     try {
       await user.sendEmailVerification();
@@ -135,7 +149,8 @@ async function signUpWithEmailPassword({ email, password, firstName, middleName,
 
 // 3. Real Email or Username Login
 async function signInWithEmailOrUsername(identifier, password) {
-  const trimmed = identifier.trim().toLowerCase();
+  const cleanIdentifier = String(identifier || '').trim();
+  const trimmed = cleanIdentifier.toLowerCase();
   const isDemoAdminLogin = (trimmed === 'admin' || trimmed === 'admin@marbslf.gov.ph') && password === 'admin123';
   // The demo profile is only for an offline build. When Firebase is configured,
   // always authenticate against Firebase so a local ADMIN profile cannot be
@@ -149,21 +164,23 @@ async function signInWithEmailOrUsername(identifier, password) {
   }
 
   try {
-    let emailToUse = identifier.trim().toLowerCase() === 'admin'
-      ? 'admin@marbslf.gov.ph' : identifier.trim();
+    let emailToUse = cleanIdentifier.includes('@')
+      ? cleanIdentifier
+      : trimmed === 'admin' ? 'admin@marbslf.gov.ph' : '';
 
-    // If identifier is not an email, lookup email by username:
-    // First try local registered users
+    // Firebase password authentication requires an email. Resolve usernames
+    // only from profiles this device already knows; never expose all users'
+    // private email addresses through a public Firestore lookup.
     if (!emailToUse.includes('@')) {
-      if (window.marbsDB && window.marbsDB.data.current_user_id !== 'USR-ADMIN') {
-        const foundLocal = window.marbsDB.data.users.find(u => u.username && u.username.toLowerCase() === identifier.toLowerCase());
-        if (foundLocal && foundLocal.email) {
-          emailToUse = foundLocal.email;
-        }
+      const foundLocal = (window.marbsDB?.data?.users || []).find(user =>
+        String(user.username || '').trim().toLowerCase() === trimmed && user.email
+      );
+      if (foundLocal) {
+        emailToUse = String(foundLocal.email).trim();
       }
 
       if (!emailToUse.includes('@')) {
-        throw new Error('For privacy, use your email to sign in on this device. A saved username may work only on a device that already knows your account.');
+        throw new Error('This device does not have that username saved yet. Sign in with your email once on this device, then you can use either email or username here.');
       }
     }
 

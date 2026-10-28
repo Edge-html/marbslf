@@ -502,7 +502,8 @@
                 <form id="lpLoginForm">
                   <div class="form-group" style="margin-bottom: 14px;">
                     <label class="form-label" for="lpLoginIdentifier" style="color: #0B0B0B; font-weight: 700; font-size: 13px;">Email or Username</label>
-                    <input type="text" id="lpLoginIdentifier" class="form-input" placeholder="Enter your email or username" required autocomplete="username">
+                    <input type="text" id="lpLoginIdentifier" class="form-input" placeholder="Enter your email or username" required autocomplete="username" aria-describedby="lpLoginIdentifierHelp">
+                    <small id="lpLoginIdentifierHelp" class="form-hint">Email works on any device. Username works on this device after registration or an email sign-in.</small>
                   </div>
                   <div class="form-group" style="margin-bottom: 14px;">
                     <label class="form-label" for="lpLoginPassword" style="color: #0B0B0B; font-weight: 700; font-size: 13px;">Password</label>
@@ -2511,7 +2512,8 @@
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label" for="loginIdentifier">Email or Username</label>
-            <input type="text" id="loginIdentifier" class="form-input" placeholder="Enter your email or username" required autocomplete="username">
+            <input type="text" id="loginIdentifier" class="form-input" placeholder="Enter your email or username" required autocomplete="username" aria-describedby="loginIdentifierHelp">
+            <small id="loginIdentifierHelp" class="form-hint">Email works on any device. Username works on this device after registration or an email sign-in.</small>
           </div>
           <div class="form-group">
             <label class="form-label" for="loginPassword">Password</label>
@@ -2871,7 +2873,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="scripts/firebaseClient.js?v=23"></script>
+  <script src="scripts/firebaseClient.js?v=24"></script>
 
   <!-- Application Scripts -->
   <script src="scripts/data.js?v=36"></script>
