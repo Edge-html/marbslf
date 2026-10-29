@@ -136,6 +136,97 @@
   let capturedIdSelfiePayload = null;
   let claimPhotoPayload = null;
   let lostUploadedPhotos = []; // Array of photo objects { image_data, image_hash, timestamp }
+  let pendingLostPost = null;
+  let pendingFoundPost = null;
+  let pendingClaimSubmission = null;
+  let pendingMeetupRecord = null;
+  let pendingMeetupWasReschedule = false;
+  let pendingLostSubmissionLogged = false;
+  let pendingFoundSubmissionLogged = false;
+  let activeReschedulingMeetupId = null;
+
+  function reportDraftKey(kind) {
+    const userId = marbsDB.getCurrentUser()?.user_id || 'guest';
+    return `marbslf_report_draft_${userId}_${kind}`;
+  }
+
+  function saveReportDraft(kind) {
+    const form = document.getElementById(kind === 'lost' ? 'reportLostForm' : 'reportFoundForm');
+    const status = document.getElementById(kind === 'lost' ? 'lostDraftStatus' : 'foundDraftStatus');
+    if (!form) return;
+    const draft = {};
+    form.querySelectorAll('input, select, textarea').forEach(field => {
+      if (!field.id || field.type === 'file' || field.type === 'password' ||
+          /serial|proof|photo|camera|password|secret/i.test(field.id)) return;
+      draft[field.id] = field.type === 'checkbox' ? field.checked : field.value;
+    });
+    try {
+      sessionStorage.setItem(reportDraftKey(kind), JSON.stringify(draft));
+      if (status) status.textContent = 'Draft saved in this tab. Photos and private proof details are excluded.';
+    } catch (error) {
+      if (status) status.textContent = 'Draft saving is unavailable in this browser; keep this tab open until submitted.';
+    }
+  }
+
+  function restoreReportDraft(kind) {
+    const form = document.getElementById(kind === 'lost' ? 'reportLostForm' : 'reportFoundForm');
+    const status = document.getElementById(kind === 'lost' ? 'lostDraftStatus' : 'foundDraftStatus');
+    if (!form) return;
+    try {
+      const draft = JSON.parse(sessionStorage.getItem(reportDraftKey(kind)) || '{}');
+      Object.entries(draft).forEach(([id, value]) => {
+        const field = document.getElementById(id);
+        if (!field || !form.contains(field) || field.type === 'file') return;
+        if (field.type === 'checkbox') field.checked = value === true;
+        else field.value = String(value ?? '');
+      });
+      if (Object.keys(draft).length && status) status.textContent = 'Your saved text draft was restored. Add photos and private proof details again if needed.';
+    } catch (error) {
+      if (status) status.textContent = 'Draft could not be restored. You can still complete this report.';
+    }
+  }
+
+  function lockFormSubmit(form) {
+    if (!form || form.dataset.submitting === 'true') return null;
+    form.dataset.submitting = 'true';
+    const button = form.querySelector('button[type="submit"]');
+    const originalLabel = button?.dataset.idleLabel || button?.textContent;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Saving…';
+    }
+    return () => {
+      form.dataset.submitting = 'false';
+      if (button) {
+        button.disabled = false;
+        if (originalLabel) button.textContent = originalLabel;
+      }
+    };
+  }
+
+  window.clearReportDraft = function(kind) {
+    const form = document.getElementById(kind === 'lost' ? 'reportLostForm' : 'reportFoundForm');
+    try { sessionStorage.removeItem(reportDraftKey(kind)); } catch (error) {}
+    form?.reset();
+    if (kind === 'lost') {
+      capturedPhotoPayload = null;
+      lostUploadedPhotos = [];
+      $('#lostFileInput').value = '';
+      $('#lostPhotosPreviewGrid').style.display = 'none';
+      $('#lostPhotosPreviewGrid').innerHTML = '';
+      $('#lostPhotoCountBadge').style.display = 'none';
+      $('#lostCameraPrompt').style.display = 'block';
+      $('#lostPhotoHashTag').style.display = 'none';
+    } else {
+      capturedPhotoPayload = null;
+      const preview = $('#foundPhotoPreview');
+      if (preview) { preview.removeAttribute('src'); preview.style.display = 'none'; }
+      $('#foundCameraPrompt').style.display = 'block';
+      $('#foundPhotoHashTag').style.display = 'none';
+    }
+    const status = document.getElementById(kind === 'lost' ? 'lostDraftStatus' : 'foundDraftStatus');
+    if (status) status.textContent = 'Saved draft cleared. Text fields autosave in this tab; photos are not included.';
+  };
 
   function compressPostImage(file) {
     return new Promise((resolve, reject) => {
@@ -1755,8 +1846,10 @@
       }
 
       if (type === 'LOST') {
+        restoreReportDraft('lost');
         $('#reportLostModal').classList.add('active');
       } else {
+        restoreReportDraft('found');
         $('#reportFoundModal').classList.add('active');
       }
     },
@@ -1897,8 +1990,13 @@
   // Setup Form Submissions
   const lostForm = $('#reportLostForm');
   if (lostForm) {
-    lostForm.addEventListener('submit', (e) => {
+    lostForm.addEventListener('input', () => saveReportDraft('lost'));
+    lostForm.addEventListener('change', () => saveReportDraft('lost'));
+    lostForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const unlockSubmit = lockFormSubmit(lostForm);
+      if (!unlockSubmit) return;
+      try {
       const user = marbsDB.getCurrentUser();
 
       const category = $('#lostCategory').value;
@@ -1915,7 +2013,9 @@
       const rewardAmount = parseFloat($('#lostRewardAmount').value) || 0;
       const hideReward = $('#lostRewardPrivacy').checked;
 
-      const newPostId = marbsDB.createId('POST');
+      const savedPendingPost = (marbsDB.data.posts || []).find(existing => existing._syncPending &&
+        existing.user_id === user.user_id && existing.post_type === 'LOST' && existing.item_name === itemName);
+      const newPostId = pendingLostPost?.post_id || savedPendingPost?.post_id || marbsDB.createId('POST');
       const post = {
         post_id: newPostId,
         user_id: user.user_id,
@@ -1942,13 +2042,38 @@
         camera_verified: lostUploadedPhotos.some(p => p.image_hash && !p.image_hash.startsWith('UPLOAD-')) || !!(capturedPhotoPayload && !capturedPhotoPayload.image_hash.startsWith('UPLOAD-')),
         photo_hash: (lostUploadedPhotos.length > 0) ? lostUploadedPhotos.map(p => p.image_hash).join(', ') : (capturedPhotoPayload ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH'),
         likes_count: 0,
-        created_at: new Date().toISOString()
+        created_at: pendingLostPost?.created_at || savedPendingPost?.created_at || new Date().toISOString(),
+        _syncPending: !!window.firestoreDb,
+        _submissionLogged: Boolean(savedPendingPost && savedPendingPost._submissionLogged)
       };
 
-      marbsDB.data.posts.unshift(post);
-      marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted lost post ${newPostId} (${itemName}) - Pending Admin Review`);
+      pendingLostPost = post;
+      const existingPostIndex = marbsDB.data.posts.findIndex(existing => existing.post_id === newPostId);
+      if (existingPostIndex >= 0) marbsDB.data.posts[existingPostIndex] = post;
+      else marbsDB.data.posts.unshift(post);
+      if (!pendingLostSubmissionLogged && !post._submissionLogged) {
+        marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted lost post ${newPostId} (${itemName}) - Pending Admin Review`);
+        pendingLostSubmissionLogged = true;
+        post._submissionLogged = true;
+      }
       marbsDB.save();
-      if (marbsDB.syncPostToFirestore) marbsDB.syncPostToFirestore(post);
+      const cloudPost = { ...post };
+      delete cloudPost._syncPending;
+      delete cloudPost._submissionLogged;
+      const postSynced = marbsDB.syncPostToFirestore ? await marbsDB.syncPostToFirestore(cloudPost) : false;
+      if (window.firestoreDb && !postSynced) {
+        post._syncPending = true;
+        marbsDB.save();
+        const status = document.getElementById('lostDraftStatus');
+        if (status) status.textContent = 'Your report is saved here but has not synced yet. Check your connection and submit again to retry.';
+        showToast('Report is waiting to sync. Your text is still here; reconnect and retry.');
+        return;
+      }
+      pendingLostPost = null;
+      pendingLostSubmissionLogged = false;
+      delete post._syncPending;
+      delete post._submissionLogged;
+      marbsDB.save();
       if (marbsDB.startPrivateWorkflowListeners) marbsDB.startPrivateWorkflowListeners();
 
       // Trigger automatic matching engine per Section 12
@@ -1956,6 +2081,7 @@
 
       $('#reportLostModal').classList.remove('active');
       lostForm.reset();
+      window.clearReportDraft('lost');
       capturedPhotoPayload = null;
       lostUploadedPhotos = [];
       const previewGrid = $('#lostPhotosPreviewGrid');
@@ -1982,14 +2108,22 @@
       renderUserDashboard();
       renderUserPill();
       updateNotificationBadges();
+      } finally {
+        unlockSubmit();
+      }
     });
   }
 
   // Setup Report Found Form
   const foundForm = $('#reportFoundForm');
   if (foundForm) {
-    foundForm.addEventListener('submit', (e) => {
+    foundForm.addEventListener('input', () => saveReportDraft('found'));
+    foundForm.addEventListener('change', () => saveReportDraft('found'));
+    foundForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const unlockSubmit = lockFormSubmit(foundForm);
+      if (!unlockSubmit) return;
+      try {
       const user = marbsDB.getCurrentUser();
 
       const category = $('#foundCategory').value;
@@ -2001,7 +2135,9 @@
       const brand = $('#foundBrand').value.trim();
       const location = $('#foundLocation').value.trim();
 
-      const newPostId = marbsDB.createId('POST');
+      const savedPendingPost = (marbsDB.data.posts || []).find(existing => existing._syncPending &&
+        existing.user_id === user.user_id && existing.post_type === 'FOUND' && existing.item_name === itemName);
+      const newPostId = pendingFoundPost?.post_id || savedPendingPost?.post_id || marbsDB.createId('POST');
       const foundPhoto = capturedPhotoPayload && activeCameraContext === 'found'
         ? capturedPhotoPayload.image_data : null;
       const post = {
@@ -2029,19 +2165,45 @@
         camera_verified: !!foundPhoto,
         photo_hash: foundPhoto ? capturedPhotoPayload.image_hash : 'NO_PHOTO_HASH',
         likes_count: 0,
-        created_at: new Date().toISOString()
+        created_at: pendingFoundPost?.created_at || savedPendingPost?.created_at || new Date().toISOString(),
+        _syncPending: !!window.firestoreDb,
+        _submissionLogged: Boolean(savedPendingPost && savedPendingPost._submissionLogged)
       };
 
-      marbsDB.data.posts.unshift(post);
-      marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted found post ${newPostId} (${itemName}) - Pending Admin Review`);
+      pendingFoundPost = post;
+      const existingPostIndex = marbsDB.data.posts.findIndex(existing => existing.post_id === newPostId);
+      if (existingPostIndex >= 0) marbsDB.data.posts[existingPostIndex] = post;
+      else marbsDB.data.posts.unshift(post);
+      if (!pendingFoundSubmissionLogged && !post._submissionLogged) {
+        marbsDB.logAudit('POST_SUBMISSION', `User ${user.user_id} submitted found post ${newPostId} (${itemName}) - Pending Admin Review`);
+        pendingFoundSubmissionLogged = true;
+        post._submissionLogged = true;
+      }
       marbsDB.save();
-      if (marbsDB.syncPostToFirestore) marbsDB.syncPostToFirestore(post);
+      const cloudPost = { ...post };
+      delete cloudPost._syncPending;
+      delete cloudPost._submissionLogged;
+      const postSynced = marbsDB.syncPostToFirestore ? await marbsDB.syncPostToFirestore(cloudPost) : false;
+      if (window.firestoreDb && !postSynced) {
+        post._syncPending = true;
+        marbsDB.save();
+        const status = document.getElementById('foundDraftStatus');
+        if (status) status.textContent = 'Your report is saved here but has not synced yet. Check your connection and submit again to retry.';
+        showToast('Report is waiting to sync. Your text is still here; reconnect and retry.');
+        return;
+      }
+      pendingFoundPost = null;
+      pendingFoundSubmissionLogged = false;
+      delete post._syncPending;
+      delete post._submissionLogged;
+      marbsDB.save();
       if (marbsDB.startPrivateWorkflowListeners) marbsDB.startPrivateWorkflowListeners();
 
       runMatchingEngineForPost(post);
 
       $('#reportFoundModal').classList.remove('active');
       foundForm.reset();
+      window.clearReportDraft('found');
       capturedPhotoPayload = null;
 
       showNotificationModal({
@@ -2056,6 +2218,9 @@
       renderUserDashboard();
       renderUserPill();
       updateNotificationBadges();
+      } finally {
+        unlockSubmit();
+      }
     });
   }
 
@@ -2163,8 +2328,11 @@
 
     const claimForm = $('#ownershipClaimForm');
     if (claimForm) {
-      claimForm.addEventListener('submit', (e) => {
+      claimForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const unlockSubmit = lockFormSubmit(claimForm);
+        if (!unlockSubmit) return;
+        try {
         const user = marbsDB.getCurrentUser();
         if (!activePostForModal) return;
 
@@ -2189,8 +2357,10 @@
 
         const isFoundPost = activePostForModal.post_type === 'FOUND';
 
+        const canReusePending = pendingClaimSubmission?.post_id === activePostForModal.post_id &&
+          pendingClaimSubmission?.claimant_id === user.user_id;
         const newMatch = {
-          match_id: marbsDB.createId('MAT'),
+          match_id: canReusePending ? pendingClaimSubmission.match_id : marbsDB.createId('MAT'),
           post_id: activePostForModal.post_id,
           lost_post_id: isFoundPost ? null : activePostForModal.post_id,
           found_post_id: isFoundPost ? activePostForModal.post_id : null,
@@ -2201,26 +2371,28 @@
           proof_photo_url: claimPhotoPayload ? claimPhotoPayload.image_data : null,
           proof_photo_hash: claimPhotoPayload ? claimPhotoPayload.image_hash : null,
           camera_verification_status: claimPhotoPayload ? claimPhotoPayload.camera_verification_status : null,
-          created_at: new Date().toISOString()
+          created_at: canReusePending ? pendingClaimSubmission.created_at : new Date().toISOString(),
+          _syncPending: !!window.firestoreDb
         };
 
-        marbsDB.data.matches.unshift(newMatch);
-        marbsDB.syncRecordToFirestore('matches', newMatch);
-
-        // Add private message thread reference per Section 14
-        const claimMessage = {
-          message_id: marbsDB.createId('MSG'),
-          sender_id: user.user_id,
-          receiver_id: activePostForModal.user_id,
-          post_id: activePostForModal.post_id,
-          message: isFoundPost 
-            ? `[System Notice] User ${getPublicAlias(user)} submitted an ownership claim with private identifying answers ${claimPhotoPayload ? 'and verified camera photo proof ' : ''}for your found item.`
-            : `[System Notice] User ${getPublicAlias(user)} reported that they found your lost item with identifying details ${claimPhotoPayload ? 'and live camera photo proof' : ''}.`,
-          timestamp: new Date().toISOString(),
-          status: 'UNREAD'
-        };
-        marbsDB.data.messages.push(claimMessage);
-        marbsDB.syncRecordToFirestore('messages', claimMessage);
+        pendingClaimSubmission = newMatch;
+        const existingMatchIndex = marbsDB.data.matches.findIndex(match => match.match_id === newMatch.match_id);
+        if (existingMatchIndex >= 0) marbsDB.data.matches[existingMatchIndex] = newMatch;
+        else marbsDB.data.matches.unshift(newMatch);
+        marbsDB.save();
+        const cloudMatch = { ...newMatch };
+        delete cloudMatch._syncPending;
+        delete cloudMatch._claimNotified;
+        const matchSynced = await marbsDB.syncRecordToFirestore('matches', cloudMatch);
+        if (window.firestoreDb && !matchSynced) {
+          newMatch._syncPending = true;
+          marbsDB.save();
+          showToast('Your answers are saved here but have not synced yet. Check your connection and submit again to retry.');
+          return;
+        }
+        delete newMatch._syncPending;
+        pendingClaimSubmission = null;
+        if (marbsDB.startPrivateWorkflowListeners) marbsDB.startPrivateWorkflowListeners();
 
         // Notify poster
         if (activePostForModal.user_id) {
@@ -2234,14 +2406,27 @@
           );
         }
 
+        marbsDB.addNotification(
+          user.user_id,
+          'Private answers submitted',
+          `Your answers for “${activePostForModal.item_name}” were sent to the post owner. We’ll notify you when they respond.`,
+          'CLAIM'
+        );
+        newMatch._claimNotified = true;
+
         marbsDB.save();
         $('#ownershipClaimModal').classList.remove('active');
         claimForm.reset();
         resetClaimPhotoUI();
+        renderUserDashboard();
+        updateNotificationBadges();
 
         showToast(isFoundPost 
-          ? 'Claim submitted! The finder has been notified to review your proof answers and photo.'
-          : 'Details submitted! The owner has been notified of your report and photo proof.');
+          ? 'Claim submitted. The finder can review it in Verification Answers.'
+          : 'Finding report submitted. The owner can review it in Verification Answers.');
+        } finally {
+          unlockSubmit();
+        }
       });
     }
   }
@@ -2266,6 +2451,24 @@
     }
 
     if (!checkUserVerification(user, post.post_type === 'LOST' ? 'report finding this item' : 'claim this found item')) {
+      return;
+    }
+
+    const existingClaim = (marbsDB.data.matches || []).find(match =>
+      match.claimant_id === user.user_id &&
+      (match.post_id === post.post_id || match.lost_post_id === post.post_id || match.found_post_id === post.post_id) &&
+      !['MATCH_REJECTED', 'CANCELLED'].includes(match.status)
+    );
+    if (existingClaim) {
+      const labels = {
+        VERIFICATION_IN_PROGRESS: 'Waiting for the post owner to review your answers.',
+        MORE_INFO_REQUESTED: 'The post owner asked for more information. Open your messages to reply.',
+        MORE_INFO_RECEIVED: 'Your reply was sent. The post owner is reviewing it.',
+        MATCH_CONFIRMED: 'Your claim was accepted. Open Messages to arrange the safe return.',
+        RETURN_SCHEDULED: 'A safe meetup is scheduled. Open Meetups to review it.'
+      };
+      showToast(labels[existingClaim.status] || 'You already submitted a claim for this item. Check My Claim Updates.');
+      navigateToView('dashboard');
       return;
     }
 
@@ -2314,6 +2517,56 @@
   }
 
   // 13. Safe Pickup Places & Meetup Scheduling (Section 15, 16)
+  function localDateInputValue(date = new Date()) {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  }
+
+  function parseOperatingWindow(place, date, time) {
+    const hours = String(place?.operating_hours || '').trim();
+    if (/24\s*\/\s*7|24\s*hours/i.test(hours)) return { open: true };
+    const dayInfo = hours.match(/^(.+?):\s*(?=\d{1,2}(?::\d{2})?\s*(?:AM|PM)|24)/i);
+    const windowInfo = hours.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s*(?:-|to)\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+    if (!dayInfo || !windowInfo) return { open: null, hours };
+
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const aliases = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+    const dayText = dayInfo[1].trim().toLowerCase();
+    const weekday = new Date(`${date}T12:00:00`).getDay();
+    if (!/(daily|every day|all week)/i.test(dayText)) {
+      const range = dayText.match(/([a-z]{3,9})\s*(?:-|to)\s*([a-z]{3,9})/i);
+      let openDays = [];
+      if (range) {
+        const startDay = aliases[range[1].slice(0, 3)] ?? dayNames.indexOf(range[1].slice(0, 3));
+        const endDay = aliases[range[2].slice(0, 3)] ?? dayNames.indexOf(range[2].slice(0, 3));
+        if (startDay < 0 || endDay < 0) return { open: null, hours };
+        for (let day = startDay; ; day = (day + 1) % 7) {
+          openDays.push(day);
+          if (day === endDay) break;
+        }
+      } else {
+        openDays = dayNames.reduce((result, day, index) => {
+          if (dayText.includes(day) || dayText.includes(day.slice(0, 3))) result.push(index);
+          return result;
+        }, []);
+      }
+      if (!openDays.length) return { open: null, hours };
+      if (!openDays.includes(weekday)) return { open: false, hours };
+    }
+
+    const toMinutes = (hour, minute, meridiem) => {
+      let value = Number(hour) % 12;
+      if (String(meridiem).toUpperCase() === 'PM') value += 12;
+      return value * 60 + Number(minute || 0);
+    };
+    const start = toMinutes(windowInfo[1], windowInfo[2], windowInfo[3]);
+    const end = toMinutes(windowInfo[4], windowInfo[5], windowInfo[6]);
+    const [selectedHour, selectedMinute] = String(time).split(':').map(Number);
+    const selected = selectedHour * 60 + selectedMinute;
+    const inRange = end <= start ? selected >= start || selected < end : selected >= start && selected < end;
+    return { open: inRange, hours };
+  }
+
   function setupMeetupAndReturnSystem() {
     $('#meetupModalClose').addEventListener('click', () => {
       $('#meetupModal').classList.remove('active');
@@ -2321,16 +2574,39 @@
 
     const safePlaceSelect = $('#meetupSafePlaceSelect');
     if (safePlaceSelect) {
-      safePlaceSelect.innerHTML = marbsDB.data.safe_places
+      const activePlaces = marbsDB.data.safe_places
         .filter(sp => sp.active_status === 'ACTIVE')
-        .map(sp => `<option value="${sp.place_id}">${sp.name} — ${sp.operating_hours}</option>`)
-        .join('');
+      safePlaceSelect.innerHTML = activePlaces.length
+        ? activePlaces.map(sp => `<option value="${escapeHtml(sp.place_id)}">${escapeHtml(sp.name)} — ${escapeHtml(sp.operating_hours)}</option>`).join('')
+        : '<option value="">No active safe pickup places are available</option>';
     }
+
+    const meetupDateInput = $('#meetupDate');
+    const meetupTimeInput = $('#meetupTime');
+    const updateMeetupConstraints = () => {
+      if (!meetupDateInput || !meetupTimeInput) return;
+      const today = localDateInputValue();
+      meetupDateInput.min = today;
+      meetupTimeInput.min = meetupDateInput.value === today
+        ? `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`
+        : '';
+      const place = marbsDB.data.safe_places.find(item => item.place_id === safePlaceSelect?.value);
+      const hint = $('#meetupHoursHint');
+      if (hint) hint.textContent = place ? `Location hours: ${place.operating_hours}. The schedule must fall within these hours.` : 'Choose a time when the pickup location is open.';
+    };
+    safePlaceSelect?.addEventListener('change', updateMeetupConstraints);
+    meetupDateInput?.addEventListener('change', updateMeetupConstraints);
+    updateMeetupConstraints();
 
     const meetupForm = $('#meetupScheduleForm');
     if (meetupForm) {
-      meetupForm.addEventListener('submit', (e) => {
+      const initialSubmitButton = meetupForm.querySelector('button[type="submit"]');
+      if (initialSubmitButton) initialSubmitButton.dataset.idleLabel = initialSubmitButton.textContent;
+      meetupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const unlockSubmit = lockFormSubmit(meetupForm);
+        if (!unlockSubmit) return;
+        try {
         const user = marbsDB.getCurrentUser();
         const placeId = $('#meetupSafePlaceSelect').value;
         const date = $('#meetupDate').value;
@@ -2340,52 +2616,114 @@
         const currentMatch = (marbsDB.data.matches || []).find(m => m.match_id === window._activeSchedulingMatchId);
         const currentPostId = window._activeSchedulingPostId;
         const currentPost = (marbsDB.data.posts || []).find(p => p.post_id === currentPostId);
-        if (!user || !place || !currentPost || !currentMatch || currentMatch.status !== 'MATCH_CONFIRMED' ||
+        const rescheduling = activeReschedulingMeetupId
+          ? (marbsDB.data.meetups || []).find(meetup => meetup.meetup_id === activeReschedulingMeetupId)
+          : null;
+        const retryingPending = pendingMeetupRecord?.match_id === currentMatch?.match_id;
+        const isReschedule = !!rescheduling || (retryingPending &&
+          (pendingMeetupWasReschedule || pendingMeetupRecord?._wasReschedule === true));
+        if (!user || !place || !currentPost || !currentMatch ||
+            !['MATCH_CONFIRMED', 'RETURN_SCHEDULED'].includes(currentMatch.status) ||
+            (currentMatch.status === 'RETURN_SCHEDULED' && !isReschedule && !retryingPending) ||
             (user.user_id !== currentPost.user_id && user.user_id !== currentMatch.claimant_id)) {
           showToast('The post owner must accept the claim before a meetup can be scheduled.');
           return;
         }
         const existingMeetup = (marbsDB.data.meetups || []).find(m => m.match_id === currentMatch.match_id &&
           m.status !== 'CANCELLED' && m.status !== 'COMPLETED');
-        if (existingMeetup) {
+        if (existingMeetup && !isReschedule && !retryingPending) {
           showToast('A meetup is already scheduled for this claim. Open Meetups to review it.');
           return;
         }
 
+        const selectedDate = new Date(`${date}T${time}`);
+        if (!date || !time || Number.isNaN(selectedDate.getTime()) || selectedDate.getTime() <= Date.now()) {
+          showToast('Choose a date and time in the future.');
+          return;
+        }
+        const availability = parseOperatingWindow(place, date, time);
+        if (availability.open === false) {
+          showToast(`That time is outside this location’s hours (${availability.hours}). Choose another time.`);
+          return;
+        }
+        if (availability.open === null && !window.confirm(`The location lists these hours: ${availability.hours || 'hours not listed'}. Please confirm the facility is open at your chosen time. Continue?`)) return;
+
         const ownerId = currentPost.post_type === 'LOST' ? currentPost.user_id : currentMatch.claimant_id;
         const finderId = currentPost.post_type === 'LOST' ? currentMatch.claimant_id : currentPost.user_id;
 
-        const meetup = {
-          meetup_id: marbsDB.createId('MT'),
-          match_id: currentMatch.match_id,
-          post_id: currentPostId,
-          owner_id: ownerId,
-          finder_id: finderId,
-          place_id: placeId,
-          place_name: place ? place.name : 'Koronadal City Hall',
-          date: date,
-          time: time,
-          status: 'CONFIRMED',
-          owner_confirmed_return: false,
-          finder_confirmed_return: false,
-          safety_acknowledged: true,
-          created_at: new Date().toISOString()
-        };
-
-        marbsDB.data.meetups.unshift(meetup);
-        currentMatch.status = 'RETURN_SCHEDULED';
-        marbsDB.syncRecordToFirestore('meetups', meetup);
-        marbsDB.syncRecordToFirestore('matches', currentMatch);
+        let meetup = rescheduling || (retryingPending ? pendingMeetupRecord : null);
+        if (!meetup) {
+          meetup = {
+            meetup_id: marbsDB.createId('MT'),
+            match_id: currentMatch.match_id,
+            post_id: currentPostId,
+            owner_id: ownerId,
+            finder_id: finderId,
+            place_id: placeId,
+            place_name: place.name,
+            date,
+            time,
+            status: 'CONFIRMED',
+            owner_confirmed_return: false,
+            finder_confirmed_return: false,
+            safety_acknowledged: true,
+            created_at: new Date().toISOString()
+          };
+          marbsDB.data.meetups.unshift(meetup);
+          pendingMeetupWasReschedule = false;
+        } else {
+          Object.assign(meetup, { place_id: placeId, place_name: place.name, date, time });
+          pendingMeetupWasReschedule = isReschedule;
+        }
+        pendingMeetupRecord = meetup;
+        meetup._wasReschedule = isReschedule;
+        meetup._noticeSent = false;
+        if (!isReschedule) currentMatch.status = 'RETURN_SCHEDULED';
+        meetup._syncPending = true;
+        marbsDB.save();
+        const cloudMeetup = { ...meetup };
+        delete cloudMeetup._syncPending;
+        delete cloudMeetup._wasReschedule;
+        delete cloudMeetup._noticeSent;
+        const meetupSynced = await marbsDB.syncRecordToFirestore('meetups', cloudMeetup);
+        if (window.firestoreDb && !meetupSynced) {
+          showToast('The schedule is saved here but hasn’t synced. Keep this form open and retry when connected.');
+          return;
+        }
+        delete meetup._syncPending;
+        pendingMeetupRecord = null;
+        const matchSynced = await syncMeetupMatchState(meetup);
+        if (window.firestoreDb && !matchSynced) {
+          meetup._syncPending = true;
+          meetup._matchSyncPending = true;
+          pendingMeetupRecord = meetup;
+          marbsDB.save();
+          showToast('The meetup is saved, but the claim status has not synced yet. Retry from Meetups when your connection is back.');
+          renderUserDashboard();
+          renderMeetupsView();
+          return;
+        }
         const otherPartyId = user.user_id === ownerId ? finderId : ownerId;
-        marbsDB.addNotification(otherPartyId, 'Safe meetup scheduled', `${place.name} on ${date} at ${time}.`, 'MEETUP');
-        marbsDB.logAudit('MEETUP_SCHEDULED', `Meetup ${meetup.meetup_id} scheduled at ${meetup.place_name}`);
+        marbsDB.addNotification(otherPartyId, isReschedule ? 'Safe meetup updated' : 'Safe meetup scheduled', `${place.name} on ${date} at ${time}.`, 'MEETUP');
+        meetup._noticeSent = true;
+        marbsDB.logAudit(isReschedule ? 'MEETUP_RESCHEDULED' : 'MEETUP_SCHEDULED', `Meetup ${meetup.meetup_id} ${isReschedule ? 'rescheduled' : 'scheduled'} at ${meetup.place_name}`);
         marbsDB.save();
 
         $('#meetupModal').classList.remove('active');
-        showToast('Public Meetup Confirmed! Please review safety instructions.');
+        activeReschedulingMeetupId = null;
+        $('#meetupModalTitle').textContent = 'Arrange Return at Safe Pickup Place';
+        const scheduleButton = $('#meetupScheduleForm button[type="submit"]');
+        if (scheduleButton) {
+          scheduleButton.textContent = 'Confirm Safe Meetup Schedule';
+          scheduleButton.dataset.idleLabel = 'Confirm Safe Meetup Schedule';
+        }
+        showToast(isReschedule ? 'Meetup updated. The other participant has been notified.' : 'Safe meetup scheduled. Please review the safety instructions.');
         renderUserDashboard();
         renderMeetupsView();
         updateNotificationBadges();
+        } finally {
+          unlockSubmit();
+        }
       });
     }
   }
@@ -2650,6 +2988,7 @@
         if (img) img.src = 'assets/images.jpg';
         const container = $('#messengerMessagesContainer');
         if (container) container.innerHTML = '<div class="messenger-empty-state">Choose “Message” from a verification answer to open its private conversation.</div>';
+        setMessengerConversationControls(false);
       }
     } else {
       if (messagesBtn) messagesBtn.classList.remove('active');
@@ -2658,6 +2997,7 @@
       if (answersContent) answersContent.style.display = 'block';
       if (headerTitle) headerTitle.textContent = 'Private Verification Answers';
       stopMessengerRealTimeSync();
+      setMessengerConversationControls(false);
       renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
       const ownedPosts = new Set((marbsDB.data.posts || [])
         .filter(p => p.user_id === marbsDB.getCurrentUser()?.user_id).map(p => p.post_id));
@@ -2779,6 +3119,14 @@
         (!counterpartyId || m.claimant_id === counterpartyId || post.user_id === counterpartyId)
       );
     window._activeSchedulingMatchId = relatedMatch ? relatedMatch.match_id : null;
+    setMessengerConversationControls(true);
+    const scheduleButton = $('#messengerScheduleBtn');
+    const activeMeetup = (marbsDB.data.meetups || []).find(item => item.match_id === relatedMatch?.match_id && item.status !== 'CANCELLED' && item.status !== 'COMPLETED');
+    if (scheduleButton) {
+      const maySchedule = relatedMatch?.status === 'MATCH_CONFIRMED' && !activeMeetup;
+      scheduleButton.disabled = !maySchedule;
+      scheduleButton.textContent = activeMeetup ? 'Meetup already scheduled' : maySchedule ? 'Schedule Safe Meetup' : 'Waiting for claim approval';
+    }
 
     $$('.messenger-thread-item').forEach(item => item.classList.remove('active'));
 
@@ -2817,6 +3165,19 @@
   }
   window.selectMessengerConversation = selectMessengerConversation;
 
+  function setMessengerConversationControls(enabled) {
+    const input = $('#messengerInput');
+    const send = $('#messengerSendBtn');
+    const schedule = $('#messengerScheduleBtn');
+    if (input) input.disabled = !enabled;
+    if (send) send.disabled = !enabled;
+    if (schedule && !enabled) {
+      schedule.disabled = true;
+      schedule.textContent = 'Select a conversation';
+    }
+    $$('#messengerQuickReplies button').forEach(button => { button.disabled = !enabled; });
+  }
+
   function renderLiveMessengerMessages(scrollBottom = true) {
     const container = $('#messengerMessagesContainer');
     if (!container || !activeChatPost) return;
@@ -2850,12 +3211,16 @@
       return `
         <div class="messenger-bubble ${isMine ? 'mine' : 'other'}">
           <div>${escapeHtml(msg.message)}</div>
-          <div class="messenger-bubble-time">${timeStr} ${isMine ? 'Sent' : ''}</div>
+          <div class="messenger-bubble-time">${msg._syncPending ? 'Not sent yet' : `${timeStr} ${isMine ? 'Sent' : ''}`}</div>
+          ${msg._syncPending ? `<button type="button" class="messenger-report-message" data-retry-message="${escapeHtml(msg.message_id)}">Retry sending</button>` : ''}
           ${!isMine ? `<button type="button" class="messenger-report-message" data-report-message="${escapeHtml(msg.message_id)}" aria-label="Report this message">Report</button>` : ''}
         </div>
       `;
     }).join('');
 
+    container.querySelectorAll('[data-retry-message]').forEach(button => {
+      button.addEventListener('click', () => window.retryPendingMessage(button.dataset.retryMessage));
+    });
     container.querySelectorAll('[data-report-message]').forEach(button => {
       button.addEventListener('click', () => openScamReportModal('MESSAGE', button.dataset.reportMessage));
     });
@@ -2865,7 +3230,57 @@
     }
   }
 
-  function handleSendMessengerMessage() {
+  async function markRequestedClaimReply(user, postId, matchId) {
+    const belongsToPost = record =>
+      record.post_id === postId || record.lost_post_id === postId || record.found_post_id === postId;
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === matchId &&
+      record.claimant_id === user.user_id && record.status === 'MORE_INFO_REQUESTED' && belongsToPost(record)) ||
+      (marbsDB.data.matches || []).find(record => record.claimant_id === user.user_id &&
+        record.status === 'MORE_INFO_REQUESTED' && belongsToPost(record));
+    if (!match) return true;
+    match.status = 'MORE_INFO_RECEIVED';
+    match.more_info_replied_at = new Date().toISOString();
+    const saved = await marbsDB.syncRecordToFirestore('matches', match);
+    if (window.firestoreDb && !saved) {
+      match._syncPending = true;
+      match._syncPurpose = 'MORE_INFO_RECEIVED';
+      match._replyNotificationPending = true;
+      marbsDB.save();
+      renderUserDashboard();
+      return false;
+    }
+    delete match._syncPending;
+    delete match._syncPurpose;
+    delete match._replyNotificationPending;
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === postId);
+    if (post?.user_id) {
+      marbsDB.addNotification(post.user_id, 'Claimant replied with more details',
+        `The claimant replied about “${post.item_name}”. Review the conversation and their claim.`, 'CLAIM');
+    }
+    return true;
+  }
+
+  window.retryPendingMessage = async function(messageId) {
+    const user = marbsDB.getCurrentUser();
+    const message = (marbsDB.data.messages || []).find(record => record.message_id === messageId && record._syncPending);
+    if (!user || !message || message.sender_id !== user.user_id || !window.firestoreDb) return;
+    const cloudMessage = { ...message };
+    delete cloudMessage._syncPending;
+    const saved = await marbsDB.syncRecordToFirestore('messages', cloudMessage);
+    if (!saved) {
+      showToast('Message is still waiting to send. Check your connection and retry.');
+      return;
+    }
+    delete message._syncPending;
+    message.status = 'SENT';
+    const claimSynced = await markRequestedClaimReply(user, message.post_id, window._activeSchedulingMatchId);
+    marbsDB.save();
+    showToast(claimSynced ? 'Message sent.' : 'Message sent; its claim update is waiting to sync. Retry from My Claim Updates.');
+    renderLiveMessengerMessages(false);
+    renderMessengerThreadsList();
+  };
+
+  async function handleSendMessengerMessage() {
     const input = $('#messengerInput');
     if (!input) return;
     const text = input.value.trim();
@@ -2896,25 +3311,54 @@
       showToast('Open a conversation from a submitted claim before sending a message.');
       return;
     }
-
-    const newMsg = {
-      message_id: marbsDB.createId('MSG'),
-      sender_id: user.user_id,
-      receiver_id: activeChatCounterpartyId,
-      post_id: activeChatPost.post_id,
-      message: text,
-      timestamp: new Date().toISOString(),
-      status: 'SENT'
-    };
-
-    marbsDB.data.messages.push(newMsg);
-    marbsDB.save();
-    marbsDB.syncRecordToFirestore('messages', newMsg);
-    input.value = '';
-
-    renderLiveMessengerMessages(true);
-    renderMessengerThreadsList();
-
+    const sendButton = $('#messengerSendBtn');
+    if (sendButton?.dataset.busy === 'true') return;
+    if (sendButton) {
+      sendButton.dataset.busy = 'true';
+      sendButton.disabled = true;
+      const label = sendButton.querySelector('span');
+      if (label) label.textContent = 'Sending…';
+    }
+    const postId = activeChatPost.post_id;
+    const matchId = window._activeSchedulingMatchId;
+    try {
+      const newMsg = {
+        message_id: marbsDB.createId('MSG'),
+        sender_id: user.user_id,
+        receiver_id: activeChatCounterpartyId,
+        post_id: postId,
+        message: text,
+        timestamp: new Date().toISOString(),
+        status: 'SENT',
+        _syncPending: !!window.firestoreDb
+      };
+      marbsDB.data.messages.push(newMsg);
+      marbsDB.save();
+      const cloudMessage = { ...newMsg };
+      delete cloudMessage._syncPending;
+      const saved = await marbsDB.syncRecordToFirestore('messages', cloudMessage);
+      if (window.firestoreDb && !saved) {
+        newMsg._syncPending = true;
+        input.value = '';
+        marbsDB.save();
+        showToast('Message did not send yet. Use Retry sending when your connection is back.');
+      } else {
+        delete newMsg._syncPending;
+        const claimSynced = await markRequestedClaimReply(user, postId, matchId);
+        input.value = '';
+        marbsDB.save();
+        if (!claimSynced) showToast('Message sent; its claim update is waiting to sync. Retry from My Claim Updates.');
+      }
+      renderLiveMessengerMessages(true);
+      renderMessengerThreadsList();
+    } finally {
+      if (sendButton) {
+        sendButton.dataset.busy = 'false';
+        sendButton.disabled = !activeChatPost || !activeChatCounterpartyId;
+        const label = sendButton.querySelector('span');
+        if (label) label.textContent = 'Send';
+      }
+    }
   }
 
   window.sendQuickMessengerText = function(text) {
@@ -2926,10 +3370,17 @@
   };
 
   window.triggerScheduleFromChat = function() {
-    if (activeChatPost) {
-      window._activeSchedulingPostId = activeChatPost.post_id;
-      window._activeSchedulingClaimantId = activeChatCounterpartyId;
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === window._activeSchedulingMatchId);
+    if (!activeChatPost || !match || match.status !== 'MATCH_CONFIRMED') {
+      showToast('The post owner must accept the claim before a meetup can be scheduled.');
+      return;
     }
+    if ((marbsDB.data.meetups || []).some(item => item.match_id === match.match_id && !['CANCELLED', 'COMPLETED'].includes(item.status))) {
+      showToast('A meetup is already scheduled. Review it in the Meetups page.');
+      return;
+    }
+    window._activeSchedulingPostId = activeChatPost.post_id;
+    window._activeSchedulingClaimantId = activeChatCounterpartyId;
     $('#postVerificationsModal').classList.remove('active');
     stopMessengerRealTimeSync();
     $('#chatModal').classList.remove('active');
@@ -3866,6 +4317,7 @@
 
     const userMatches = marbsDB.data.matches.filter(m => m.claimant_id === user.user_id);
     $('#dashMatchesCount').textContent = userMatches.length;
+    renderMyClaimUpdates(user);
 
     // Render Posts in Dashboard
     const myPostsTbody = $('#myPostsTbody');
@@ -3895,6 +4347,7 @@
             <td>
               <div style="display: flex; gap: 6px; align-items: center;">
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="window.marbsApp.openPostDetailModal('${p.post_id}')">View</button>
+                ${p._syncPending ? `<button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="window.retryPendingPostSync('${p.post_id}')">Retry sync</button>` : ''}
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #5A5245; border-color: #bfdbfe;" onclick="window.openPostVerificationAnswers('${p.post_id}')" title="Review verification answers submitted for this post">Answers</button>
                 <button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px; color: #C4433A; border-color: #E8BDB8;" onclick="window.marbsApp.deletePost('${p.post_id}')">Delete</button>
               </div>
@@ -4950,8 +5403,18 @@
       };
 
       const qna = m.qna_responses || {};
-      const statusColor = m.status === 'MATCH_CONFIRMED' || m.status === 'RETURN_SCHEDULED' ? '#2F8A53' :
-                          m.status === 'MATCH_REJECTED' ? '#C4433A' : '#5A5245';
+      const statusLabels = {
+        VERIFICATION_IN_PROGRESS: 'Waiting for owner review',
+        MORE_INFO_REQUESTED: 'More details requested',
+        MORE_INFO_RECEIVED: 'Reply received · owner review',
+        MATCH_CONFIRMED: 'Claim accepted · schedule return',
+        RETURN_SCHEDULED: 'Safe meetup scheduled',
+        MATCH_REJECTED: 'Claim declined'
+      };
+      const statusColor = ['MATCH_CONFIRMED', 'RETURN_SCHEDULED'].includes(m.status) ? '#2F8A53' :
+                          m.status === 'MATCH_REJECTED' ? '#C4433A' :
+                          m.status === 'MORE_INFO_REQUESTED' ? '#9a6a0a' : '#5A5245';
+      const isClosedClaim = ['MATCH_REJECTED', 'CANCELLED', 'COMPLETED', 'RETURN_SCHEDULED'].includes(m.status);
 
       return `
         <div class="card" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -4967,7 +5430,7 @@
             </div>
             <div style="text-align: right;">
               <span style="background: ${statusColor}15; color: ${statusColor}; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 12px; display: inline-block;">
-                ${m.status || 'VERIFICATION_IN_PROGRESS'}
+                ${statusLabels[m.status] || 'Waiting for owner review'}
               </span>
               <div style="font-size: 11px; color: var(--text-subtle); margin-top: 4px;">
                 ${m.created_at ? new Date(m.created_at).toLocaleDateString() : 'Recent'}
@@ -4984,8 +5447,8 @@
                 <span style="background: #E3EFE6; color: #186A3A; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 4px;">ID VERIFIED</span>
               ` : ''}
             </div>
-            <div style="font-size: 11px; color: #5A5245; font-weight: 700;">
-              Match Score: ${m.match_score || 90}%
+            <div style="font-size: 11px; color: #5A5245; font-weight: 600; text-align: right; max-width: 190px;">
+              Review the private answers carefully before deciding.
             </div>
           </div>
 
@@ -5078,14 +5541,25 @@
           <!-- Action Buttons -->
           <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
             <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.openMessengerForPost('${post.post_id}', '${m.claimant_id}', '${m.match_id}')">
-              Open Private Chat
+              Message
             </button>
-            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #C4433A; border-color: #E8BDB8;" onclick="window.rejectVerificationMatch('${m.match_id}')">
-              Reject Claim
-            </button>
-            <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 6px 14px;" onclick="window.acceptVerificationMatch('${m.match_id}', '${post.post_id}')">
-              Accept & Schedule Return
-            </button>
+            ${['VERIFICATION_IN_PROGRESS', 'MORE_INFO_RECEIVED'].includes(m.status) ? `
+              <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;" onclick="window.requestVerificationDetails('${m.match_id}')">
+                Request more details
+              </button>
+            ` : ''}
+            ${m.status === 'MATCH_CONFIRMED' ? `
+              <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 6px 14px;" onclick="window.openMeetupScheduler('${m.match_id}', '${post.post_id}')">
+                Schedule safe return
+              </button>
+            ` : !isClosedClaim ? `
+              <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px; color: #C4433A; border-color: #E8BDB8;" onclick="window.rejectVerificationMatch('${m.match_id}')">
+                Decline claim
+              </button>
+              <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 6px 14px;" onclick="window.acceptVerificationMatch('${m.match_id}', '${post.post_id}')">
+                Accept claim
+              </button>
+            ` : `<span class="activity-badge" style="background: ${statusColor}18; color: ${statusColor};">${statusLabels[m.status] || m.status}</span>`}
           </div>
         </div>
       `;
@@ -5105,44 +5579,391 @@
     openVerificationsModal(postId);
   };
 
-  window.acceptVerificationMatch = function (matchId, postId) {
-    const match = (marbsDB.data.matches || []).find(m => m.match_id === matchId);
-    if (!match) return;
-
-    match.status = 'MATCH_CONFIRMED';
-    marbsDB.logAudit('MATCH_CONFIRMED', `Post owner confirmed match ${matchId}`);
-    marbsDB.save();
-    marbsDB.syncRecordToFirestore('matches', match);
-    marbsDB.addNotification(match.claimant_id, 'Claim accepted', 'The post owner accepted your claim. You can now coordinate a safe return.', 'CLAIM');
-
+  window.openMeetupScheduler = function(matchId, postId) {
+    const user = marbsDB.getCurrentUser();
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === matchId);
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === postId);
+    if (!user || !match || !post || post.user_id !== user.user_id || match.status !== 'MATCH_CONFIRMED') {
+      showToast('Only the post owner can schedule the accepted return.');
+      return;
+    }
+    if (pendingMeetupRecord?._syncPending && pendingMeetupRecord.match_id !== matchId) {
+      showToast('Retry syncing your pending meetup before arranging another one.');
+      return;
+    }
     window._activeSchedulingMatchId = matchId;
     window._activeSchedulingPostId = postId;
     window._activeSchedulingClaimantId = match.claimant_id;
+    activeReschedulingMeetupId = null;
+    const form = $('#meetupScheduleForm');
+    form?.reset();
+    if (pendingMeetupRecord?.match_id === matchId) {
+      $('#meetupSafePlaceSelect').value = pendingMeetupRecord.place_id;
+      $('#meetupDate').value = pendingMeetupRecord.date;
+      $('#meetupTime').value = pendingMeetupRecord.time;
+    }
+    $('#meetupDate').min = localDateInputValue();
+    $('#meetupModalTitle').textContent = 'Arrange Return at Safe Pickup Place';
+    const submitButton = $('#meetupScheduleForm button[type="submit"]');
+    if (submitButton) {
+      submitButton.textContent = 'Confirm Safe Meetup Schedule';
+      submitButton.dataset.idleLabel = 'Confirm Safe Meetup Schedule';
+    }
+    $('#meetupSafePlaceSelect').dispatchEvent(new Event('change'));
+    $('#meetupDate').dispatchEvent(new Event('change'));
+    $('#meetupModal').classList.add('active');
+  };
+
+  window.rescheduleMeetup = function(meetupId) {
+    const user = marbsDB.getCurrentUser();
+    const meetup = (marbsDB.data.meetups || []).find(record => record.meetup_id === meetupId);
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === meetup?.match_id);
+    if (!user || !meetup || meetup.status !== 'CONFIRMED' || meetup.owner_confirmed_return || meetup.finder_confirmed_return ||
+        ![meetup.owner_id, meetup.finder_id].includes(user.user_id)) {
+      showToast('This meetup can no longer be rescheduled.');
+      return;
+    }
+    activeReschedulingMeetupId = meetup.meetup_id;
+    window._activeSchedulingMatchId = meetup.match_id;
+    window._activeSchedulingPostId = meetup.post_id;
+    window._activeSchedulingClaimantId = match?.claimant_id || '';
+    $('#meetupSafePlaceSelect').value = meetup.place_id;
+    $('#meetupDate').value = meetup.date;
+    $('#meetupTime').value = meetup.time;
+    $('#meetupDate').min = localDateInputValue();
+    $('#meetupModalTitle').textContent = 'Reschedule safe meetup';
+    const submitButton = $('#meetupScheduleForm button[type="submit"]');
+    if (submitButton) {
+      submitButton.textContent = 'Save new meetup time';
+      submitButton.dataset.idleLabel = 'Save new meetup time';
+    }
+    $('#meetupSafePlaceSelect').dispatchEvent(new Event('change'));
+    $('#meetupDate').dispatchEvent(new Event('change'));
+    $('#meetupModal').classList.add('active');
+  };
+
+  async function syncMeetupMatchState(meetup) {
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === meetup?.match_id);
+    if (!match) return false;
+    const nextStatus = meetup.status === 'CANCELLED' ? 'MATCH_CONFIRMED' : 'RETURN_SCHEDULED';
+    if (meetup.status === 'CANCELLED' && match.status !== 'RETURN_SCHEDULED') return true;
+    const previousStatus = match.status;
+    match.status = nextStatus;
+    const synced = await marbsDB.syncRecordToFirestore('matches', match);
+    if (window.firestoreDb && !synced) {
+      match.status = previousStatus;
+      marbsDB.save();
+      return false;
+    }
+    return true;
+  }
+
+  window.cancelScheduledMeetup = async function(meetupId) {
+    const user = marbsDB.getCurrentUser();
+    const meetup = (marbsDB.data.meetups || []).find(record => record.meetup_id === meetupId);
+    if (!user || !meetup || meetup.status !== 'CONFIRMED' || meetup.owner_confirmed_return || meetup.finder_confirmed_return ||
+        ![meetup.owner_id, meetup.finder_id].includes(user.user_id)) {
+      showToast('This meetup can no longer be cancelled.');
+      return;
+    }
+    if (!window.confirm('Cancel this safe meetup? The other participant will be notified.')) return;
+    meetup.status = 'CANCELLED';
+    meetup.cancelled_by = user.user_id;
+    meetup.cancelled_at = new Date().toISOString();
+    meetup._syncPending = true;
+    meetup._noticeSent = false;
+    marbsDB.save();
+    const cloudRecord = { ...meetup };
+    delete cloudRecord._syncPending;
+    delete cloudRecord._noticeSent;
+    delete cloudRecord._wasReschedule;
+    const saved = await marbsDB.syncRecordToFirestore('meetups', cloudRecord);
+    if (window.firestoreDb && !saved) {
+      showToast('Cancellation is saved here but could not sync. It will appear as pending; retry when connected.');
+      renderMeetupsView();
+      return;
+    }
+    delete meetup._syncPending;
+    const matchSynced = await syncMeetupMatchState(meetup);
+    if (window.firestoreDb && !matchSynced) {
+      meetup._syncPending = true;
+      meetup._matchSyncPending = true;
+      marbsDB.save();
+      showToast('The cancellation is saved, but the claim status has not synced yet. Retry it from Meetup History.');
+      renderMeetupsView();
+      return;
+    }
+    const otherId = user.user_id === meetup.owner_id ? meetup.finder_id : meetup.owner_id;
+    marbsDB.addNotification(otherId, 'Safe meetup cancelled', `The meetup for ${meetup.date} at ${meetup.place_name} was cancelled. Please arrange another time in Messages.`, 'MEETUP');
+    meetup._noticeSent = true;
+    marbsDB.save();
+    showToast('Meetup cancelled. The other person has been notified.');
+    renderUserDashboard();
+    renderMeetupsView();
+    updateNotificationBadges();
+  };
+
+  window.retryMeetupSync = async function(meetupId) {
+    const meetup = (marbsDB.data.meetups || []).find(record => record.meetup_id === meetupId && record._syncPending);
+    if (!meetup) return;
+    const cloudRecord = { ...meetup };
+    delete cloudRecord._syncPending;
+    delete cloudRecord._noticeSent;
+    delete cloudRecord._wasReschedule;
+    const saved = await marbsDB.syncRecordToFirestore('meetups', cloudRecord);
+    if (!saved) {
+      showToast('Still unable to sync. Check your connection and retry.');
+      return;
+    }
+    delete meetup._syncPending;
+    const user = marbsDB.getCurrentUser();
+    const matchSynced = await syncMeetupMatchState(meetup);
+    if (window.firestoreDb && !matchSynced) {
+      meetup._syncPending = true;
+      meetup._matchSyncPending = true;
+      marbsDB.save();
+      showToast('The meetup saved, but its claim status is still waiting to sync. Retry once connected.');
+      renderMeetupsView();
+      return;
+    }
+    delete meetup._matchSyncPending;
+    if (pendingMeetupRecord?.meetup_id === meetup.meetup_id) pendingMeetupRecord = null;
+    if (!meetup._noticeSent && user) {
+      const otherId = user.user_id === meetup.owner_id ? meetup.finder_id : meetup.owner_id;
+      const cancelled = meetup.status === 'CANCELLED';
+      const rescheduled = meetup._wasReschedule === true;
+      marbsDB.addNotification(otherId,
+        cancelled ? 'Safe meetup cancelled' : rescheduled ? 'Safe meetup updated' : 'Safe meetup scheduled',
+        cancelled ? `The meetup for ${meetup.date} at ${meetup.place_name} was cancelled. Please arrange another time in Messages.` : `${meetup.place_name} on ${meetup.date} at ${meetup.time}.`,
+        'MEETUP'
+      );
+      meetup._noticeSent = true;
+    }
+    marbsDB.save();
+    showToast('Meetup changes synced successfully.');
+    renderUserDashboard();
+    renderMeetupsView();
+    updateNotificationBadges();
+  };
+
+  window.acceptVerificationMatch = async function (matchId, postId) {
+    const user = marbsDB.getCurrentUser();
+    const match = (marbsDB.data.matches || []).find(m => m.match_id === matchId);
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === postId);
+    if (!user || !match || !post || post.user_id !== user.user_id || match.status === 'MATCH_REJECTED') {
+      showToast('Only the post owner can accept this claim.');
+      return;
+    }
+    if (match.status === 'MATCH_CONFIRMED') {
+      window.openMeetupScheduler(matchId, postId);
+      return;
+    }
+    if (!['VERIFICATION_IN_PROGRESS', 'MORE_INFO_REQUESTED', 'MORE_INFO_RECEIVED'].includes(match.status)) return;
+
+    const previousStatus = match.status;
+    match.status = 'MATCH_CONFIRMED';
+    marbsDB.save();
+    const saved = await marbsDB.syncRecordToFirestore('matches', match);
+    if (window.firestoreDb && !saved) {
+      match.status = previousStatus;
+      marbsDB.save();
+      showToast('The claim could not be accepted yet. Check your connection and try again.');
+      renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
+      return;
+    }
+    marbsDB.logAudit('MATCH_CONFIRMED', `Post owner confirmed match ${matchId}`);
+    marbsDB.addNotification(match.claimant_id, 'Claim accepted', 'The post owner accepted your claim. You can now coordinate a safe return.', 'CLAIM');
 
     $('#postVerificationsModal').classList.remove('active');
-    
-    // Open Safe Return scheduler modal
-    $('#meetupModal').classList.add('active');
+    window.openMeetupScheduler(matchId, postId);
     showToast('Match accepted! Select an official Safe Pickup Place to schedule the return.');
     renderUserDashboard();
     updateNotificationBadges();
   };
 
-  window.rejectVerificationMatch = function (matchId) {
+  window.rejectVerificationMatch = async function (matchId) {
     if (!confirm('Are you sure the submitted answers do not match your item? This will decline the claim.')) return;
+    const user = marbsDB.getCurrentUser();
     const match = (marbsDB.data.matches || []).find(m => m.match_id === matchId);
-    if (!match) return;
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === (match?.post_id || match?.lost_post_id || match?.found_post_id));
+    if (!user || !match || !post || post.user_id !== user.user_id ||
+        !['VERIFICATION_IN_PROGRESS', 'MORE_INFO_REQUESTED', 'MORE_INFO_RECEIVED'].includes(match.status)) {
+      showToast('Only the post owner can decline an active claim.');
+      return;
+    }
 
+    const previousStatus = match.status;
     match.status = 'MATCH_REJECTED';
-    marbsDB.logAudit('MATCH_REJECTED', `Post owner declined claim ${matchId}`);
     marbsDB.save();
-    marbsDB.syncRecordToFirestore('matches', match);
+    const saved = await marbsDB.syncRecordToFirestore('matches', match);
+    if (window.firestoreDb && !saved) {
+      match.status = previousStatus;
+      marbsDB.save();
+      showToast('The claim could not be declined yet. Check your connection and try again.');
+      renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
+      return;
+    }
+    marbsDB.logAudit('MATCH_REJECTED', `Post owner declined claim ${matchId}`);
     marbsDB.addNotification(match.claimant_id, 'Claim update', 'The post owner could not verify this claim. Contact support if you think this was a mistake.', 'CLAIM');
 
     showToast('Claim was declined.');
     renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
     updateNotificationBadges();
   };
+
+  window.retryPendingPostSync = async function(postId) {
+    const user = marbsDB.getCurrentUser();
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === postId && record._syncPending);
+    if (!user || !post || post.user_id !== user.user_id || !window.firestoreDb) {
+      showToast('This report is not waiting for a sync retry.');
+      return;
+    }
+    const cloudPost = { ...post };
+    delete cloudPost._syncPending;
+    delete cloudPost._submissionLogged;
+    delete cloudPost._syncNotified;
+    const synced = await marbsDB.syncPostToFirestore(cloudPost);
+    if (!synced) {
+      showToast('Report still could not sync. Check your connection and retry.');
+      return;
+    }
+    delete post._syncPending;
+    delete post._submissionLogged;
+    if (!post._syncNotified) {
+      marbsDB.addNotification(user.user_id, 'Report sent for review', `“${post.item_name}” is now synced and waiting for administrator review.`, 'POST');
+      post._syncNotified = true;
+    }
+    marbsDB.save();
+    showToast('Report synced successfully. It is waiting for administrator review.');
+    renderFeed();
+    renderRecentActivity();
+    renderUserDashboard();
+    updateNotificationBadges();
+  };
+
+  window.requestVerificationDetails = async function(matchId) {
+    const user = marbsDB.getCurrentUser();
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === matchId);
+    const post = (marbsDB.data.posts || []).find(record => record.post_id === (match?.post_id || match?.lost_post_id || match?.found_post_id));
+    if (!user || !match || !post || post.user_id !== user.user_id ||
+        !['VERIFICATION_IN_PROGRESS', 'MORE_INFO_RECEIVED'].includes(match.status)) {
+      showToast('This claim can no longer be updated. Refresh and review its current status.');
+      return;
+    }
+    const previousStatus = match.status;
+    const previousRequestedAt = match.more_info_requested_at;
+    match.status = 'MORE_INFO_REQUESTED';
+    match.more_info_requested_at = new Date().toISOString();
+    marbsDB.save();
+    const saved = await marbsDB.syncRecordToFirestore('matches', match);
+    if (window.firestoreDb && !saved) {
+      match.status = previousStatus;
+      if (previousRequestedAt) match.more_info_requested_at = previousRequestedAt;
+      else delete match.more_info_requested_at;
+      marbsDB.save();
+      showToast('Could not sync the request yet. Check your connection and retry.');
+      return;
+    }
+    marbsDB.addNotification(
+      match.claimant_id,
+      'The post owner needs more details',
+      `Please open Messages for “${post.item_name}” and reply with any additional details the owner needs.`,
+      'CLAIM'
+    );
+    showToast('The claimant was asked to reply in Messages.');
+    renderVerificationAnswersList($('#postVerificationsFilterSelect')?.value || 'ALL');
+    renderUserDashboard();
+    updateNotificationBadges();
+  };
+
+  window.retryPendingClaimSync = async function(matchId) {
+    const match = (marbsDB.data.matches || []).find(record => record.match_id === matchId && record._syncPending);
+    if (!match) return;
+    const button = Array.from(document.querySelectorAll('[data-retry-claim]')).find(item => item.dataset.retryClaim === matchId);
+    if (button?.disabled) return;
+    if (button) { button.disabled = true; button.textContent = 'Retrying…'; }
+    const record = { ...match };
+    delete record._syncPending;
+    delete record._claimNotified;
+    delete record._syncPurpose;
+    delete record._replyNotificationPending;
+    const saved = await marbsDB.syncRecordToFirestore('matches', record);
+    if (!saved) {
+      showToast('Still unable to sync this claim. Check the connection and retry.');
+      if (button) { button.disabled = false; button.textContent = 'Retry saving'; }
+      return;
+    }
+    delete match._syncPending;
+    delete match._syncPurpose;
+    if (match._replyNotificationPending) {
+      const post = (marbsDB.data.posts || []).find(item => item.post_id === (match.post_id || match.lost_post_id || match.found_post_id));
+      if (post?.user_id) marbsDB.addNotification(post.user_id, 'Claimant replied with more details',
+        `The claimant replied about “${post.item_name}”. Review the conversation and their claim.`, 'CLAIM');
+      delete match._replyNotificationPending;
+    } else if (match.status === 'VERIFICATION_IN_PROGRESS' && !match._claimNotified) {
+      const post = (marbsDB.data.posts || []).find(item => item.post_id === match.post_id);
+      const isFoundPost = post?.post_type === 'FOUND';
+      if (post?.user_id) {
+        marbsDB.addNotification(post.user_id, isFoundPost ? 'New Ownership Claim Received' : 'Found Match Lead Received',
+          `A citizen submitted private answers for “${post.item_name}”. Review them in Verification Answers.`, 'CLAIM');
+      }
+      const claimant = marbsDB.getCurrentUser();
+      if (claimant?.user_id === match.claimant_id) {
+        marbsDB.addNotification(claimant.user_id, 'Private answers submitted',
+          `Your answers for “${post?.item_name || 'this item'}” were sent to the post owner.`, 'CLAIM');
+      }
+      match._claimNotified = true;
+    }
+    marbsDB.save();
+    showToast('Your claim synced successfully.');
+    renderUserDashboard();
+    updateNotificationBadges();
+  };
+
+  function renderMyClaimUpdates(user) {
+    const container = $('#myClaimsContainer');
+    if (!container) return;
+    const claims = (marbsDB.data.matches || [])
+      .filter(match => match.claimant_id === user.user_id)
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    if (!claims.length) {
+      container.innerHTML = '<div class="workflow-empty">You have not submitted a private ownership answer yet. Open an item post and choose “Found this?” or “I think this is mine” to begin.</div>';
+      return;
+    }
+    const steps = ['Answers sent', 'Owner review', 'Safe return', 'Both confirm'];
+    const statusCopy = {
+      VERIFICATION_IN_PROGRESS: 'Waiting for the post owner to review your private answers.',
+      MORE_INFO_REQUESTED: 'The owner needs more details. Reply through Messages.',
+      MORE_INFO_RECEIVED: 'Your reply was sent. The owner is reviewing it.',
+      MATCH_CONFIRMED: 'Your claim was accepted. Message the other person to arrange the return.',
+      RETURN_SCHEDULED: 'A safe meetup is scheduled. Check the Meetups page.',
+      COMPLETED: 'Both people confirmed the return. You can leave a rating in Meetup History.',
+      MATCH_REJECTED: 'The owner could not confirm this claim. Contact support if you think this is a mistake.',
+      CANCELLED: 'This claim was cancelled.'
+    };
+    container.innerHTML = claims.map(match => {
+      const postId = match.post_id || match.lost_post_id || match.found_post_id;
+      const post = (marbsDB.data.posts || []).find(item => item.post_id === postId);
+      const ownerId = post?.user_id || '';
+      const meetup = (marbsDB.data.meetups || []).find(item => item.match_id === match.match_id && item.status !== 'CANCELLED');
+      const status = match._syncPending ? 'Saved here · waiting to sync' : (statusCopy[match.status] || 'Your claim is being reviewed.');
+      const stage = match.status === 'COMPLETED' ? 4 : match.status === 'RETURN_SCHEDULED' ? 3 : match.status === 'MATCH_CONFIRMED' ? 2 : 1;
+      const failed = match.status === 'MATCH_REJECTED' || match.status === 'CANCELLED';
+      return `<article class="workflow-claim-card">
+        <div>
+          <div class="workflow-claim-title">${escapeHtml(post?.item_name || 'Lost / found item')}</div>
+          <div class="workflow-claim-status">${escapeHtml(status)}</div>
+          <ol class="workflow-steps" aria-label="Claim progress">${steps.map((label, index) => `<li class="${!failed && index < stage ? 'is-complete' : ''} ${!failed && index === stage ? 'is-current' : ''}">${label}</li>`).join('')}</ol>
+          <div class="workflow-claim-date">Submitted ${match.created_at ? new Date(match.created_at).toLocaleDateString() : 'recently'}</div>
+        </div>
+        <div class="workflow-claim-actions">
+          ${match._syncPending ? `<button type="button" class="btn btn-outline" data-retry-claim="${escapeHtml(match.match_id)}" onclick="window.retryPendingClaimSync('${escapeHtml(match.match_id)}')">Retry saving</button>` : ''}
+          ${ownerId ? `<button type="button" class="btn btn-outline" onclick="window.openMessengerForPost('${escapeHtml(postId)}', '${escapeHtml(ownerId)}', '${escapeHtml(match.match_id)}')">Open Messages</button>` : ''}
+          ${meetup ? `<button type="button" class="btn btn-primary" onclick="window.navigateToView('meetups')">View meetup</button>` : ''}
+        </div>
+      </article>`;
+    }).join('');
+  }
 
   window.showDashboardTab = function(tabName) {
     if (tabName === 'overview') {
@@ -5374,14 +6195,27 @@
     );
 
     const activeMeetups = userMeetups.filter(m => m.status !== 'COMPLETED' && m.status !== 'CANCELLED');
-    const completedMeetups = userMeetups.filter(m => m.status === 'COMPLETED');
+    const historyMeetups = userMeetups.filter(m => m.status === 'COMPLETED' || m.status === 'CANCELLED');
+
+    activeMeetups.forEach(meetup => {
+      const start = new Date(`${meetup.date}T${meetup.time}`).getTime();
+      const remaining = start - Date.now();
+      if (!Number.isFinite(start) || remaining < 0 || remaining > 24 * 60 * 60 * 1000) return;
+      const reminderKey = `marbslf_meetup_reminder_${user.user_id}_${meetup.meetup_id}_${meetup.date}_${meetup.time}`;
+      try {
+        if (localStorage.getItem(reminderKey)) return;
+        marbsDB.addNotification(user.user_id, 'Safe meetup coming up',
+          `Your meetup at ${meetup.place_name} is scheduled for ${meetup.date} at ${meetup.time}.`, 'MEETUP');
+        localStorage.setItem(reminderKey, 'sent');
+      } catch (error) {}
+    });
 
     const activeCountBadge = $('#meetupsActiveCountBadge');
     const historyCountBadge = $('#meetupsHistoryCountBadge');
     const navBadge = $('#navMeetupsBadge');
 
     if (activeCountBadge) activeCountBadge.textContent = activeMeetups.length;
-    if (historyCountBadge) historyCountBadge.textContent = completedMeetups.length;
+    if (historyCountBadge) historyCountBadge.textContent = historyMeetups.length;
     if (navBadge) {
       if (activeMeetups.length > 0) {
         navBadge.style.display = 'inline-block';
@@ -5485,6 +6319,11 @@
                 <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.openMessengerForPost('${post.post_id}', '${counterpartyId}', '${m.match_id}')">
                   Open Messages
                 </button>
+                ${m._syncPending ? `<button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.retryMeetupSync('${m.meetup_id}')">Retry sync</button>` : ''}
+                ${!m._syncPending && !m.owner_confirmed_return && !m.finder_confirmed_return ? `
+                  <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px;" onclick="window.rescheduleMeetup('${m.meetup_id}')">Reschedule</button>
+                  <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #a12f28; border-color: #e8bdb8;" onclick="window.cancelScheduledMeetup('${m.meetup_id}')">Cancel meetup</button>
+                ` : ''}
                 ${isOwner && !m.owner_confirmed_return ? `
                   <button type="button" class="btn btn-outline" style="font-size: 12px; padding: 6px 14px; color: #1E7A46; border-color: #86efac;" onclick="window.confirmReturnStep('${m.meetup_id}', 'OWNER')">
                     Confirm I Received It
@@ -5507,17 +6346,18 @@
 
     const historyList = $('#historyMeetupsList');
     if (historyList) {
-      if (completedMeetups.length === 0) {
+      if (historyMeetups.length === 0) {
         historyList.innerHTML = `
           <div style="text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--border); border-radius: var(--radius-md);">
-            <strong style="font-size: 15px; color: var(--text-main);">No Completed Transactions Yet</strong>
+            <strong style="font-size: 15px; color: var(--text-main);">No Meetup History Yet</strong>
             <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 440px; margin-left: auto; margin-right: auto;">
-              Completed returns and verified safe meetup transactions will be archived permanently here with ratings and proofs.
+              Completed returns and cancelled meetup plans will appear here.
             </p>
           </div>
         `;
       } else {
-        historyList.innerHTML = completedMeetups.map(m => {
+        historyList.innerHTML = historyMeetups.map(m => {
+          const cancelled = m.status === 'CANCELLED';
           const post = (marbsDB.data.posts || []).find(p => p.post_id === m.post_id) || {
             item_name: 'Returned Item',
             post_type: 'POST',
@@ -5532,24 +6372,25 @@
             r.meetup_id === m.meetup_id && r.rater_id === user.user_id);
 
           return `
-            <div class="meetup-schedule-card" style="border-left: 4px solid #2F8A53; background: #fbfdfc;">
+            <div class="meetup-schedule-card" style="border-left: 4px solid ${cancelled ? '#9b312a' : '#2F8A53'}; background: ${cancelled ? '#fffafa' : '#fbfdfc'};">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 14px; align-items: center;">
                   <img src="${post.image || 'assets/images.jpg'}" alt="${escapeHtml(post.item_name)}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border);" onerror="this.src='assets/images.jpg'">
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <span class="activity-badge" style="background: #E3EFE6; color: #155630; font-weight: 800; font-size: 10px;">COMPLETED & RETRIEVED</span>
+                      <span class="activity-badge" style="background: ${cancelled ? '#f7e7e4' : '#E3EFE6'}; color: ${cancelled ? '#8b2e27' : '#155630'}; font-weight: 800; font-size: 10px;">${cancelled ? 'MEETUP CANCELLED' : 'COMPLETED & RETRIEVED'}</span>
                       <strong style="font-size: 15px; color: var(--text-main);">${escapeHtml(post.item_name)}</strong>
                     </div>
                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
                       Location: <strong>${escapeHtml(m.place_name)}</strong> • Handover Date: ${m.date}
                     </div>
-                    <div style="font-size: 12px; color: #186A3A; font-weight: 700; margin-top: 3px;">
-                      Citizen: ${escapeHtml(getPublicAlias(counterparty))}
+                    <div style="font-size: 12px; color: ${cancelled ? '#7a4b45' : '#186A3A'}; font-weight: 700; margin-top: 3px;">
+                      ${cancelled ? `Cancelled by ${m.cancelled_by === user.user_id ? 'you' : escapeHtml(getPublicAlias(counterparty))}` : `Citizen: ${escapeHtml(getPublicAlias(counterparty))}`}
                     </div>
                   </div>
                 </div>
 
+                ${cancelled ? `<div style="text-align: right; background: #fff; border: 1px solid #E5E1D8; border-radius: 8px; padding: 8px 12px; color: #7a4b45; font-size: 12px;">No return was recorded.${m._syncPending ? `<button type="button" class="btn btn-outline" style="display:block;margin-top:8px;font-size:11px;" onclick="window.retryMeetupSync('${m.meetup_id}')">Retry sync</button>` : ''}</div>` : `
                 <div style="text-align: right; background: #fff; border: 1px solid #E5E1D8; border-radius: 8px; padding: 8px 12px;">
                   <div style="color: #C08A1E; font-size: 14px; font-weight: 800;">
                     ${ratingObj ? `${'★'.repeat(ratingObj.stars)} (${ratingObj.stars}.0 Stars)` : 'Not rated yet'}
@@ -5559,6 +6400,7 @@
                   </div>
                   ${!ratingObj && [m.owner_id, m.finder_id].includes(user.user_id) ? `<button type="button" class="btn btn-primary" style="margin-top:10px;font-size:12px" onclick="window.openRatingModal('${counterpartyId}', '${m.meetup_id}', '${m.post_id}')">Rate Citizen</button>` : ''}
                 </div>
+                `}
               </div>
             </div>
           `;
@@ -5578,7 +6420,7 @@
   let activeRatingTargetUserId = null;
   let activeRatingMeetupId = null;
   let activeRatingPostId = null;
-  let selectedRatingStars = 5;
+  let selectedRatingStars = 0;
 
   window.openRatingModal = function(targetUserId, meetupId, postId) {
     const user = marbsDB.getCurrentUser();
@@ -5593,7 +6435,7 @@
     activeRatingTargetUserId = targetUserId;
     activeRatingMeetupId = meetupId;
     activeRatingPostId = postId;
-    selectedRatingStars = 5;
+    selectedRatingStars = 0;
 
     const targetUser = (marbsDB.data.users || []).find(u => u.user_id === activeRatingTargetUserId) || {
       first_name: 'Verified Citizen',
@@ -5611,7 +6453,8 @@
     const itemTag = $('#ratingItemNameTag');
     if (itemTag && post) itemTag.textContent = `• ${post.item_name}`;
 
-    window.setRatingStars(5);
+    window.setRatingStars(0);
+    $$('.feedback-chip').forEach(chip => chip.classList.remove('active'));
     const commentInput = $('#ratingCommentText');
     if (commentInput) commentInput.value = '';
 
@@ -5620,8 +6463,9 @@
   };
 
   window.setRatingStars = function(stars) {
-    selectedRatingStars = stars;
+    selectedRatingStars = Number(stars) >= 1 && Number(stars) <= 5 ? Number(stars) : 0;
     const labels = {
+      0: 'Select a star rating',
       1: '1 Star — Poor Experience / Disappointing',
       2: '2 Stars — Below Expectations',
       3: '3 Stars — Good & Honest Citizen',
@@ -5630,15 +6474,16 @@
     };
 
     const labelEl = $('#starPickerLabel');
-    if (labelEl) labelEl.textContent = labels[stars] || `${stars} Stars`;
+    if (labelEl) labelEl.textContent = labels[selectedRatingStars] || `${selectedRatingStars} Stars`;
 
     $$('.star-btn').forEach(btn => {
       const btnStar = Number(btn.dataset.star);
-      if (btnStar <= stars) {
+      if (selectedRatingStars > 0 && btnStar <= selectedRatingStars) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
       }
+      btn.setAttribute('aria-pressed', String(selectedRatingStars === btnStar));
     });
   };
 
@@ -5652,6 +6497,10 @@
     const meetup = (marbsDB.data.meetups || []).find(m => m.meetup_id === activeRatingMeetupId);
     if (!user || !meetup || meetup.status !== 'COMPLETED' ||
         activeRatingTargetUserId !== (user.user_id === meetup.owner_id ? meetup.finder_id : meetup.owner_id)) return;
+    if (!Number.isInteger(selectedRatingStars) || selectedRatingStars < 1 || selectedRatingStars > 5) {
+      showToast('Choose a star rating before submitting.');
+      return;
+    }
     if ((marbsDB.data.ratings || []).some(r => r.meetup_id === meetup.meetup_id && r.rater_id === user.user_id)) return;
     if (!window.firestoreDb || !window.firebaseAuth?.currentUser) {
       showToast('Sign in to Firebase before submitting a rating.');
@@ -5661,7 +6510,7 @@
     if (submitButton?.disabled) return;
     if (submitButton) submitButton.disabled = true;
 
-    const comment = ($('#ratingCommentText')?.value || '').trim() || 'Very honest citizen! Safely returned the item.';
+    const comment = ($('#ratingCommentText')?.value || '').trim();
     const selectedTags = Array.from($$('.feedback-chip.active')).map(c => c.textContent.trim());
 
     const ratingRecord = {

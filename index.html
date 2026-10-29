@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
   
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="styles/main.css?v=61">
+  <link rel="stylesheet" href="styles/main.css?v=62">
   <link rel="stylesheet" href="styles/ux-polish.css?v=2">
 </head>
 <body>
@@ -1239,6 +1239,17 @@
             </div>
           </div>
 
+          <section class="workflow-panel" aria-labelledby="myClaimsTitle">
+            <div class="workflow-panel-heading">
+              <div>
+                <h3 id="myClaimsTitle">My Claim Updates</h3>
+                <p>Follow each item claim and see what to do next.</p>
+              </div>
+              <button type="button" class="btn btn-outline" onclick="window.openVerificationsModal()">Review answers on my posts</button>
+            </div>
+            <div id="myClaimsContainer" class="workflow-claims-list" aria-live="polite"></div>
+          </section>
+
           <!-- Section: My Posts -->
           <div style="margin-bottom: 32px;">
             <div class="section-header">
@@ -1603,6 +1614,10 @@
       </div>
       <form id="reportLostForm">
         <div class="modal-body">
+          <div class="report-draft-note" role="status">
+            <span id="lostDraftStatus">Text fields autosave in this tab. Photos and private serial details are excluded.</span>
+            <button type="button" onclick="window.clearReportDraft('lost')">Clear saved draft</button>
+          </div>
           
           <div class="privacy-alert">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #5A5245; flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -1753,6 +1768,10 @@
       </div>
       <form id="reportFoundForm">
         <div class="modal-body">
+          <div class="report-draft-note" role="status">
+            <span id="foundDraftStatus">Text fields autosave in this tab. Photos are not included.</span>
+            <button type="button" onclick="window.clearReportDraft('found')">Clear saved draft</button>
+          </div>
           <div class="privacy-alert">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #059669; flex-shrink: 0;"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
             <div>
@@ -2122,7 +2141,7 @@
                 </div>
               </div>
               <div class="marketplace-item-actions">
-                <button type="button" class="btn btn-primary" style="font-size: 11px; padding: 5px 12px; white-space: nowrap;" onclick="window.triggerScheduleFromChat()">
+                <button type="button" class="btn btn-primary" id="messengerScheduleBtn" style="font-size: 11px; padding: 5px 12px; white-space: nowrap;" onclick="window.triggerScheduleFromChat()" disabled>
                   Schedule Safe Meetup
                 </button>
               </div>
@@ -2141,15 +2160,15 @@
 
             <!-- Quick Replies (FB Marketplace style) -->
             <div class="messenger-quick-replies" id="messengerQuickReplies">
-              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('Hello! Is this item still in your possession?')">"Is this item still with you?"</button>
-              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('I reviewed your answers. Let\'s schedule the meetup at Koronadal City Hall.')">"Meet at City Hall?"</button>
-              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('When is your available time for safe return handover?')">"What time is best for you?"</button>
+              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('Hello! Is this item still in your possession?')" disabled>"Is this item still with you?"</button>
+              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('I reviewed your answers. Let\'s arrange a safe meetup.')" disabled>"Let's arrange a meetup"</button>
+              <button type="button" class="quick-chip" onclick="window.sendQuickMessengerText('When are you available for a safe return handover?')" disabled>"What time is best for you?"</button>
             </div>
 
             <!-- Real-Time Input Bar -->
             <div class="messenger-input-bar">
-              <input type="text" id="messengerInput" class="form-input" placeholder="Type a message in real-time..." style="flex-grow: 1;">
-              <button type="button" id="messengerSendBtn" class="btn btn-primary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+              <input type="text" id="messengerInput" class="form-input" maxlength="1000" placeholder="Choose Message from a verification answer first" style="flex-grow: 1;" disabled>
+              <button type="button" id="messengerSendBtn" class="btn btn-primary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;" disabled>
                 <span>Send</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
@@ -2170,7 +2189,7 @@
       <div class="modal-header">
         <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-dark);"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
-          Arrange Return at Safe Pickup Place
+          <span id="meetupModalTitle">Arrange Return at Safe Pickup Place</span>
         </h3>
         <button class="modal-close-btn" id="meetupModalClose">×</button>
       </div>
@@ -2200,6 +2219,8 @@
               <input type="time" id="meetupTime" class="form-input" required>
             </div>
           </div>
+
+          <p id="meetupHoursHint" class="form-hint" role="status">Choose a time when the pickup location is open.</p>
 
           <div class="warning-alert" style="font-size: 11px; margin-top: 10px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #d97706; flex-shrink: 0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -2291,21 +2312,21 @@
 
           <!-- Interactive 5-Star Rating Picker -->
           <div class="interactive-star-picker" id="starPickerContainer">
-            <button type="button" class="star-btn active" data-star="1" onclick="window.setRatingStars(1)" aria-label="1 star"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
-            <button type="button" class="star-btn active" data-star="2" onclick="window.setRatingStars(2)" aria-label="2 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
-            <button type="button" class="star-btn active" data-star="3" onclick="window.setRatingStars(3)" aria-label="3 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
-            <button type="button" class="star-btn active" data-star="4" onclick="window.setRatingStars(4)" aria-label="4 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
-            <button type="button" class="star-btn active" data-star="5" onclick="window.setRatingStars(5)" aria-label="5 stars"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn" data-star="1" onclick="window.setRatingStars(1)" aria-label="1 star" aria-pressed="false"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn" data-star="2" onclick="window.setRatingStars(2)" aria-label="2 stars" aria-pressed="false"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn" data-star="3" onclick="window.setRatingStars(3)" aria-label="3 stars" aria-pressed="false"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn" data-star="4" onclick="window.setRatingStars(4)" aria-label="4 stars" aria-pressed="false"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+            <button type="button" class="star-btn" data-star="5" onclick="window.setRatingStars(5)" aria-label="5 stars" aria-pressed="false"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
           </div>
           <div id="starPickerLabel" style="font-weight: 800; font-size: 13px; color: #8A6D14; margin-top: 6px; margin-bottom: 18px;">
-            5 Stars — Exceptional &amp; Highly Reliable Citizen
+            Select a star rating
           </div>
 
           <!-- Quick Feedback Tags -->
           <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px;">
-            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">Very Honest</button>
-            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">On Time at Safe Spot</button>
-            <button type="button" class="feedback-chip active" onclick="window.toggleFeedbackChip(this)">Friendly &amp; Cooperative</button>
+            <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Very Honest</button>
+            <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">On Time at Safe Spot</button>
+            <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Friendly &amp; Cooperative</button>
             <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Smooth Handover</button>
             <button type="button" class="feedback-chip" onclick="window.toggleFeedbackChip(this)">Fast Communication</button>
           </div>
@@ -2313,7 +2334,7 @@
           <!-- Optional Comments Textarea -->
           <div class="form-group" style="text-align: left;">
             <label class="form-label" style="font-size: 12px; font-weight: 700;">Share Your Experience (Optional)</label>
-            <textarea id="ratingCommentText" class="form-input" rows="3" placeholder="e.g., Arrived promptly at Koronadal City Hall. The item was completely intact and handled honestly. Thank you!"></textarea>
+            <textarea id="ratingCommentText" class="form-input" rows="3" maxlength="500" placeholder="What went well or could have gone better? (optional)"></textarea>
           </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -2873,11 +2894,11 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="scripts/firebaseClient.js?v=24"></script>
+  <script src="scripts/firebaseClient.js?v=25"></script>
 
   <!-- Application Scripts -->
-  <script src="scripts/data.js?v=36"></script>
+  <script src="scripts/data.js?v=37"></script>
   <script src="scripts/camera.js?v=18"></script>
-  <script src="scripts/app.js?v=63"></script>
+  <script src="scripts/app.js?v=64"></script>
 </body>
 </html>

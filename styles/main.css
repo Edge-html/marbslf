@@ -6244,6 +6244,86 @@ select.cs-native {
 
 .meetup-confirmation-progress span { color: #70695e; font-size: 11px; }
 
+.workflow-panel {
+  margin: 0 0 30px;
+  padding: 18px;
+  background: linear-gradient(135deg, #fff 0%, #fbf9f4 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 5px 18px rgba(35, 31, 24, .045);
+}
+
+.workflow-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.workflow-panel-heading h3 { margin: 0; font-size: 16px; }
+.workflow-panel-heading p { margin: 3px 0 0; color: var(--text-muted); font-size: 12px; }
+.workflow-claims-list { display: grid; gap: 10px; }
+
+.workflow-claim-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e9e3d8;
+  border-radius: 12px;
+}
+
+.workflow-claim-title { color: var(--text-main); font-size: 13px; font-weight: 800; }
+.workflow-claim-status { margin-top: 4px; color: #655e52; font-size: 12px; }
+.workflow-claim-date { margin-top: 3px; color: #8b8377; font-size: 10px; }
+.workflow-claim-actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+.workflow-empty { padding: 16px; color: var(--text-muted); background: #fff; border: 1px dashed var(--border); border-radius: 10px; font-size: 12px; }
+.workflow-steps { display: flex; gap: 6px; margin: 9px 0 0; padding: 0; list-style: none; }
+.workflow-steps li { position: relative; flex: 1; padding-top: 9px; color: #8b8377; font-size: 9px; line-height: 1.2; }
+.workflow-steps li::before { position: absolute; top: 0; left: 0; width: 100%; height: 3px; content: ""; background: #e5e1d8; border-radius: 3px; }
+.workflow-steps li:first-child::before { border-radius: 3px 0 0 3px; }
+.workflow-steps li:last-child::before { border-radius: 0 3px 3px 0; }
+.workflow-steps li.is-complete { color: #256b41; font-weight: 700; }
+.workflow-steps li.is-complete::before { background: #328752; }
+.workflow-steps li.is-current { color: #7a5f10; font-weight: 800; }
+.workflow-steps li.is-current::before { background: #c08a1e; }
+
+.report-draft-note {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 9px 11px;
+  color: #5c564c;
+  background: #f7f4ec;
+  border: 1px solid #e8e1d4;
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+.report-draft-note button {
+  flex: 0 0 auto;
+  padding: 0;
+  color: #6b5421;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .workflow-panel { padding: 13px; }
+  .workflow-panel-heading { align-items: flex-start; flex-direction: column; }
+  .workflow-claim-card { grid-template-columns: 1fr; }
+  .workflow-claim-actions { justify-content: flex-start; }
+  .report-draft-note { align-items: flex-start; }
+}
+
 @media (max-width: 600px) {
   .public-history-view { padding: 18px 12px 44px; }
   .public-history-hero { align-items: flex-start; flex-direction: column; gap: 18px; border-radius: 16px; }

@@ -1064,12 +1064,14 @@ class MarbsLFDatabase {
   }
 
   async syncPostToFirestore(post) {
-    if (!window.firestoreDb) return;
+    if (!window.firestoreDb || !post?.post_id) return false;
     try {
       await window.firestoreDb.collection('posts').doc(post.post_id).set(post, { merge: true });
       console.log(`✓ Post ${post.post_id} saved to Firebase Firestore`);
+      return true;
     } catch (e) {
       console.warn('Firestore post push warning:', e);
+      return false;
     }
   }
 

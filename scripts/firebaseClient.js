@@ -277,6 +277,12 @@ async function signOutUser() {
     }
   }
 
+  try {
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith('marbslf_report_draft_')) sessionStorage.removeItem(key);
+    });
+  } catch (e) {}
+
   if (window.marbsDB) {
     window.marbsDB.setCurrentUser(null);
   }

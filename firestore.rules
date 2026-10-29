@@ -163,16 +163,49 @@ service cloud.firestore {
         ]);
       allow update: if isMeetupParticipant(resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'owner_confirmed_return', 'finder_confirmed_return', 'status', 'completed_at'
+          'owner_confirmed_return', 'finder_confirmed_return', 'status', 'completed_at',
+          'place_id', 'place_name', 'date', 'time', 'cancelled_by', 'cancelled_at'
         ])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'place_id', 'place_name', 'date', 'time'
+        ])
+          || (resource.data.status == 'CONFIRMED'
+            && resource.data.owner_confirmed_return == false
+            && resource.data.finder_confirmed_return == false
+            && request.resource.data.status == 'CONFIRMED'
+            && request.resource.data.owner_confirmed_return == false
+            && request.resource.data.finder_confirmed_return == false
+            && request.resource.data.place_id is string
+            && request.resource.data.place_name is string
+            && request.resource.data.date is string
+            && request.resource.data.time is string))
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['owner_confirmed_return'])
           || (request.auth.uid == resource.data.owner_id && request.resource.data.owner_confirmed_return == true))
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['finder_confirmed_return'])
           || (request.auth.uid == resource.data.finder_id && request.resource.data.finder_confirmed_return == true))
-        && request.resource.data.status in ['CONFIRMED', 'COMPLETED']
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['completed_at'])
+          || request.resource.data.status == 'COMPLETED')
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['cancelled_by', 'cancelled_at'])
+          || (request.resource.data.status == 'CANCELLED'
+            && request.resource.data.cancelled_by == request.auth.uid
+            && request.resource.data.cancelled_at is string))
+        && (request.resource.data.status == resource.data.status
+          || (request.resource.data.status == 'CANCELLED'
+            && resource.data.status == 'CONFIRMED'
+            && resource.data.owner_confirmed_return == false
+            && resource.data.finder_confirmed_return == false
+            && request.resource.data.cancelled_by == request.auth.uid
+            && request.resource.data.cancelled_at is string)
+          || (request.resource.data.status == 'COMPLETED'
+            && resource.data.status == 'CONFIRMED'))
+        && request.resource.data.status in ['CONFIRMED', 'COMPLETED', 'CANCELLED']
         && (request.resource.data.status != 'COMPLETED'
           || (request.resource.data.owner_confirmed_return == true
-            && request.resource.data.finder_confirmed_return == true));
+            && request.resource.data.finder_confirmed_return == true))
+        && (request.resource.data.status != 'CANCELLED'
+          || (resource.data.status == 'CONFIRMED'
+            && resource.data.owner_confirmed_return == false
+            && resource.data.finder_confirmed_return == false));
       allow delete: if isAdmin();
     }
 
